@@ -44,7 +44,7 @@ main(int argc, char** argv)
       range_type res = seq.find(pattern.rbegin(), pattern.rend());
       if(length(res) > 0) { found++; matches += length(res); }
     }
-    double seconds = readTimer();
+    double seconds = readTimer() - start;
     printTime("Simple FM", found, matches, chars, seconds);
   }
 
@@ -56,7 +56,7 @@ main(int argc, char** argv)
       range_type res = rel.find(pattern.rbegin(), pattern.rend());
       if(length(res) > 0) { found++; matches += length(res); }
     }
-    double seconds = readTimer();
+    double seconds = readTimer() - start;
     printTime("Relative FM", found, matches, chars, seconds);
   }
 

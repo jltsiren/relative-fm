@@ -1,8 +1,8 @@
-SDSL_DIR=/Users/jltsiren/work/sdsl-lite
+SDSL_DIR=../sdsl-lite
 
 # In OS X, getrusage() returns maximum resident set size in bytes.
 # In Linux, the value is in kilobytes, so this line should be commented out.
-RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
+#RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
 # Return information on the number of runs of 1-bits in RelativeFM::reportSize().
 #RUN_FLAGS=-DREPORT_RUNS
