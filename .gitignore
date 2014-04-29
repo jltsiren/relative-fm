@@ -1,0 +1,4 @@
+*.o
+align_bwts
+build_bwt
+query_test
