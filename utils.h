@@ -74,7 +74,7 @@ uint64_t memoryUsage(); // Peak memory usage in bytes.
 //------------------------------------------------------------------------------
 
 // Returns the total length of the rows, excluding line ends.
-uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, bool skipEmptyRows);
+uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows);
 
 //------------------------------------------------------------------------------
 

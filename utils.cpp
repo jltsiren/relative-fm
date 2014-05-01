@@ -49,7 +49,7 @@ memoryUsage()
 //------------------------------------------------------------------------------
 
 uint64_t
-readRows(const std::string& filename, std::vector<std::string>& rows, bool skipEmptyRows)
+readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows)
 {
   std::ifstream input(filename.c_str(), std::ios_base::binary);
   if(!input)
@@ -63,7 +63,7 @@ readRows(const std::string& filename, std::vector<std::string>& rows, bool skipE
   {
     std::string buf;
     std::getline(input, buf);
-    if(skipEmptyRows && buf.length() == 0) { continue; }
+    if(skip_empty_rows && buf.length() == 0) { continue; }
     rows.push_back(buf);
     chars += buf.length();
   }
