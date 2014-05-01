@@ -8,8 +8,6 @@
 #include <sdsl/csa_alphabet_strategy.hpp>
 #include <sdsl/wavelet_trees.hpp>
 
-#include <sdsl/hybrid_vector.hpp>
-
 
 #include "utils.h"
 
@@ -75,7 +73,7 @@ public:
   /*
     Maximum diagonal in LCS computation. If further diagonals would be needed, only the most frequent
     character in the ranges will be matched. Maximal memory usage will be around
-    4 * MAX_D * MAX_D bytes.
+    4 * MAX_D * MAX_D bytes (+ SimpleFM for the reference and the target sequence).
   */
   const static int MAX_D = 50000;
 
@@ -91,11 +89,11 @@ public:
   template<class Iter> range_type find(Iter begin, Iter end) const;
 
   /*
-    Download the hybrid bitvector from http://www.cs.helsinki.fi/group/pads/ and copy
-    hybrid_vector.hpp into SDSL include directory.
+    The hybrid bitvector of Juha Kärkkäinen, Dominik Kempa, and Simon J. Puglisi would probably
+    be good here, but it only supports vectors shorter than 2^31 bits.
   */
-  typedef hybrid_vector<> vector_type;
-//  typedef rrr_vector<63> vector_type;
+//  typedef hybrid_vector<> vector_type;
+  typedef rrr_vector<63> vector_type;
 
   const SimpleFM& reference;
   bwt_type        ref_minus_lcs, seq_minus_lcs;
