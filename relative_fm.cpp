@@ -1,6 +1,5 @@
 #include "relative_fm.h"
 
-
 //------------------------------------------------------------------------------
 
 const std::string SimpleFM::EXTENSION = ".bwt";

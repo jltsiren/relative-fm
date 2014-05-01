@@ -2,6 +2,7 @@
 #define _RELATIVE_FM_UTILS_H
 
 
+#include <fstream>
 #include <iostream>
 
 #include <sdsl/csa_alphabet_strategy.hpp>
@@ -30,6 +31,22 @@ inline uint64_t
 length(range_type range)
 {
   return range.second + 1 - range.first;
+}
+
+//------------------------------------------------------------------------------
+
+template<class A>
+void
+readInteger(std::ifstream& input, A& a)
+{
+  input.read((char*)&a, sizeof(A));
+}
+
+template<class A>
+void
+writeInteger(std::ofstream& output, A& a)
+{
+  output.write((char*)&a, sizeof(A));
 }
 
 //------------------------------------------------------------------------------
