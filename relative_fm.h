@@ -8,6 +8,9 @@
 #include <sdsl/csa_alphabet_strategy.hpp>
 #include <sdsl/wavelet_trees.hpp>
 
+#include <sdsl/hybrid_vector.hpp>
+
+
 #include "utils.h"
 
 /*
@@ -87,7 +90,12 @@ public:
 
   template<class Iter> range_type find(Iter begin, Iter end) const;
 
-  typedef rrr_vector<63> vector_type;
+  /*
+    Download the hybrid bitvector from http://www.cs.helsinki.fi/group/pads/ and copy
+    hybrid_vector.hpp into SDSL include directory.
+  */
+  typedef hybrid_vector<> vector_type;
+//  typedef rrr_vector<63> vector_type;
 
   const SimpleFM& reference;
   bwt_type        ref_minus_lcs, seq_minus_lcs;
