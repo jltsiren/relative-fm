@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include "relative_fm.h"
 
 //------------------------------------------------------------------------------
@@ -236,6 +238,12 @@ struct record_type
   std::string pattern;
 
   record_type(range_type l, range_type r, std::string p) : left(l), right(r), pattern(p) {}
+
+  bool onlyNs() const
+  {
+    for(auto c : this->pattern) { if(c != 'N') { return false; } }
+    return true;
+  }
 };
 
 struct
@@ -327,13 +335,21 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
   FIXME Space optimizations have not been implemented yet.
 */
 std::vector<std::pair<int, int> >
-greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range)
+greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range, bool onlyNs)
 {
   std::vector<std::pair<int, int> > res;
   if(isEmpty(ref_range) || isEmpty(seq_range)) { return res; }
 
   std::vector<uint8_t> ref_buffer = extract(ref, ref_range); int ref_len = length(ref_range);
   std::vector<uint8_t> seq_buffer = extract(seq, seq_range); int seq_len = length(seq_range);
+
+  if(onlyNs || abs(ref_len - seq_len) > RelativeFM::MAX_D)
+  {
+#ifdef VERBOSE_OUTPUT
+      std::cout << "Reverting to heuristic on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
+#endif
+      return mostFrequentChar(ref_buffer, seq_buffer);
+  }
 
   // v[k] stores how many characters of ref have been processed on diagonal k.
   std::vector<std::vector<int> > store;
@@ -456,7 +472,7 @@ alignBWTs(const SimpleFM& ref, const SimpleFM& seq, uint64_t block_size, uint ma
   bit_vector ref_lcs(ref.bwt.size(), 0), seq_lcs(seq.bwt.size(), 0);
   for(auto curr : ranges)
   {
-    auto block = greedyLCS(ref.bwt, seq.bwt, curr.left, curr.right);
+    auto block = greedyLCS(ref.bwt, seq.bwt, curr.left, curr.right, curr.onlyNs());
     lcs += block.size();
     for(auto xy : block)
     {

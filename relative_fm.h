@@ -159,7 +159,7 @@ RelativeFM::find(Iter begin, Iter end) const
 }
 
 std::vector<std::pair<int, int> >
-greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range);
+greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range, bool onlyNs);
 
 std::pair<bit_vector, bit_vector>
 alignBWTs(const SimpleFM& ref, const SimpleFM& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print);

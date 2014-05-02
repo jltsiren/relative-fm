@@ -37,10 +37,11 @@ query_test:query_test.o $(RFMOBJS)
 
 package:
 	mkdir relative-fm
-	cp $(SOURCES) $(HEADERS) Makefile targz relative-fm
+	cp $(SOURCES) $(HEADERS) Makefile targz relative-fm.tex relative-fm
 	./targz relative-fm
 	rm relative-fm/*
 	rmdir relative-fm
 
 clean:
 	rm -f $(PROGRAMS) $(OBJS)
+	rm -f relative-fm.aux relative-fm.log relative-fm.pdf
