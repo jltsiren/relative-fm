@@ -5,7 +5,7 @@ SDSL_DIR=../sdsl-lite
 #RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
 # Return information on the number of runs of 1-bits in RelativeFM::reportSize().
-#RUN_FLAGS=-DREPORT_RUNS
+RUN_FLAGS=-DREPORT_RUNS
 
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
