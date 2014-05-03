@@ -2,6 +2,10 @@
 align_bwts
 build_bwt
 query_test
-relative-fm.aux
-relative-fm.log
-relative-fm.pdf
+*.aux
+*.bak
+*.bbl
+*.blg
+*.log
+*.pdf
+.DS_Store

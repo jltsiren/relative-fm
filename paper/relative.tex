@@ -1,0 +1,134 @@
+\documentclass{llncs}
+\usepackage{amsmath}
+
+
+\newcommand{\BWT}
+  {\ensuremath{\mathsf{BWT}}}
+\newcommand{\rank}
+  {\ensuremath{\mathsf{rank}}}
+\newcommand{\select}
+  {\ensuremath{\mathsf{select}}}
+
+
+\begin{document}
+
+\title{Relative FM-indexes}
+\maketitle
+
+\begin{abstract}
+Intuitively, if two strings $S_1$ and $S_2$ are sufficiently similar and we already have an FM-index for $S_1$ then, by storing a little extra information, we should be able to reuse parts of that index in an FM-index for $S_2$.  We formalize this intuition and show that it can lead to significant space savings in practice, as well as to some interesting theoretical problems.
+\end{abstract}
+
+
+\section{Introduction} \label{sec:introduction}
+
+FM-indexes~\cite{FM05} are core components in most modern DNA aligners (e.g.,~\cite{LTPS09,LD09,LYLLYKW09}) and have thus played an important role in the genomics revolution.  Medical researchers are now producing databases of hundreds or even thousands of human genomes, so bioinformatics researchers are working to improve FM-indexes' compression of sets of nearly duplicate strings.  As far as we know, however, the solutions proposed so far (e.g.,~\cite{FGHP??,MNSV10}) index the concatenation of the genomes, so we can search the whole database easily but searching only in one specified genome is more difficult.  In this paper we consider how to index each of the genomes individually while still using reasonable space and query time.
+
+Our intuition is that if two strings $S_1$ and $S_2$ are sufficiently similar and we already have an FM-index for $S_1$ then, by storing a little extra information, we should be able to reuse parts of that index in an FM-index for $S_2$.  More specifically, it seems $S_1$'s and $S_2$'s Burrows-Wheelers Transforms~\cite{BW94} (BWTs) should also be fairly similar.  For example, if
+\begin{align*}
+S_1 & = \mathsf{GCACTTAGAGGTCAGT}\\
+S_2 & = \mathsf{GCACTAGACGTCAGT}
+\end{align*}
+then
+\begin{align*}
+\BWT (S_1) & = \mathsf{TCTGCGTAAAAGGTGC}\\
+\BWT (S_2) & = \mathsf{TGCTCGTAAAACGAG}
+\end{align*}
+whose longest common subsequence {\sf TCTCGTAAAAGG} is nearly as long as either BWT.  We leave as an open problem proving bounds on the edit distance between \(\BWT (S_1)\) and \(\BWT (S_2)\) in terms of the edit distance between $S_1$ and $S_2$.
+
+The most important component of an FM-index for a string is a data structure supporting fast \rank\ queries on the string's BWT.  Suppose we store bitvectors $B_1$ and $B_2$ in which the 1s mark subsequences $D_1$ and $D_2$ complementary to a longest common substring $C$ in \(\BWT (S_1)\) and \(\BWT (S_2)\), respectively.  We claim that if we can support fast \rank\ queries on \(\BWT (S_1)\), $B_1$, $B_2$, $D_1$ and $D_2$ and fast $\select_0$ queries on $B_1$, then we can support fast \rank\ queries on \(\BWT (S_2)\).
+
+To see why, notice that
+\begin{align*}
+\BWT (S_2).\rank_X (i)
+& = C.\rank_X (B_2.\rank_0 (i))\\
+& \quad + D_2.\rank_X (B_2.\rank_1 (i))
+\end{align*}
+and, by the same reasoning, 
+\begin{align*}
+C.\rank_X (j)
+& = \BWT (S_1).\rank_X (B_1.\select_0 (j))\\
+& \quad - D_1.\rank_X (B_1.\rank_1 (B_1.\select_0 (j)))\,.
+\end{align*}
+Therefore,
+\begin{align*}
+\BWT (S_2).\rank_X (i)
+& = \BWT (S_1).\rank_X (k)\\
+& \quad - D_1.\rank_X (B_1.\rank_1 (k))\\
+& \quad + D_2.\rank_X (B_2.\rank_1 (i))
+\end{align*}
+where \(k = B_1.\select_0 (B_2.\rank_0 (i))\).
+
+In our example, with
+\begin{align*}
+B_1 & = 0001000000000111\\
+B_2 & = 010000000001010\\
+D_1 & = \mathsf{GTGC}\\
+D_2 & = \mathsf{GCA}
+\end{align*}
+we have \(B_1.\select_0 (B_2.\rank_0 (13)) = 11\) so
+\begin{align*}
+\BWT (S_2).\rank_\mathsf{C} (13)
+& = \BWT (S_1).\rank_\mathsf{C} (11)\\
+& \quad - D_1.\rank_\mathsf{C} (B_1.\rank_1 (11))\\
+& \quad + D_2.\rank_\mathsf{C} (B_2.\rank_1 (13))\\
+& = 3\,.
+\end{align*}
+We invite the reader to try other \rank\ queries and other examples.
+
+In this paper we are mainly concerned with the practical applications of our observation.  In Section~\ref{sec:simon&jouni} we describe how we built an FM-index for a Han genome from the YanHuang Project~\cite{??}, reusing a \rank\ data structure over the BWT of the human reference genome~\cite{??}.  The Han genome is about 3.0 billion  base pairs, the reference is about 3.1 billion base pairs and we found a common subsequence of about 2.9 billion base pairs.  A standard implementation~\cite{??} of a stand-alone FM-index for the Han genome takes about ?? MB, while our index uses only about ?? MB on top of the index for the reference.  On the other hand, queries to our index take about ?? times longer.  Since our index is compressed relative to the underlying index for the reference, we call it a relative FM-index.
+
+The \rank\ data structure over the BWT normally dominates the space usage of an FM-index because the other components all have sublinear size.  If we store enough relative FM-indexes and our space savings for the \rank\ data structures are good enough, however, those other components could become a concern.  In particular, the suffix array (SA) sample used for locating and extracting usually has only slightly sublinear size, unless those operations are very slow.  In Section~\ref{sec:djamal&giovanni} we consider how to reuse also the SA sample of the underlying index.  We show that a natural formalization of this problem is NP-hard, via a reduction from permuation pattern matching~\cite{??}, but give a heuristic that seems to work well in practice.  Bitvectors with constant time queries also take space only slightly sublinear in the total number of bits, but that can be reduced to space linear in the number of 1s by increasing the query time to logarithmic in the number of 1s or doubly-logarithmic in the total number of bits.
+
+
+\section{Simon \& Jouni}
+\label{sec:simon&jouni}
+
+Finding the longest common subsequence of two long strings is expensive. To make the construction of a relative FM-index practical, we approximate the LCS of the two Burrows-Wheeler transforms, using the combinatorial properties of the BWT to align the sequences.
+
+Let $S_{1}$ be a random string of length $n$ over alphabet $\Sigma$ of size $\sigma$, and let string $S_{2}$ differ from it by $s$ insertions, deletions, and substitutions. In the expected case, the edit operations change the lexicographic ranks of $O(s \log_{\sigma} n)$ suffixes and the preceding characters for $O(s)$ suffixes~\cite{MNSV10}. If the remove the characters corresponding to those suffixes from $\BWT(S_{1})$ and $\BWT(S_{2})$, we are left with a common subsequence of length $n - O(s \log_{\sigma} n)$ in the expected case.
+
+Assume that we have partitioned the BWTs according to the first $k$ characters of the suffixes, for $k \ge 0$. For all $x \in \Sigma^{k}$, let $\BWT_{x}(S_{1})$ and $\BWT_{x}(S_{2})$ be the substrings of the BWTs corresponding to the suffixes starting with $x$. If we remove the suffixes affected by the edit operations, as well as the suffixes where string $x$ covers an edit, we are left with a common subsequence $\BWT_{x}'$ of $\BWT_{x}(S_{1})$ and $\BWT_{x}(S_{2})$. If we concatenate the sequences $\BWT_{x}'$ for all $x$, we get a common subsequence of $\BWT(S_{1})$ and $\BWT(S_{2})$ of length $n - O(s (k + \log_{\sigma} n))$ in the expected case. This suggests that we can find a long common substring of $\BWT(S_{1})$ and $\BWT(S_{2})$ by partitioning the BWTs, finding LCS for each partition, and concatenating the results.
+
+In practice, we partition the BWTs by variable-length strings. We use backward searching on the BWTs to traverse the suffix trees of $S_{1}$ and $S_{2}$, selecting a partition when either the length of $\BWT_{x}(S_{1})$ or $\BWT_{x}(S_{2})$ is at most $1024$, or the length of the pattern $x$ reaches $32$. For each partition, we use the greedy LCS algorithm~\cite{Myers86} to find the longest common subsequence of that partition. To avoid hard cases, we stop the greedy algorithm if it would need diagonals beyond $\pm 50000$, and match only the most common characters for that partition. We also predict in advance the common cases where this happens (the difference of the lengths of $\BWT_{x}(S_{1})$ and $\BWT_{x}(S_{2})$ is over $50000$, or $x = N^{32}$ for DNA sequences), and match the most common characters in that partition directly.
+
+We implemented the counting structure of the relative FM-index using the SDSL library~\cite{Gog2014b}, and compared its performance to a regular FM-index. We used Huffman-shaped wavelet trees with either plain or entropy-compressed (RRR)~\cite{Raman2007} bitvectors for the BWTs and sequences $D_{1}$ and $D_{2}$. Either entropy-compressed or sparse~\cite{Okanohara2007} bitvectors were used for marking the positions of subsequences $D_{1}$ and $D_{2}$ in the BWTs.
+
+The implementation was written in C++ and compiled on g++ version 4.7.3. We used a system with 32 gigabyes of memory and two quad-core 2.53 GHz Intel Xeon E5540 processors, running Ubuntu 12.04 with Linux kernel 3.2.0. Only one CPU core was used in the experiments.
+
+For our experiments, we used the 1000 Genomes Project assembly of the human reference genome as the reference sequence $S_{1}$.\footnote{GRCh37, \url{ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/}} As sequence $S_{2}$, we used the genome of a Han Chinese individual from the YanHuang project.\footnote{\url{ftp://public.genomics.org.cn/BGI/yanhuang/fa/}} The lengths of the sequences were 3.10 billion bases and 3.00 billion bases, respectively, and our algorithm found a common subsequence of 2.93 billion bases. As our pattern set, we used 10 million reads of length 56. Almost 4.20 million reads had exact matches in sequence $S_{2}$, with a total of 99.7 million occurrences. The results of the experiments can be seen in Table~\ref{table:experiments}.
+
+\begin{table}
+\centering
+\caption{Experiments with human genomes. Bitvectors used in the wavelet tree (WT) and for the LCS; time and space requirements for building the relative FM-index; time required for counting queries and index size for a regular and a relative FM-index; the performance of the relative FM-index compared to the regular index. The query times are averages over five runs.}\label{table:experiments}
+\begin{tabular}{cccccccccccccc}
+\hline
+\noalign{\smallskip}
+\multicolumn{2}{c}{Bitvectors} & & \multicolumn{2}{c}{Construction} & & \multicolumn{2}{c}{Regular} & & \multicolumn{2}{c}{Relative} & & \multicolumn{2}{c}{Rel vs.~Reg} \\
+WT & LCS & & Time & Space & & Time & Size & & Time & Size & & Time & Size \\
+\noalign{\smallskip}
+\hline
+\noalign{\smallskip}
+Plain & RRR    & &  762 s & 9124 MB & & 146 s & 1090 MB & & 1392 s & 288 MB & & 954 \% & 26 \% \\
+\noalign{\smallskip}
+Plain & Sparse & & \\
+\noalign{\smallskip}
+RRR   & RRR    & & 6022 s & 7823 MB & & 667 s &  628 MB & & 3022 s & 256 MB & & 453 \% & 41 \% \\
+\noalign{\smallskip}
+RRR   & Sparse & & \\
+\noalign{\smallskip}
+\hline
+\end{tabular}
+\end{table}
+
+% FIXME Comment the experiments when we have the results with sparse bitvectors.
+
+\section{Djamal \& Giovanni}
+\label{sec:djamal&giovanni}
+
+
+\bibliographystyle{plain}
+\bibliography{relative}
+
+
+\end{document}

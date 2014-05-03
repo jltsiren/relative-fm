@@ -10,7 +10,13 @@ SDSL_DIR=../sdsl-lite
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 
-OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS)
+# Sparse bitvectors are smaller but slower.
+#VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
+
+# RRR bitvectors make the WT smaller and slower.
+#WT_FLAGS=-DUSE_RRR_WT
+
+OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(WT_FLAGS)
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)

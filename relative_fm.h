@@ -88,12 +88,11 @@ public:
 
   template<class Iter> range_type find(Iter begin, Iter end) const;
 
-  /*
-    The hybrid bitvector of Juha Kärkkäinen, Dominik Kempa, and Simon J. Puglisi would probably
-    be good here, but it only supports vectors shorter than 2^31 bits.
-  */
-//  typedef hybrid_vector<> vector_type;
+#ifdef USE_SPARSE_BITVECTORS
+  // typedef sd_vector<> vector_type;
+#else
   typedef rrr_vector<63> vector_type;
+#endif
 
   const SimpleFM& reference;
   bwt_type        ref_minus_lcs, seq_minus_lcs;
@@ -102,9 +101,14 @@ public:
   uint64_t        size;
 
   vector_type::rank_1_type*   ref_rank;
-  vector_type::select_1_type* ref_select;
   vector_type::rank_1_type*   seq_rank;
+#ifdef USE_SPARSE_BITVECTORS
+  vector_type::select_0_type* ref_select;
+  vector_type::select_0_type* seq_select;
+#else
+  vector_type::select_1_type* ref_select;
   vector_type::select_1_type* seq_select;
+#endif
 
 private:
   void loadFrom(std::ifstream& input);
@@ -118,8 +122,13 @@ private:
   inline uint64_t rank(uint64_t i, uint8_t c) const
   {
     uint64_t res = 0;
+#ifdef USE_SPARSE_BITVECTORS  // LCS is marked with 0-bits.
+    uint64_t lcs_bits = i + 1 - this->seq_rank->rank(i + 1); // Number of LCS bits up to i in seq.
+    bool check_lcs = (this->seq_lcs[i] == 0); // Is position i in LCS.
+#else
     uint64_t lcs_bits = this->seq_rank->rank(i + 1); // Number of LCS bits up to i in seq.
     bool check_lcs = (this->seq_lcs[i] == 1); // Is position i in LCS.
+#endif
     if(lcs_bits < i + 1) // There are i + 1 - lcs_bits non-LCS bits in seq.
     {
       res += this->seq_minus_lcs.rank(i + check_lcs - lcs_bits, c);

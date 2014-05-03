@@ -100,6 +100,10 @@ RelativeFM::RelativeFM(const SimpleFM& ref, const SimpleFM& seq, bool print) :
   this->ref_minus_lcs = getComplement(ref.bwt, lcs_vecs.first, lcs_length);
   this->seq_minus_lcs = getComplement(seq.bwt, lcs_vecs.second, lcs_length);
 
+#ifdef USE_SPARSE_BITVECTORS
+  lcs_vecs.first.flip();
+  lcs_vecs.second.flip();
+#endif
   this->ref_lcs = lcs_vecs.first;
   this->seq_lcs = lcs_vecs.second;
   this->buildRankSelect();
@@ -130,8 +134,8 @@ RelativeFM::RelativeFM(const SimpleFM& ref, std::ifstream& input) :
 RelativeFM::~RelativeFM()
 {
   delete ref_rank; ref_rank = 0;
-  delete ref_select; ref_select = 0;
   delete seq_rank; seq_rank = 0;
+  delete ref_select; ref_select = 0;
   delete seq_select; seq_select = 0;
 }
 
@@ -142,8 +146,8 @@ RelativeFM::reportSize(bool print) const
 
   uint64_t bitvector_bytes = size_in_bytes(this->ref_lcs) + size_in_bytes(seq_lcs);
   if(this->ref_rank != 0) { bitvector_bytes += size_in_bytes(*(this->ref_rank)); }
-  if(this->ref_select != 0) { bitvector_bytes += size_in_bytes(*(this->ref_select)); }
   if(this->seq_rank != 0) { bitvector_bytes += size_in_bytes(*(this->seq_rank)); }
+  if(this->ref_select != 0) { bitvector_bytes += size_in_bytes(*(this->ref_select)); }
   if(this->seq_select != 0) { bitvector_bytes += size_in_bytes(*(this->seq_select)); }
 
 #ifdef REPORT_RUNS
@@ -222,9 +226,14 @@ void
 RelativeFM::buildRankSelect()
 {
   this->ref_rank = new vector_type::rank_1_type(&(this->ref_lcs));
-  this->ref_select = new vector_type::select_1_type(&(this->ref_lcs));
   this->seq_rank = new vector_type::rank_1_type(&(this->seq_lcs));
+#ifdef USE_SPARSE_BITVECTORS
+  this->ref_select = new vector_type::select_0_type(&(this->ref_lcs));
+  this->seq_select = new vector_type::select_0_type(&(this->seq_lcs));
+#else
+  this->ref_select = new vector_type::select_1_type(&(this->ref_lcs));
   this->seq_select = new vector_type::select_1_type(&(this->seq_lcs));
+#endif
 }
 
 //------------------------------------------------------------------------------
