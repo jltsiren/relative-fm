@@ -33,6 +33,14 @@ length(range_type range)
   return range.second + 1 - range.first;
 }
 
+inline uint
+bitlength(uint64_t i)
+{
+  uint res = 0;
+  while(i > 0) { res++; i >>= 1; }
+  return res;
+}
+
 //------------------------------------------------------------------------------
 
 template<class A>

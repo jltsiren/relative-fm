@@ -89,7 +89,7 @@ public:
   template<class Iter> range_type find(Iter begin, Iter end) const;
 
 #ifdef USE_SPARSE_BITVECTORS
-  // typedef sd_vector<> vector_type;
+  typedef sd_vector<> vector_type;
 #else
   typedef rrr_vector<63> vector_type;
 #endif

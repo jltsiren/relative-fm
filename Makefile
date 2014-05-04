@@ -4,13 +4,13 @@ SDSL_DIR=../sdsl-lite
 # In Linux, the value is in kilobytes, so this line should be commented out.
 #RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
-# Return information on the number of runs of 1-bits in RelativeFM::reportSize().
-RUN_FLAGS=-DREPORT_RUNS
+# Compute run and gap measures for the bitvectors in RelativeFM::reportSize().
+#RUN_FLAGS=-DREPORT_RUNS
 
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 
-# Sparse bitvectors are smaller but slower.
+# Sparse bitvectors are slower, but they can sometimes be smaller.
 #VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
 
 # RRR bitvectors make the WT smaller and slower.

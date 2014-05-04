@@ -1,0 +1,192 @@
+File: human
+Text size: 3095693981
+Building SA...
+Building BWT...
+Building alphabet...
+Building WT...
+BWT size: 3095693982
+
+File: yanhuang
+Text size: 3001661309
+Building SA...
+Building BWT...
+Building alphabet...
+Building WT...
+BWT size: 3001661310
+
+Relative FM-index builder
+
+Reference: human
+
+BWT:            1120.49 MB (3.03628 bpc)
+Simple FM:      1120.5 MB (3.03629 bpc)
+
+
+Target: yanhuang
+Reference size: 3095693982
+Target size: 3001661310
+Number of ranges: 12387923
+Reverting to heuristic on ranges ((1149622446, 1149622446), (1117840628, 1117908082))
+  Matched 1 copies of character 84 (T) from sequences of length (1, 67455)
+Reverting to heuristic on ranges ((1228570466, 1228570466), (1193803566, 1194041347))
+  Matched 1 copies of character 67 (C) from sequences of length (1, 237782)
+Reverting to heuristic on ranges ((2013285683, 2013285683), (1954787387, 1954993706))
+  Matched 1 copies of character 71 (G) from sequences of length (1, 206320)
+Reverting to heuristic on ranges ((2013293602, 2250304208), (1955001453, 2176421748))
+  Matched 221420024 copies of character 78 (N) from sequences of length (237010607, 221420296)
+Reverting to heuristic on ranges ((2250305000, 2250305001), (2176422463, 2177138932))
+  Matched 1 copies of character 67 (C) from sequences of length (2, 716470)
+Length of approximate LCS: 2935231786
+
+Index built in 762.32 seconds
+
+BWT:            1089.67 MB (3.04526 bpc)
+Simple FM:      1089.68 MB (3.04527 bpc)
+
+BWT:            83.2208 MB (0.232574 bpc)
+Bitvectors:     204.938 MB (0.57273 bpc)
+Relative FM:    288.165 MB (0.805322 bpc)
+
+
+Memory usage: 9123.58 MB
+
+Query test
+
+Reference: human
+
+BWT:            1120.49 MB (3.03628 bpc)
+Simple FM:      1120.5 MB (3.03629 bpc)
+
+
+Sequence: yanhuang
+
+BWT:            1089.67 MB (3.04526 bpc)
+Simple FM:      1089.68 MB (3.04527 bpc)
+
+BWT:            83.2208 MB (0.232574 bpc)
+Bitvectors:     204.938 MB (0.57273 bpc)
+Relative FM:    288.165 MB (0.805322 bpc)
+
+
+Patters: patterns
+
+10000000 patterns of total length 560000000
+
+
+Simple FM:      Found 4195529 patterns with 99656791 occ in 140.78 seconds (3.79356 MB / s)
+Relative FM:    Found 4195529 patterns with 99656791 occ in 1416.48 seconds (0.377032 MB / s)
+
+Memory usage: 3867.36 MB
+
+Query test
+
+Reference: human
+
+BWT:            1120.49 MB (3.03628 bpc)
+Simple FM:      1120.5 MB (3.03629 bpc)
+
+
+Sequence: yanhuang
+
+BWT:            1089.67 MB (3.04526 bpc)
+Simple FM:      1089.68 MB (3.04527 bpc)
+
+BWT:            83.2208 MB (0.232574 bpc)
+Bitvectors:     204.938 MB (0.57273 bpc)
+Relative FM:    288.165 MB (0.805322 bpc)
+
+
+Patters: patterns
+
+10000000 patterns of total length 560000000
+
+
+Simple FM:      Found 4195529 patterns with 99656791 occ in 172.19 seconds (3.10156 MB / s)
+Relative FM:    Found 4195529 patterns with 99656791 occ in 1340.97 seconds (0.398262 MB / s)
+
+Memory usage: 3867.36 MB
+
+Query test
+
+Reference: human
+
+BWT:            1120.49 MB (3.03628 bpc)
+Simple FM:      1120.5 MB (3.03629 bpc)
+
+
+Sequence: yanhuang
+
+BWT:            1089.67 MB (3.04526 bpc)
+Simple FM:      1089.68 MB (3.04527 bpc)
+
+BWT:            83.2208 MB (0.232574 bpc)
+Bitvectors:     204.938 MB (0.57273 bpc)
+Relative FM:    288.165 MB (0.805322 bpc)
+
+
+Patters: patterns
+
+10000000 patterns of total length 560000000
+
+
+Simple FM:      Found 4195529 patterns with 99656791 occ in 172.13 seconds (3.10264 MB / s)
+Relative FM:    Found 4195529 patterns with 99656791 occ in 1385.61 seconds (0.385431 MB / s)
+
+Memory usage: 3867.36 MB
+
+Query test
+
+Reference: human
+
+BWT:            1120.49 MB (3.03628 bpc)
+Simple FM:      1120.5 MB (3.03629 bpc)
+
+
+Sequence: yanhuang
+
+BWT:            1089.67 MB (3.04526 bpc)
+Simple FM:      1089.68 MB (3.04527 bpc)
+
+BWT:            83.2208 MB (0.232574 bpc)
+Bitvectors:     204.938 MB (0.57273 bpc)
+Relative FM:    288.165 MB (0.805322 bpc)
+
+
+Patters: patterns
+
+10000000 patterns of total length 560000000
+
+
+Simple FM:      Found 4195529 patterns with 99656791 occ in 121.93 seconds (4.38003 MB / s)
+Relative FM:    Found 4195529 patterns with 99656791 occ in 1460.64 seconds (0.365633 MB / s)
+
+Memory usage: 3867.36 MB
+
+Query test
+
+Reference: human
+
+BWT:            1120.49 MB (3.03628 bpc)
+Simple FM:      1120.5 MB (3.03629 bpc)
+
+
+Sequence: yanhuang
+
+BWT:            1089.67 MB (3.04526 bpc)
+Simple FM:      1089.68 MB (3.04527 bpc)
+
+BWT:            83.2208 MB (0.232574 bpc)
+Bitvectors:     204.938 MB (0.57273 bpc)
+Relative FM:    288.165 MB (0.805322 bpc)
+
+
+Patters: patterns
+
+10000000 patterns of total length 560000000
+
+
+Simple FM:      Found 4195529 patterns with 99656791 occ in 122.01 seconds (4.37716 MB / s)
+Relative FM:    Found 4195529 patterns with 99656791 occ in 1354.25 seconds (0.394357 MB / s)
+
+Memory usage: 3867.36 MB
+
