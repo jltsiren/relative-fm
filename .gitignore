@@ -1,6 +1,7 @@
 *.o
 align_bwts
 build_bwt
+lcs
 query_test
 *.aux
 *.bak
