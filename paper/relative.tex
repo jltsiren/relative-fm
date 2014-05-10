@@ -73,13 +73,14 @@ whose LCS {\sf TGGGATAAAATGG} is nearly as long as either BWT. Note that in
 this example $\LCS(S_1,S_2)=\mathsf{AGAGAGTGAGT}$ is shorter than $\LCS(\BWT
 (S_1),\BWT (S_2))$.
 
-We introduce the concept of {\em BW-divergence}
-\(\BWD (S_1, S_2)\) between $S_1$ and $S_2$ as the maximum of $|S_1|$ and
-$|S_2|$ minus the length of a longest common subsequence of $\BWT (S_1)$ and
-$\BWT (S_2)$. We prove that, if we are willing to tolerate a slight increase
-in query times, we can build an index for $S_2$ using an unmodified FM-index
-for $S_1$ and additional data structures whose total space in words is
-asymptotically bounded by $\BWD (S_1, S_2)$ (Theorem~\ref{theo:counting}).
+We introduce the concept of {\em BW-distance} \(\BWD (S_1, S_2)\) between
+$S_1$ and $S_2$ defined as $|S_1| + |S_2| - 2 |\LCS(\BWT (S_1),\BWT (S_2))|$.
+Note that this coincides with the edit distance between $\BWT (S_1)$ and
+$\BWT (S_2)$ when only insertions and deletions are allowed. We prove that,
+if we are willing to tolerate a slight increase in query times, we can build
+an index for $S_2$ using an unmodified FM-index for $S_1$ and additional data
+structures whose total space in words is asymptotically bounded by $\BWD
+(S_1, S_2)$ (Theorem~\ref{theo:counting}).
 
 This first result is the starting point for our investigation as it generates
 many challenging issues. First, since we are interested in indexing whole
@@ -91,18 +92,18 @@ the BWT to align the sequences. In the same section we also discuss and test
 several practical alternatives for building the index for $S_2$ given the one
 for $S_1$ and we analyze their time/space trade-offs.
 
-If one needs an index not only for counting queries but also for
-locating and extracting, we must enrich it with suffix array (SA) samples.
-Such samples usually take significantly less space than the main index.
-However, we may stil want to take advantage of the similarities between $S_1$
-and $S_2$ to ``reuse'' SA samples from $S_1$ for $S_2$'s index. In
-Section~\ref{sec:djamal&giovanni} we show that this is indeed possible if
-instead of considering the LCS between the BWTs we use a common sequence with
-the additional constraint of being {\em BWT-invariant}
+If we need an index not only for counting queries but also for locating and
+extracting, we must enrich it with suffix array (SA) samples. Such samples
+usually take significantly less space than the main index. However, we may
+still want to take advantage of the similarities between $S_1$ and $S_2$ to
+``reuse'' SA samples from $S_1$ for $S_2$'s index. In
+Section~\ref{sec:djamal&giovanni} we show that this is indeed possible if,
+instead of considering the LCS between the BWTs, we use a common subsequence
+with the additional constraint of being {\em BWT-invariant}
 (Theorem~\ref{theo:locating}). This result motivates the problem of finding
-the longest BWT-invariant subsequence which unfortunately turns out to be
-NP-hard (Theorem~\ref{theo:np}). We have therefore devised a heuristic to
-find a ``long'' BWT-invariant subsequence in $\Oh{|S_1|\log|S_1|}$ time.
+the longest BWT-invariant subsequence, which unfortunately turns out to be
+NP-hard (Theorem~\ref{theo:np}). We therefore devise a heuristic to find a
+``long'' BWT-invariant subsequence in $\Oh{|S_1|\log|S_1|}$ time.
 
 We have tested our approach in practice by building an FM-index for the genome
 of a Han Chinese individual, ``reusing'' an FM-index of the human reference
@@ -190,22 +191,24 @@ queries.
 
 % \BWT(S_1)[\alpha_1]=\BWT(S_2)[\beta_1],\;\ldots,\,\BWT(S_1)[\alpha_m]=\BWT(S_2)[\beta_m]
 
-\section{BW-divergence and relative FM-indices} \label{sec:BWdiv}
+\section{BW-distance and relative FM-indices} \label{sec:BWdiv}
 
 Given two strings \(S_1 [1..n_1]\) and \(S_2 [1..n_2]\) we define the {\em
-BW-divergence\/} \(\BWD (S_1, S_2)\) between $S_1$ and $S_2$ to be the
-maximum of $n_1$ and $n_2$, minus the length of a longest common subsequence
-of $\BWT (S_1)$ and $\BWT (S_2)$, that is,
+BW-distance\/} \(\BWD (S_1, S_2)\) between $S_1$ and $S_2$ as
 \begin{equation}\label{eq:BWDdef}
-\BWD(S_1, S_2) = \max(n_1,n_2) - |\LCS(\BWT (S_1),\BWT (S_2))|.
+\BWD(S_1, S_2) = n_1 + n_2 - 2 |\LCS(\BWT (S_1),\BWT (S_2))|.
 \end{equation}
-We now show how to support counting queries on $S_2$ using an FM-index for
-$S_1$ and some auxiliary data structures taking $\Oh{\BWD (S_1, S_2)}$ words
-of space. Specifically, we consider how we can support rank queries on \(\BWT
-(S_2)\) and partial-sum queries on the distinct characters' frequencies.
+Note that the BW-distance is nothing but the edit distance between
+$\BWT(S_1)$ and $\BWT(S_2)$ when only insertions and deletions are
+allowed~\cite{Myers86} (also known as the shortest edit script or indel distance),
+and is thus at most twice their normal edit distance. We now show
+how to support counting queries on $S_2$ using an FM-index for $S_1$ and some
+auxiliary data structures taking $\Oh{\BWD (S_1, S_2)}$ words of space.
+Specifically, we consider how we can support rank queries on \(\BWT (S_2)\)
+and partial-sum queries on the distinct characters' frequencies.
 
 Let $C$ denote a LCS of $\BWT (S_1)$ and $\BWT(S_2)$ with $|C|=m$. Let $C=c_1
-\cdots c_m$, and for $i=1,\ldots,m$, let $\alpha_i$ (resp. $\beta_i$) bethe
+\cdots c_m$, and for $i=1,\ldots,m$, let $\alpha_i$ (resp. $\beta_i$) be the
 position of $c_i$ in $\BWT(S_1)$ (resp. $\BWT(S_s)$) with $\alpha_1 < \cdots
 < \alpha_{m}$ (resp. $\beta_1 < \cdots < \beta_{m})$. Define
 \begin{itemize}
@@ -297,7 +300,7 @@ larger than on $S_1$.
 \end{theorem}
 
 
-In Section~\ref{sec:djamal&giovanni} we show how to build a relative FMindex
+In Section~\ref{sec:djamal&giovanni} we show how to build a relative FM-index
 supporting also locating and extracting.
 
 
@@ -310,15 +313,15 @@ supporting also locating and extracting.
 
 A longest common sequence of $\BWT (S_1)$ and $\BWT (S_2)$ can be computed in
 $\Oh{n_1 n_2 /w}$ time, where $w$ is the word size~\cite{Myers99}. Since we
-are mainly interested in strings with a small BW-divergence, a better
-alternative could be the algorithms whose running times are bounded by the number
-of differences between the input sequences (see
+are mainly interested in strings with a small BW-distance, a better
+alternative could be the algorithms whose running times are bounded by the
+number of differences between the input sequences (see
 eg~\cite{LandauVN86,Myers86}). Unfortunately none of these algorithms is
-really practical when working with such very large files as the complete genomes
-we considered in our tests. Hence, to make the construction of a relative
-FM-index practical, we approximate the LCS of the two Burrows-Wheeler
-transforms, using the combinatorial properties of the BWT to align the
-sequences.
+really practical when working with such very large files as the complete
+genomes we considered in our tests. Hence, to make the construction of a
+relative FM-index practical, we approximate the LCS of the two
+Burrows-Wheeler transforms, using the combinatorial properties of the BWT to
+align the sequences.
 
 Let $S_{1}$ be a random string of length $n$ over alphabet $\Sigma$ of size
 $\sigma$, and let string $S_{2}$ differ from it by $s$ insertions, deletions,
@@ -393,19 +396,19 @@ Bitvector & & Time & Space & & Time & Size & & Time & Size & & Time & Size \\
 \noalign{\smallskip}
 \hline
 \noalign{\smallskip}
-Plain & &  762\:s & 9124\:MB & & 146\:s & 1090\:MB & & 1392\:s & 288\:MB & & 954\:\% & \ 26\:\% \\
+Plain & &  762\:s & 9124\:MB & & 146\:s & 1090\:MB & & 1392\:s & 288\:MB & & 954\% & \ 26\% \\
 \noalign{\smallskip}
-RRR   & & 6022\:s & 7823\:MB & & 667\:s &  628\:MB & & 3022\:s & 256\:MB & & 453\:\% & \ 41\:\% \\
+RRR   & & 6022\:s & 7823\:MB & & 667\:s &  628\:MB & & 3022\:s & 256\:MB & & 453\% & \ 41\% \\
 \noalign{\smallskip}
 \hline
 \end{tabular}
 \end{table}
 
 % FIXME Should we mention that it is easy to extract the regular index from the relative index?
-With plain bitvectors in the wavelet tree, the relative FM-index was 9.5 times slower than a regular FM-index, while requiring a quarter of the space. With entropy-compressed bitvectors, the relative index was 4.5 times slower and required 41~\% of the space. Comparing the relative FM-index using plain bitvectors to the regular index using entropy-compressed bitvectors, we see that the relative index is 2.1 times slower, while taking 46~\% of the space.
+With plain bitvectors in the wavelet tree, the relative FM-index was 9.5 times slower than a regular FM-index, while requiring a quarter of the space. With entropy-compressed bitvectors, the relative index was 4.5 times slower and required 41\% of the space. Comparing the relative FM-index using plain bitvectors to the regular index using entropy-compressed bitvectors, we see that the relative index is 2.1 times slower, while taking 46\% of the space.
 
 % FIXME We have numbers. Do we want to show them?
-Bitvectors $B_{1}$ and $B_{2}$ took 70~\% to 80~\% of the total size of the
+Bitvectors $B_{1}$ and $B_{2}$ took 70\% to 80\% of the total size of the
 relative index. We tried to encode them as sparse
 bitvectors~\cite{Okanohara2007}, but the result was slightly larger and
 clearly slower than with entropy-compressed bitvectors. By our estimates,
@@ -492,7 +495,7 @@ string $S_2$ provided that we have
 \begin{itemize}
 \item bitvector \(M_1 [1..n_1]\) with 0s in positions  $i_1, \ldots, i_\ell$,
     supporting fast \rank\ queries,
-\item bitvector \(M_2 [1..n_2]\) with 0s in positions of $j_1, \ldots,
+\item bitvector \(M_2 [1..n_2]\) with 0s in positions $j_1, \ldots,
     j_\ell$, supporting fast $\select_0$ queries;
 \end{itemize}
 proof idea in the appendix, complete proof in the full paper. Summing up,
@@ -606,20 +609,18 @@ $$
 implying $S_2[j_h+1,n_2] \prec S_2[j_k+1,n_2]$ as claimed.\qed
 \end{proof}
 
-To evaluate whether the sequence $G$ derived from the above procedure is
-still able to capture the similarity between sequences, we have compared the
-length of $G$ with the \LCS\ length for pairs of {\it S.{}cerevisiae\/}
-genomes from the Saccharomyces Genome Resequencing
+To evaluate whether the subsequence $G$ derived from the above procedure is
+still able to capture the similarity between $S_1$ and $S_2$, we have
+compared the length of $G$ with the \LCS\ length for pairs of {\it
+S.{}cerevisiae\/} genomes from the Saccharomyces Genome Resequencing
 Project.\footnote{https://www.sanger.ac.uk/research/
 projects/genomeinformatics/sgrp.html} In particular we compared the 273614N
-sequence with sequences 322134S, 378604X, BC187, and DBVPG1106. For each pair
-we report in Table~\ref{table:G} the ratio between the length of $G$ and
-$\LCS(\BWT(S_1),\BWT(S_2))$ and the length of sequence 273614N (roughly 11.9
-MB). We see that in all cases more than 85\% of BWT positions are in $G$ which
-roughly indicates that more than 85\% of the SA samples from 273614N could be
-reused as SA samples for the other sequences. We leave as a future work the
-development of these ideas and the complete implementation of a relative
-FM-index supporting locating and extracting.
+sequence with sequences 322134S, 378604X, BC187, and DBVPG1106. For each
+sequence we report in Table~\ref{table:G} the ratio between the length of $G$
+and $\LCS(\BWT(S_1),\BWT(S_2))$ and the length of sequence 273614N (roughly
+11.9 MB). We see that in all cases more than 85\% of BWT positions are in $G$
+which roughly indicates that more than 85\% of the SA samples from 273614N
+could be reused as SA samples for the other sequences.
 
 \begin{table}[t]
 \centering \caption{Comparison between $|G|$ and $|\LCS|$. The normalizing
@@ -640,22 +641,20 @@ $|G|/n$     & 0.8694 & 0.8655 & 0.8798 & 0.8800\\[.5ex]
 
 In this paper we have considered the problem of building an index for a
 string $S_2$ given an FM-index for a similar string $S_1$. We have shown how
-to build such ``relative'' index using space bounded by the BW-divergence
-between $S_1$ and $S_2$. The BW-divergence is a new measure that it is
-defined in terms of the longest common subsequence of $\BWT(S_1)$ and
-$\BWT(S_2)$. Thus, for the first time, we have provided a formal
-justification for the use of the LCS as a measure of similarity. We have also
-introduced the notion of longest BWT-invariant subsequence and shown that it
-measures the number of $S_1$ suffix array samples that can be easily
-``reused'' for an index for $S_2$.
+to build such a ``relative'' index using space bounded by the BW-distance
+between $S_1$ and $S_2$. The BW-distance is simply the edit distance between
+$\BWT(S_1)$ and $\BWT(S_2)$ when only insertions and deletions are allowed.
+We have also introduced the notion of BWT-invariant subsequence and shown
+that it can be used to determine a set of $S_1$ suffix array samples that can
+be easily ``reused'' for an index for $S_2$.
 
-We have tested our approach building a relative index for a Han Chinese
-individual with respect to an FM-index of the human reference genome, showing
-that it can be used also for genome scale indexes. We leave as a future work
-the development of these ideas and the complete implementation of a relative
-FM-index supporting locating and extracting.  We also leave as future work
-proving bounds on the BW-divergence and the length of the longest
-BWT-invariant subsequence, in terms of the edit distance of the strings.
+We have tested our approach by building a relative index for a Han Chinese
+individual with respect to an FM-index of the human reference genome. We
+leave as a future work the development of these ideas and the complete
+implementation of a relative FM-index supporting locating and extracting.  We
+also leave as future work proving bounds on the BW-distance and the length of
+the longest BWT-invariant subsequence in terms of the edit distance of the
+strings.
 
 
 \bibliographystyle{plain}
@@ -724,7 +723,7 @@ with 1s marking the positions in $S_1$ and $S_2$ of characters that are not
 mapped into $C'$ in \(\BWT (S_1)\) and \(\BWT (S_2)\).  We claim that if we
 can support fast \rank\ queries on $B_2'$, $R$ and $M_1$, fast access to $A$
 and fast $\select_0$ queries on $B_1'$ and $M_2$, then we can support fast
-access to a (possibly irregular) sample SA sample for $S_2$ with as many
+access to a (possibly irregular) SA sample for $S_2$ with as many
 sampled characters as there are in $C'$ in \(\BWT (S_1)\).  More
 specifically, if \(\BWT (S_2) [i]\) is in $C'$ and
 \(R [B_1'.\select_0 (B_2'.\rank_0 (i))] = 1\)
