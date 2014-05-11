@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 
+#include <sdsl/bits.hpp>
 #include <sdsl/int_vector.hpp>
 #include <sdsl/iterators.hpp>
 #include <sdsl/util.hpp>
@@ -60,7 +61,7 @@ public:
 //------------------------------------------------------------------------------
 
   hybrid_vector(const bit_vector& bv) :
-    m_length(bv.size()),
+    m_length(bv.size()), n_ones(0),
     n_block((m_length + k_block_size - 1) / k_block_size),
     n_sblock((n_block + k_sb_rate - 1) / k_sb_rate),
     trunk_size(0),
@@ -71,7 +72,7 @@ public:
     this->compute_trunk_size(bv);
     this->m_trunk = new uint8_t[this->trunk_size];
 
-    size_type sb_ones = 0, total_ones = 0, trunk_ptr = 0;
+    size_type sb_ones = 0, trunk_ptr = 0;
     for(size_type beg = 0, block_id = 0; beg < this->m_length; beg += k_block_size, block_id++)
     {
       size_type end = std::min(beg + k_block_size, this->m_length);
@@ -84,7 +85,7 @@ public:
       if((block_id % k_sb_rate) == 0)
       {
         size_type* sb_header = (size_type*)(this->m_header + sb_id * k_header_size);
-        sb_header[0] = trunk_ptr; sb_header[1] = total_ones;
+        sb_header[0] = trunk_ptr; sb_header[1] = this->n_ones;
         if(sb_id > 0 && (sb_ones == 0 || sb_ones == k_sblock_size))
         {
           sb_header = (size_type*)(this->m_header + (sb_id - 1) * k_header_size);
@@ -117,7 +118,7 @@ public:
           {
             if(i + j < k_block_size && buffer[i + j] == 1)
             {
-              *block_data |= ((size_type)1) << (k_word_bits - (j + 1));
+              *block_data |= ((size_type)1) << j;
             }
           }
           ++block_data; trunk_ptr += sizeof(size_type);
@@ -146,12 +147,12 @@ public:
       }
 
       // Update global ranks.
-      sb_ones += ones; total_ones += ones;
+      sb_ones += ones; this->n_ones += ones;
     }
   }
 
   hybrid_vector() :
-    m_length(0), n_block(0), n_sblock(0), trunk_size(0),
+    m_length(0), n_ones(0), n_block(0), n_sblock(0), trunk_size(0),
     m_trunk(0), m_header(0)
   {
   }
@@ -167,7 +168,7 @@ public:
   }
 
   hybrid_vector(std::istream& in) :
-    m_length(0), n_block(0), n_sblock(0), trunk_size(0),
+    m_length(0), n_ones(0), n_block(0), n_sblock(0), trunk_size(0),
     m_trunk(0), m_header(0)
   {
     this->load(in);
@@ -194,8 +195,9 @@ public:
 
   size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const
   {
-    size_t bytes = sizeof(this->m_length) + sizeof(this->n_block) + sizeof(this->n_sblock) + sizeof(this->trunk_size);
+    size_t bytes = sizeof(this->m_length) + sizeof(this->n_ones) + sizeof(this->n_block) + sizeof(this->n_sblock) + sizeof(this->trunk_size);
     out.write((char*)&(this->m_length), sizeof(this->m_length));
+    out.write((char*)&(this->n_ones), sizeof(this->n_ones));
     out.write((char*)&(this->n_block), sizeof(this->n_block));
     out.write((char*)&(this->n_sblock), sizeof(this->n_sblock));
     out.write((char*)&(this->trunk_size), sizeof(this->trunk_size));
@@ -219,6 +221,7 @@ public:
     this->clear();
 
     in.read((char*)&(this->m_length), sizeof(this->m_length));
+    in.read((char*)&(this->n_ones), sizeof(this->n_ones));
     in.read((char*)&(this->n_block), sizeof(this->n_block));
     in.read((char*)&(this->n_sblock), sizeof(this->n_sblock));
     in.read((char*)&(this->trunk_size), sizeof(this->trunk_size));
@@ -235,6 +238,7 @@ public:
     this->clear();
 
     this->m_length = another.m_length;
+    this->n_ones = another.n_ones;
     this->n_block = another.n_block;
     this->n_sblock = another.n_sblock;
     this->trunk_size = another.trunk_size;
@@ -254,17 +258,19 @@ public:
   void swap(hybrid_vector& another)
   {
     if(this == &another) { return; }
-    std::swap(m_length, hybrid.m_length);
-    std::swap(n_block, hybrid.n_block);
-    std::swap(n_sblock, hybrid.n_sblock);
-    std::swap(trunk_size, hybrid.trunk_size);
-    std::swap(m_trunk, hybrid.m_trunk);
-    std::swap(m_header, hybrid.m_header);
+    std::swap(m_length, another.m_length);
+    std::swap(n_ones, another.n_ones);
+    std::swap(n_block, another.n_block);
+    std::swap(n_sblock, another.n_sblock);
+    std::swap(trunk_size, another.trunk_size);
+    std::swap(m_trunk, another.m_trunk);
+    std::swap(m_header, another.m_header);
   }
 
 //------------------------------------------------------------------------------
 
-  size_type size() const { return this->m_length; }  
+  size_type size() const { return this->m_length; }
+  size_type items() const { return this->n_ones; }
   iterator begin() const { return iterator(this, 0); }
   iterator end() const { return iterator(this, this->size()); }
 
@@ -355,11 +361,12 @@ private:
     delete[] this->m_header; this->m_header = 0;
   }
 
+//------------------------------------------------------------------------------
+
   void superblock_for_index(size_type i,
     size_type& trunk_ptr, size_type& header_ptr, size_type& ones, size_type& uniform) const
   {
-    size_type block = i / k_block_size;
-    size_type superblock = block / sb_rate;
+    size_type superblock = (i / k_block_size) / k_sb_rate;
     size_type* sb_header = (size_type*)(this->m_header + superblock * k_header_size);
 
     trunk_ptr = sb_header[0] & k_sb_ptr_mask;
@@ -372,9 +379,52 @@ private:
     size_type& block_bytes, size_type&block_ones, uint8_t& block_encoding)
   {
     size_type block = i / k_block_size;
-    for(size_type b = superblock * bit_vector_type; b != block; b++)
+    for(size_type b = (block / k_sb_rate) * k_sb_rate; b != block; b++)
     {
-      trunk_ptr += this->m_header[header_ptr] & bit_vector_type::k_b_size_mask;
+      trunk_ptr += this->m_header[header_ptr] & k_b_size_mask;
+      ones += this->m_header[header_ptr + 1];
+      header_ptr += 2;
+    }
+
+    block_bytes = this->m_header[header_ptr] & k_b_size_mask;
+    block_ones = this->m_header[header_ptr + 1];
+    block_encoding = this->m_header[header_ptr] & k_encoding_mask;
+  }
+
+  void superblock_for_rank(size_type r, bool bit,
+    size_type& trunk_ptr, size_type& header_ptr, size_type& bits, size_type& ones, size_type& uniform) const
+  {
+    size_type* sb_header = 0;
+    size_type low = 0, high = this->n_sblock - 1;
+    while(low < high) // Find the last sb with at most r - 1 correct bits before it.
+    {
+      size_type mid = low + (high - low + 1) / 2;
+      sb_header = (size_type*)(this->m_header + mid * k_header_size);
+      size_type count = (bit ? sb_header[1] : mid * k_sb_rate * k_block_size - sb_header[1]);
+      if(count >= r) { high = mid - 1; }
+      else           { low = mid; }
+    }
+
+    sb_header = (size_type*)(this->m_header + high * k_header_size);
+    trunk_ptr = sb_header[0] & k_sb_ptr_mask;
+    header_ptr = superblock * k_header_size + k_sb_header;
+    bits = high * k_sb_rate * k_block_size;
+    ones = sb_header[1];
+    uniform = sb_header[0] ^ trunk_ptr;
+  }
+
+  void block_for_rank(size_type r, bool bit,
+    size_type& trunk_ptr, size_type& header_ptr, size_type& bits, size_type& ones,
+    size_type& block_bytes, size_type&block_ones, uint8_t& block_encoding)
+  {
+    // Find the first block after which there are >= r correct bits.
+    while(true)
+    {
+      size_type count = ones + this->m_header[header_ptr + 1];
+      if(!bit) { count = bits + k_block_size - count; }
+      if(count >= r) { break; }
+      trunk_ptr += this->m_header[header_ptr] & k_b_size_mask;
+      bits += k_block_size;
       ones += this->m_header[header_ptr + 1];
       header_ptr += 2;
     }
@@ -474,10 +524,10 @@ public:
       size_type* block_words = (size_type*)block_data;
       while(offset >= bit_vector_type::k_word_bits)
       {
-        ones += __builtin_popcountll(*block_words); // FIXME portable popcount?
+        ones += bits::cnt(*block_words);
         ++block_words; offset -= bit_vector_type::k_word_bits;
       }
-      ones += __builtin_popcountll(*block_words >> (bit_vector_type::k_word_bits - (offset + 1)));
+      ones += bits::cnt(*block_words & bits::lo_set(offset + 1));
     }
     else if(block_encoding == bit_vector_type::k_gap_encoding)
     {
@@ -576,13 +626,48 @@ public:
 
   const size_type operator()(size_type i) const { return this->select(i); }
 
-  const size_type select(size_type i) const
+  const size_type select(size_type r) const
   {
-    // We return the position of i'th 1-bit/0-bit.
-    if (i <= 0 || this->vec == 0) { return 0; }
+    // We return the position of r'th 1-bit/0-bit.
+    if(r <= 0 || this->vec == 0) { return 0; }
+    if(t_b == 1 && r > this->vec->items()) { return this->vec->size(); }
+    if(t_b == 0 && r > this->vec->size() - this->vec->items()) { return this->vec->size(); }
 
-    // FIXME implement
-    // Binary search the superblocks, then proceed like in rank.
+    // Handle the superblock.
+    size_type trunk_ptr = 0, header_ptr = 0, bits = 0, ones = 0, uniform = 0;
+    this->vec->superblock_for_rank(r, t_b, trunk_ptr, header_ptr, bits, ones, uniform);
+    if(uniform != 0) // A superblock of t_b.
+    {
+      if(t_b) { return bits + r - ones - 1; }
+      else    { return r + ones - 1; }
+    }
+
+    // Find the correct block.
+    size_type block_bytes = 0, block_ones = 0; uint8_t block_encoding = 0;
+    this->vec->block_for_rank(r, t_b, trunk_ptr, header_ptr, ones, block_bytes, block_ones, block_encoding);
+    uint8_t* block_data = this->vec->m_trunk + trunk_ptr;
+
+    // Decode the block.
+    if(block_encoding == bit_vector_type::k_plain_encoding)
+    {
+      size_type* block_words = (size_type*)block_data;
+      while(true)
+      {
+        size_type temp = ones + bits::cnt(*block_words);
+        size_type count = (t_b ? temp : bits + k_word_bits - temp); 
+        if(count >= r) { break; }
+        ++block_words; ones = temp; bits += k_word_bits;
+      }
+      return bits + (t_b ? bits::sel(*block_words, r - ones) : bits::sel(~(*block_words), r - (bits - ones)));
+    }
+    else if(block_encoding == bit_vector_type::k_gap_encoding)
+    {
+      // FIXME implement
+    }
+    else  // Run-length encoding.
+    {
+      // FIXME implement
+    }
 
     return 0;
   }
