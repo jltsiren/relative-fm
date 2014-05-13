@@ -61,17 +61,17 @@ this paper we consider the longest common subsequence (LCS). The BWT sorts
 the characters of a string into the lexicographic order of the suffixes
 following those characters.  For example, if
 $$
-S_1 = \mathsf{AAGTTGAGAGTGAGT},\qquad
-S_2 = \mathsf{AGAGAGTCGAAGTT};
+S_1 = \mathsf{GCACTTAGAGGTCAGT},\qquad
+S_2 = \mathsf{GCACTAGACGTCAGT};
 $$
 then
 $$
-\BWT (S_1) = \mathsf{TGGGATTAAAAGTGG},\qquad
-\BWT (S_2) = \mathsf{TGGGATCAAAATGG};
+\BWT (S_1) = \mathsf{TCTGCGTAAAAGGTGC},\qquad
+\BWT (S_2) = \mathsf{TGCTCGTAAAACGCG};
 $$
-whose LCS {\sf TGGGATAAAATGG} is nearly as long as either BWT. Note that in
-this example $\LCS(S_1,S_2)=\mathsf{AGAGAGTGAGT}$ is shorter than $\LCS(\BWT
-(S_1),\BWT (S_2))$.
+whose LCS {\sf TCTCGTAAAAGG} is nearly as long as either BWT.
+
+\pagebreak
 
 We introduce the concept of {\em BW-distance} \(\BWD (S_1, S_2)\) between
 $S_1$ and $S_2$ defined as $|S_1| + |S_2| - 2 |\LCS(\BWT (S_1),\BWT (S_2))|$.
@@ -248,28 +248,26 @@ where \(k = B_1.\select_0 (B_2.\rank_0 (i))\).
 
 For example, for the strings
 $$
-S_1 = \mathsf{AAGTTGAGAGTGAGT},\qquad
-S_2 = \mathsf{AGAGAGTCGAAGTT};
+S_1 = \mathsf{GCACTTAGAGGTCAGT},\qquad
+S_2 = \mathsf{GCACTAGACGTCAGT}
 $$
-it is
+given as an example in Section~\ref{sec:introduction},
 $$
-\BWT (S_1) = \mathsf{TGGGATTAAAAGTGG},\qquad
-\BWT (S_2) = \mathsf{TGGGATCAAAATGG};
+\BWT (S_1) = \mathsf{TCTGCGTAAAAGGTGC},\qquad
+\BWT (S_2) = \mathsf{TGCTCGTAAAACGCG};
 $$
-and $\LCS(\BWT (S_1),\BWT (S_2)) = \mathsf{TCTCGTAAAAGG}$. Hence
+and $\LCS(\BWT (S_1),\BWT (S_2)) = \mathsf{TCTCGTAAAAGG}$ so
 \begin{align*}
 B_1  & = 0001000000000111  & D_1  &= \mathsf{GTGC}\\
-B_2  & = 010000000001010   & D_2  & = \mathsf{GCC}.
+B_2  & = 010000000001010   & D_2  & = \mathsf{GCC}\,.
 \end{align*}
-Suppose we want to compute $\BWT (S_2).\rank_\mathsf{C}$. It is
-\(B_1.\select_0 (B_2.\rank_0 (13)) = 12\), so
+Suppose we want to compute $\BWT (S_2).\rank_\mathsf{C} (13)$. Since \(B_1.\select_0 (B_2.\rank_0 (13)) = 12\),
 \begin{align*}
 \BWT (S_2).\rank_\mathsf{C} (13)
 & = \BWT (S_1).\rank_\mathsf{C} (12)\; -\; D_1.\rank_\mathsf{C} (B_1.\rank_1 (12))
 \\
 & \quad + D_2.\rank_\mathsf{C} (B_2.\rank_1 (13)) \;=\; 3.
 \end{align*}
-
 
 Observing that the number of 1s in $B_1$ and $B_2$ is \(\Oh{\max (n_1, n_2) -
 \ell} = \Oh{\BWD (S_1, S_2)}\), we can store data structures for $B_1$,
