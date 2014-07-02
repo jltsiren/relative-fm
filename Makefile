@@ -5,13 +5,13 @@ SDSL_DIR=../sdsl-lite
 #RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
 # Compute run and gap measures for the bitvectors in RelativeFM::reportSize().
-#RUN_FLAGS=-DREPORT_RUNS
+RUN_FLAGS=-DREPORT_RUNS
 
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 
 # Sparse bitvectors are slower, but they can sometimes be smaller.
-#VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
+VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
 
 # RRR bitvectors make the WT smaller and slower.
 #WT_FLAGS=-DUSE_RRR_WT

@@ -140,10 +140,10 @@ RelativeFM::~RelativeFM()
 }
 
 void
-countRuns(const RelativeFM::vector_type& vec, uint64_t& runs, uint64_t& gap0, uint64_t& gap1, uint64_t& run)
+countRuns(const RelativeFM::vector_type& vec, uint64_t& runs, uint64_t& gap0, uint64_t& gap1, uint64_t& run, uint64_t& delta)
 {
   bool in_run = false;
-  uint64_t prev0 = 0, prev1 = 0, prevr = 0;
+  uint64_t prev0 = 0, prev1 = 0, prevr = 0, onebits = 0;
   for(uint64_t i = 0; i < vec.size(); i++)
   {
     if(vec[i] == 1)
@@ -155,6 +155,7 @@ countRuns(const RelativeFM::vector_type& vec, uint64_t& runs, uint64_t& gap0, ui
         runs++; prevr = i + 1;
       }
       in_run = true; prev1 = i + 1;
+      onebits++;
     }
     else
     {
@@ -167,6 +168,14 @@ countRuns(const RelativeFM::vector_type& vec, uint64_t& runs, uint64_t& gap0, ui
       in_run = false; prev0 = i + 1;
     }
   }
+
+  int_vector<64> buffer(onebits);
+  for(uint64_t i = 0, j = 0; i < vec.size(); i++)
+  {
+    if(vec[i] == 1) { buffer[j] = i; j++; }
+  }
+  enc_vector<> delta_vec(buffer);
+  delta = size_in_bytes(delta_vec);
 }
 
 uint64_t
@@ -186,12 +195,12 @@ RelativeFM::reportSize(bool print) const
 
 #ifdef REPORT_RUNS
   uint64_t ref_runs = 0, seq_runs = 0;
-  uint64_t ref_gap0 = 0, ref_gap1 = 0, ref_run = 0;
-  uint64_t seq_gap0 = 0, seq_gap1 = 0, seq_run = 0;
+  uint64_t ref_gap0 = 0, ref_gap1 = 0, ref_run = 0, ref_delta = 0;
+  uint64_t seq_gap0 = 0, seq_gap1 = 0, seq_run = 0, seq_delta = 0;
   if(print)
   {
-    countRuns(this->ref_lcs, ref_runs, ref_gap0, ref_gap1, ref_run);
-    countRuns(this->seq_lcs, seq_runs, seq_gap0, seq_gap1, seq_run);
+    countRuns(this->ref_lcs, ref_runs, ref_gap0, ref_gap1, ref_run, ref_delta);
+    countRuns(this->seq_lcs, seq_runs, seq_gap0, seq_gap1, seq_run, seq_delta);
   }
 #endif
 
@@ -206,24 +215,28 @@ RelativeFM::reportSize(bool print) const
 #ifdef REPORT_RUNS
     std::cout << std::string(16, ' ') << ref_runs << " runs (gap0 "
       << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
-      << " MB, run " << (inMegabytes(ref_run) / 8) << " MB)" << std::endl;
+      << " MB, run " << (inMegabytes(ref_run) / 8) << " MB, delta "
+      << inMegabytes(ref_delta) << " MB)" << std::endl;
 #endif
     printSize("seq_lcs", seqlcs_bytes, this->size);
 #ifdef REPORT_RUNS
     std::cout << std::string(16, ' ') << seq_runs << " runs (gap0 "
       << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
-      << " MB, run " << (inMegabytes(seq_run) / 8) << " MB)" << std::endl;
+      << " MB, run " << (inMegabytes(seq_run) / 8) << " MB, delta "
+      << inMegabytes(seq_delta) << " MB)" << std::endl;
 #endif
 #else
     printSize("BWT", bwt_bytes, this->size);
     printSize("Bitvectors", bitvector_bytes, this->size);
 #ifdef REPORT_RUNS
-    std::cout << std::string(16, ' ') << "ref_lcs: " << ref_runs << " runs (gap0 "
+    std::cout << std::string(16, ' ') << ref_runs << " runs (gap0 "
       << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
-      << " MB, run " << (inMegabytes(ref_run) / 8) << " MB)" << std::endl;
-    std::cout << std::string(16, ' ') << "seq_lcs: " << seq_runs << " runs (gap0 "
+      << " MB, run " << (inMegabytes(ref_run) / 8) << " MB, delta "
+      << inMegabytes(ref_delta) << " MB)" << std::endl;
+    std::cout << std::string(16, ' ') << seq_runs << " runs (gap0 "
       << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
-      << " MB, run " << (inMegabytes(seq_run) / 8) << " MB)" << std::endl;
+      << " MB, run " << (inMegabytes(seq_run) / 8) << " MB, delta "
+      << inMegabytes(seq_delta) << " MB)" << std::endl;
 #endif
 #endif
     printSize("Relative FM", bytes, this->size);
