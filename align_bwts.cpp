@@ -30,7 +30,7 @@ main(int argc, char** argv)
     std::cout << "Index built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;
 
-    rel.writeTo(argv[2]);
+    rel.writeTo(argv[arg]);
     seq.reportSize(true);
     rel.reportSize(true);
     std::cout << std::endl;
