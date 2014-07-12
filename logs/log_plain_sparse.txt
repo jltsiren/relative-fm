@@ -62,16 +62,16 @@ Reverting to heuristic on ranges ((2250305000, 2250305001), (2176422463, 2177138
   Matched 1 copies of character 67 (C) from sequences of length (2, 716470)
 Length of approximate LCS: 2935231786
 
-Index built in 708.37 seconds
+Index built in 710.84 seconds
 
 BWT:            1089.67 MB (3.04526 bpc)
 Simple FM:      1089.68 MB (3.04527 bpc)
 
 ref_minus_lcs:  59.3674 MB (0.165911 bpc)
 seq_minus_lcs:  23.8534 MB (0.0666621 bpc)
-ref_lcs:        130.586 MB (0.364943 bpc)
-seq_lcs:        74.3516 MB (0.207787 bpc)
-Relative FM:    288.165 MB (0.805322 bpc)
+ref_lcs:        139.598 MB (0.390129 bpc)
+seq_lcs:        67.1662 MB (0.187706 bpc)
+Relative FM:    289.992 MB (0.810428 bpc)
 
 
 Target: venter
@@ -82,16 +82,16 @@ Reverting to heuristic on ranges ((2013293602, 2250304208), (1959744325, 1985109
   Matched 25319082 copies of character 78 (N) from sequences of length (237010607, 25364764)
 Length of approximate LCS: 2746259754
 
-Index built in 838.95 seconds
+Index built in 823.31 seconds
 
 BWT:            965.521 MB (2.8828 bpc)
 Simple FM:      965.524 MB (2.88281 bpc)
 
 ref_minus_lcs:  101.012 MB (0.301596 bpc)
 seq_minus_lcs:  22.4161 MB (0.0669288 bpc)
-ref_lcs:        124.88 MB (0.37286 bpc)
-seq_lcs:        80.7452 MB (0.241085 bpc)
-Relative FM:    329.059 MB (0.982488 bpc)
+ref_lcs:        255.212 MB (0.761999 bpc)
+seq_lcs:        64.4441 MB (0.192414 bpc)
+Relative FM:    443.09 MB (1.32296 bpc)
 
 
 Target: maternal
@@ -102,16 +102,16 @@ Reverting to heuristic on ranges ((2013293602, 2250304208), (1997243383, 2197865
   Matched 200621645 copies of character 78 (N) from sequences of length (237010607, 200621911)
 Length of approximate LCS: 2991957267
 
-Index built in 589.43 seconds
+Index built in 574.77 seconds
 
 BWT:            1090.24 MB (3.01219 bpc)
 Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5568 MB (0.106527 bpc)
 seq_minus_lcs:  15.1488 MB (0.0418543 bpc)
-ref_lcs:        89.3191 MB (0.246777 bpc)
-seq_lcs:        74.6087 MB (0.206134 bpc)
-Relative FM:    217.64 MB (0.601311 bpc)
+ref_lcs:        96.8214 MB (0.267505 bpc)
+seq_lcs:        48.0353 MB (0.132715 bpc)
+Relative FM:    198.569 MB (0.54862 bpc)
 
 
 Target: paternal
@@ -122,19 +122,19 @@ Reverting to heuristic on ranges ((2013293602, 2250304208), (1997238590, 2197860
   Matched 200621645 copies of character 78 (N) from sequences of length (237010607, 200621911)
 Length of approximate LCS: 2991896458
 
-Index built in 589.37 seconds
+Index built in 575.11 seconds
 
 BWT:            1090.24 MB (3.01219 bpc)
 Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5822 MB (0.106598 bpc)
 seq_minus_lcs:  15.1679 MB (0.041907 bpc)
-ref_lcs:        89.3522 MB (0.246869 bpc)
-seq_lcs:        74.6422 MB (0.206227 bpc)
-Relative FM:    217.751 MB (0.601619 bpc)
+ref_lcs:        96.8665 MB (0.26763 bpc)
+seq_lcs:        48.0823 MB (0.132846 bpc)
+Relative FM:    198.706 MB (0.548999 bpc)
 
 
-Memory usage: 9123.58 MB
+Memory usage: 9123.49 MB
 
 Query test
 
@@ -151,9 +151,9 @@ Simple FM:      1089.68 MB (3.04527 bpc)
 
 ref_minus_lcs:  59.3674 MB (0.165911 bpc)
 seq_minus_lcs:  23.8534 MB (0.0666621 bpc)
-ref_lcs:        130.586 MB (0.364943 bpc)
-seq_lcs:        74.3516 MB (0.207787 bpc)
-Relative FM:    288.165 MB (0.805322 bpc)
+ref_lcs:        139.598 MB (0.390129 bpc)
+seq_lcs:        67.1662 MB (0.187706 bpc)
+Relative FM:    289.992 MB (0.810428 bpc)
 
 
 Patters: patterns
@@ -161,10 +161,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1138983 patterns with 5488310 occ in 56.56 seconds (6.70229 MB / s)
-Relative FM:    Found 1138983 patterns with 5488310 occ in 620.63 seconds (0.610801 MB / s)
+Simple FM:      Found 1138983 patterns with 5488310 occ in 56.33 seconds (6.72965 MB / s)
+Relative FM:    Found 1138983 patterns with 5488310 occ in 1116.27 seconds (0.339596 MB / s)
 
-Memory usage: 3409.5 MB
+Memory usage: 3425.45 MB
 
 Query test
 
@@ -181,9 +181,9 @@ Simple FM:      965.524 MB (2.88281 bpc)
 
 ref_minus_lcs:  101.012 MB (0.301596 bpc)
 seq_minus_lcs:  22.4161 MB (0.0669288 bpc)
-ref_lcs:        124.88 MB (0.37286 bpc)
-seq_lcs:        80.7452 MB (0.241085 bpc)
-Relative FM:    329.059 MB (0.982488 bpc)
+ref_lcs:        255.212 MB (0.761999 bpc)
+seq_lcs:        64.4441 MB (0.192414 bpc)
+Relative FM:    443.09 MB (1.32296 bpc)
 
 
 Patters: patterns
@@ -191,10 +191,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1178904 patterns with 5305755 occ in 56.67 seconds (6.68928 MB / s)
-Relative FM:    Found 1178904 patterns with 5305755 occ in 684.25 seconds (0.55401 MB / s)
+Simple FM:      Found 1178904 patterns with 5305755 occ in 56.76 seconds (6.67867 MB / s)
+Relative FM:    Found 1178904 patterns with 5305755 occ in 1230.55 seconds (0.308058 MB / s)
 
-Memory usage: 3312.8 MB
+Memory usage: 3452.68 MB
 
 Query test
 
@@ -211,9 +211,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5568 MB (0.106527 bpc)
 seq_minus_lcs:  15.1488 MB (0.0418543 bpc)
-ref_lcs:        89.3191 MB (0.246777 bpc)
-seq_lcs:        74.6087 MB (0.206134 bpc)
-Relative FM:    217.64 MB (0.601311 bpc)
+ref_lcs:        96.8214 MB (0.267505 bpc)
+seq_lcs:        48.0353 MB (0.132715 bpc)
+Relative FM:    198.569 MB (0.54862 bpc)
 
 
 Patters: patterns
@@ -221,10 +221,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210582 patterns with 5669659 occ in 57.31 seconds (6.61458 MB / s)
-Relative FM:    Found 1210582 patterns with 5669659 occ in 619.99 seconds (0.611431 MB / s)
+Simple FM:      Found 1210582 patterns with 5669659 occ in 57.3 seconds (6.61573 MB / s)
+Relative FM:    Found 1210582 patterns with 5669659 occ in 1058.23 seconds (0.358222 MB / s)
 
-Memory usage: 3335.48 MB
+Memory usage: 3325.17 MB
 
 Query test
 
@@ -241,9 +241,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5822 MB (0.106598 bpc)
 seq_minus_lcs:  15.1679 MB (0.041907 bpc)
-ref_lcs:        89.3522 MB (0.246869 bpc)
-seq_lcs:        74.6422 MB (0.206227 bpc)
-Relative FM:    217.751 MB (0.601619 bpc)
+ref_lcs:        96.8665 MB (0.26763 bpc)
+seq_lcs:        48.0823 MB (0.132846 bpc)
+Relative FM:    198.706 MB (0.548999 bpc)
 
 
 Patters: patterns
@@ -251,10 +251,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210086 patterns with 5670911 occ in 57.46 seconds (6.59731 MB / s)
-Relative FM:    Found 1210086 patterns with 5670911 occ in 620.96 seconds (0.610476 MB / s)
+Simple FM:      Found 1210086 patterns with 5670911 occ in 57.23 seconds (6.62382 MB / s)
+Relative FM:    Found 1210086 patterns with 5670911 occ in 1060.95 seconds (0.357304 MB / s)
 
-Memory usage: 3335.61 MB
+Memory usage: 3325.32 MB
 
 Query test
 
@@ -271,9 +271,9 @@ Simple FM:      1089.68 MB (3.04527 bpc)
 
 ref_minus_lcs:  59.3674 MB (0.165911 bpc)
 seq_minus_lcs:  23.8534 MB (0.0666621 bpc)
-ref_lcs:        130.586 MB (0.364943 bpc)
-seq_lcs:        74.3516 MB (0.207787 bpc)
-Relative FM:    288.165 MB (0.805322 bpc)
+ref_lcs:        139.598 MB (0.390129 bpc)
+seq_lcs:        67.1662 MB (0.187706 bpc)
+Relative FM:    289.992 MB (0.810428 bpc)
 
 
 Patters: patterns
@@ -281,10 +281,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1138983 patterns with 5488310 occ in 56.55 seconds (6.70347 MB / s)
-Relative FM:    Found 1138983 patterns with 5488310 occ in 619.51 seconds (0.611905 MB / s)
+Simple FM:      Found 1138983 patterns with 5488310 occ in 56.31 seconds (6.73204 MB / s)
+Relative FM:    Found 1138983 patterns with 5488310 occ in 1114.22 seconds (0.340221 MB / s)
 
-Memory usage: 3409.5 MB
+Memory usage: 3425.45 MB
 
 Query test
 
@@ -301,9 +301,9 @@ Simple FM:      965.524 MB (2.88281 bpc)
 
 ref_minus_lcs:  101.012 MB (0.301596 bpc)
 seq_minus_lcs:  22.4161 MB (0.0669288 bpc)
-ref_lcs:        124.88 MB (0.37286 bpc)
-seq_lcs:        80.7452 MB (0.241085 bpc)
-Relative FM:    329.059 MB (0.982488 bpc)
+ref_lcs:        255.212 MB (0.761999 bpc)
+seq_lcs:        64.4441 MB (0.192414 bpc)
+Relative FM:    443.09 MB (1.32296 bpc)
 
 
 Patters: patterns
@@ -311,10 +311,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1178904 patterns with 5305755 occ in 56.98 seconds (6.65288 MB / s)
-Relative FM:    Found 1178904 patterns with 5305755 occ in 685.48 seconds (0.553016 MB / s)
+Simple FM:      Found 1178904 patterns with 5305755 occ in 56.69 seconds (6.68692 MB / s)
+Relative FM:    Found 1178904 patterns with 5305755 occ in 1233.43 seconds (0.307339 MB / s)
 
-Memory usage: 3312.8 MB
+Memory usage: 3452.67 MB
 
 Query test
 
@@ -331,9 +331,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5568 MB (0.106527 bpc)
 seq_minus_lcs:  15.1488 MB (0.0418543 bpc)
-ref_lcs:        89.3191 MB (0.246777 bpc)
-seq_lcs:        74.6087 MB (0.206134 bpc)
-Relative FM:    217.64 MB (0.601311 bpc)
+ref_lcs:        96.8214 MB (0.267505 bpc)
+seq_lcs:        48.0353 MB (0.132715 bpc)
+Relative FM:    198.569 MB (0.54862 bpc)
 
 
 Patters: patterns
@@ -341,10 +341,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210582 patterns with 5669659 occ in 57.42 seconds (6.6019 MB / s)
-Relative FM:    Found 1210582 patterns with 5669659 occ in 619.64 seconds (0.611777 MB / s)
+Simple FM:      Found 1210582 patterns with 5669659 occ in 57.2 seconds (6.6273 MB / s)
+Relative FM:    Found 1210582 patterns with 5669659 occ in 1059.44 seconds (0.357813 MB / s)
 
-Memory usage: 3335.48 MB
+Memory usage: 3325.17 MB
 
 Query test
 
@@ -361,9 +361,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5822 MB (0.106598 bpc)
 seq_minus_lcs:  15.1679 MB (0.041907 bpc)
-ref_lcs:        89.3522 MB (0.246869 bpc)
-seq_lcs:        74.6422 MB (0.206227 bpc)
-Relative FM:    217.751 MB (0.601619 bpc)
+ref_lcs:        96.8665 MB (0.26763 bpc)
+seq_lcs:        48.0823 MB (0.132846 bpc)
+Relative FM:    198.706 MB (0.548999 bpc)
 
 
 Patters: patterns
@@ -371,10 +371,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210086 patterns with 5670911 occ in 57.4 seconds (6.6042 MB / s)
-Relative FM:    Found 1210086 patterns with 5670911 occ in 620.27 seconds (0.611155 MB / s)
+Simple FM:      Found 1210086 patterns with 5670911 occ in 57.55 seconds (6.58699 MB / s)
+Relative FM:    Found 1210086 patterns with 5670911 occ in 1128.81 seconds (0.335824 MB / s)
 
-Memory usage: 3335.61 MB
+Memory usage: 3325.32 MB
 
 Query test
 
@@ -391,9 +391,9 @@ Simple FM:      1089.68 MB (3.04527 bpc)
 
 ref_minus_lcs:  59.3674 MB (0.165911 bpc)
 seq_minus_lcs:  23.8534 MB (0.0666621 bpc)
-ref_lcs:        130.586 MB (0.364943 bpc)
-seq_lcs:        74.3516 MB (0.207787 bpc)
-Relative FM:    288.165 MB (0.805322 bpc)
+ref_lcs:        139.598 MB (0.390129 bpc)
+seq_lcs:        67.1662 MB (0.187706 bpc)
+Relative FM:    289.992 MB (0.810428 bpc)
 
 
 Patters: patterns
@@ -401,10 +401,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1138983 patterns with 5488310 occ in 56.35 seconds (6.72726 MB / s)
-Relative FM:    Found 1138983 patterns with 5488310 occ in 622.37 seconds (0.609093 MB / s)
+Simple FM:      Found 1138983 patterns with 5488310 occ in 56.29 seconds (6.73444 MB / s)
+Relative FM:    Found 1138983 patterns with 5488310 occ in 1115.18 seconds (0.339928 MB / s)
 
-Memory usage: 3409.5 MB
+Memory usage: 3425.44 MB
 
 Query test
 
@@ -421,9 +421,9 @@ Simple FM:      965.524 MB (2.88281 bpc)
 
 ref_minus_lcs:  101.012 MB (0.301596 bpc)
 seq_minus_lcs:  22.4161 MB (0.0669288 bpc)
-ref_lcs:        124.88 MB (0.37286 bpc)
-seq_lcs:        80.7452 MB (0.241085 bpc)
-Relative FM:    329.059 MB (0.982488 bpc)
+ref_lcs:        255.212 MB (0.761999 bpc)
+seq_lcs:        64.4441 MB (0.192414 bpc)
+Relative FM:    443.09 MB (1.32296 bpc)
 
 
 Patters: patterns
@@ -431,10 +431,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1178904 patterns with 5305755 occ in 56.67 seconds (6.68928 MB / s)
-Relative FM:    Found 1178904 patterns with 5305755 occ in 683.53 seconds (0.554594 MB / s)
+Simple FM:      Found 1178904 patterns with 5305755 occ in 56.59 seconds (6.69873 MB / s)
+Relative FM:    Found 1178904 patterns with 5305755 occ in 1235.46 seconds (0.306834 MB / s)
 
-Memory usage: 3312.8 MB
+Memory usage: 3452.67 MB
 
 Query test
 
@@ -451,9 +451,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5568 MB (0.106527 bpc)
 seq_minus_lcs:  15.1488 MB (0.0418543 bpc)
-ref_lcs:        89.3191 MB (0.246777 bpc)
-seq_lcs:        74.6087 MB (0.206134 bpc)
-Relative FM:    217.64 MB (0.601311 bpc)
+ref_lcs:        96.8214 MB (0.267505 bpc)
+seq_lcs:        48.0353 MB (0.132715 bpc)
+Relative FM:    198.569 MB (0.54862 bpc)
 
 
 Patters: patterns
@@ -461,10 +461,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210582 patterns with 5669659 occ in 57.31 seconds (6.61458 MB / s)
-Relative FM:    Found 1210582 patterns with 5669659 occ in 620.32 seconds (0.611106 MB / s)
+Simple FM:      Found 1210582 patterns with 5669659 occ in 57.39 seconds (6.60536 MB / s)
+Relative FM:    Found 1210582 patterns with 5669659 occ in 1059.6 seconds (0.357759 MB / s)
 
-Memory usage: 3335.49 MB
+Memory usage: 3325.17 MB
 
 Query test
 
@@ -481,9 +481,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5822 MB (0.106598 bpc)
 seq_minus_lcs:  15.1679 MB (0.041907 bpc)
-ref_lcs:        89.3522 MB (0.246869 bpc)
-seq_lcs:        74.6422 MB (0.206227 bpc)
-Relative FM:    217.751 MB (0.601619 bpc)
+ref_lcs:        96.8665 MB (0.26763 bpc)
+seq_lcs:        48.0823 MB (0.132846 bpc)
+Relative FM:    198.706 MB (0.548999 bpc)
 
 
 Patters: patterns
@@ -491,10 +491,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210086 patterns with 5670911 occ in 57.37 seconds (6.60766 MB / s)
-Relative FM:    Found 1210086 patterns with 5670911 occ in 619.77 seconds (0.611648 MB / s)
+Simple FM:      Found 1210086 patterns with 5670911 occ in 57.34 seconds (6.61112 MB / s)
+Relative FM:    Found 1210086 patterns with 5670911 occ in 1058.3 seconds (0.358198 MB / s)
 
-Memory usage: 3335.61 MB
+Memory usage: 3325.32 MB
 
 Query test
 
@@ -511,9 +511,9 @@ Simple FM:      1089.68 MB (3.04527 bpc)
 
 ref_minus_lcs:  59.3674 MB (0.165911 bpc)
 seq_minus_lcs:  23.8534 MB (0.0666621 bpc)
-ref_lcs:        130.586 MB (0.364943 bpc)
-seq_lcs:        74.3516 MB (0.207787 bpc)
-Relative FM:    288.165 MB (0.805322 bpc)
+ref_lcs:        139.598 MB (0.390129 bpc)
+seq_lcs:        67.1662 MB (0.187706 bpc)
+Relative FM:    289.992 MB (0.810428 bpc)
 
 
 Patters: patterns
@@ -521,10 +521,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1138983 patterns with 5488310 occ in 56.41 seconds (6.72011 MB / s)
-Relative FM:    Found 1138983 patterns with 5488310 occ in 620.97 seconds (0.610466 MB / s)
+Simple FM:      Found 1138983 patterns with 5488310 occ in 56.25 seconds (6.73922 MB / s)
+Relative FM:    Found 1138983 patterns with 5488310 occ in 1346.75 seconds (0.281479 MB / s)
 
-Memory usage: 3409.5 MB
+Memory usage: 3425.44 MB
 
 Query test
 
@@ -541,9 +541,9 @@ Simple FM:      965.524 MB (2.88281 bpc)
 
 ref_minus_lcs:  101.012 MB (0.301596 bpc)
 seq_minus_lcs:  22.4161 MB (0.0669288 bpc)
-ref_lcs:        124.88 MB (0.37286 bpc)
-seq_lcs:        80.7452 MB (0.241085 bpc)
-Relative FM:    329.059 MB (0.982488 bpc)
+ref_lcs:        255.212 MB (0.761999 bpc)
+seq_lcs:        64.4441 MB (0.192414 bpc)
+Relative FM:    443.09 MB (1.32296 bpc)
 
 
 Patters: patterns
@@ -551,10 +551,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1178904 patterns with 5305755 occ in 56.64 seconds (6.69282 MB / s)
-Relative FM:    Found 1178904 patterns with 5305755 occ in 684.01 seconds (0.554204 MB / s)
+Simple FM:      Found 1178904 patterns with 5305755 occ in 56.68 seconds (6.6881 MB / s)
+Relative FM:    Found 1178904 patterns with 5305755 occ in 1231.94 seconds (0.307711 MB / s)
 
-Memory usage: 3312.8 MB
+Memory usage: 3452.67 MB
 
 Query test
 
@@ -571,9 +571,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5568 MB (0.106527 bpc)
 seq_minus_lcs:  15.1488 MB (0.0418543 bpc)
-ref_lcs:        89.3191 MB (0.246777 bpc)
-seq_lcs:        74.6087 MB (0.206134 bpc)
-Relative FM:    217.64 MB (0.601311 bpc)
+ref_lcs:        96.8214 MB (0.267505 bpc)
+seq_lcs:        48.0353 MB (0.132715 bpc)
+Relative FM:    198.569 MB (0.54862 bpc)
 
 
 Patters: patterns
@@ -581,10 +581,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210582 patterns with 5669659 occ in 57.23 seconds (6.62382 MB / s)
-Relative FM:    Found 1210582 patterns with 5669659 occ in 619.54 seconds (0.611876 MB / s)
+Simple FM:      Found 1210582 patterns with 5669659 occ in 57.25 seconds (6.62151 MB / s)
+Relative FM:    Found 1210582 patterns with 5669659 occ in 1057.86 seconds (0.358347 MB / s)
 
-Memory usage: 3335.48 MB
+Memory usage: 3325.17 MB
 
 Query test
 
@@ -601,9 +601,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5822 MB (0.106598 bpc)
 seq_minus_lcs:  15.1679 MB (0.041907 bpc)
-ref_lcs:        89.3522 MB (0.246869 bpc)
-seq_lcs:        74.6422 MB (0.206227 bpc)
-Relative FM:    217.751 MB (0.601619 bpc)
+ref_lcs:        96.8665 MB (0.26763 bpc)
+seq_lcs:        48.0823 MB (0.132846 bpc)
+Relative FM:    198.706 MB (0.548999 bpc)
 
 
 Patters: patterns
@@ -611,10 +611,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210086 patterns with 5670911 occ in 57.33 seconds (6.61227 MB / s)
-Relative FM:    Found 1210086 patterns with 5670911 occ in 621.55 seconds (0.609897 MB / s)
+Simple FM:      Found 1210086 patterns with 5670911 occ in 57.31 seconds (6.61458 MB / s)
+Relative FM:    Found 1210086 patterns with 5670911 occ in 1061.49 seconds (0.357122 MB / s)
 
-Memory usage: 3335.61 MB
+Memory usage: 3325.32 MB
 
 Query test
 
@@ -631,9 +631,9 @@ Simple FM:      1089.68 MB (3.04527 bpc)
 
 ref_minus_lcs:  59.3674 MB (0.165911 bpc)
 seq_minus_lcs:  23.8534 MB (0.0666621 bpc)
-ref_lcs:        130.586 MB (0.364943 bpc)
-seq_lcs:        74.3516 MB (0.207787 bpc)
-Relative FM:    288.165 MB (0.805322 bpc)
+ref_lcs:        139.598 MB (0.390129 bpc)
+seq_lcs:        67.1662 MB (0.187706 bpc)
+Relative FM:    289.992 MB (0.810428 bpc)
 
 
 Patters: patterns
@@ -641,10 +641,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1138983 patterns with 5488310 occ in 56.38 seconds (6.72369 MB / s)
-Relative FM:    Found 1138983 patterns with 5488310 occ in 623.85 seconds (0.607648 MB / s)
+Simple FM:      Found 1138983 patterns with 5488310 occ in 56.36 seconds (6.72607 MB / s)
+Relative FM:    Found 1138983 patterns with 5488310 occ in 1119.91 seconds (0.338493 MB / s)
 
-Memory usage: 3409.5 MB
+Memory usage: 3425.44 MB
 
 Query test
 
@@ -661,9 +661,9 @@ Simple FM:      965.524 MB (2.88281 bpc)
 
 ref_minus_lcs:  101.012 MB (0.301596 bpc)
 seq_minus_lcs:  22.4161 MB (0.0669288 bpc)
-ref_lcs:        124.88 MB (0.37286 bpc)
-seq_lcs:        80.7452 MB (0.241085 bpc)
-Relative FM:    329.059 MB (0.982488 bpc)
+ref_lcs:        255.212 MB (0.761999 bpc)
+seq_lcs:        64.4441 MB (0.192414 bpc)
+Relative FM:    443.09 MB (1.32296 bpc)
 
 
 Patters: patterns
@@ -671,10 +671,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1178904 patterns with 5305755 occ in 56.58 seconds (6.69992 MB / s)
-Relative FM:    Found 1178904 patterns with 5305755 occ in 683.49 seconds (0.554626 MB / s)
+Simple FM:      Found 1178904 patterns with 5305755 occ in 56.65 seconds (6.69164 MB / s)
+Relative FM:    Found 1178904 patterns with 5305755 occ in 1231.12 seconds (0.307916 MB / s)
 
-Memory usage: 3312.8 MB
+Memory usage: 3452.68 MB
 
 Query test
 
@@ -691,9 +691,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5568 MB (0.106527 bpc)
 seq_minus_lcs:  15.1488 MB (0.0418543 bpc)
-ref_lcs:        89.3191 MB (0.246777 bpc)
-seq_lcs:        74.6087 MB (0.206134 bpc)
-Relative FM:    217.64 MB (0.601311 bpc)
+ref_lcs:        96.8214 MB (0.267505 bpc)
+seq_lcs:        48.0353 MB (0.132715 bpc)
+Relative FM:    198.569 MB (0.54862 bpc)
 
 
 Patters: patterns
@@ -701,10 +701,10 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210582 patterns with 5669659 occ in 57.28 seconds (6.61804 MB / s)
-Relative FM:    Found 1210582 patterns with 5669659 occ in 619.58 seconds (0.611836 MB / s)
+Simple FM:      Found 1210582 patterns with 5669659 occ in 57.22 seconds (6.62498 MB / s)
+Relative FM:    Found 1210582 patterns with 5669659 occ in 1058.64 seconds (0.358083 MB / s)
 
-Memory usage: 3335.48 MB
+Memory usage: 3325.17 MB
 
 Query test
 
@@ -721,9 +721,9 @@ Simple FM:      1090.24 MB (3.0122 bpc)
 
 ref_minus_lcs:  38.5822 MB (0.106598 bpc)
 seq_minus_lcs:  15.1679 MB (0.041907 bpc)
-ref_lcs:        89.3522 MB (0.246869 bpc)
-seq_lcs:        74.6422 MB (0.206227 bpc)
-Relative FM:    217.751 MB (0.601619 bpc)
+ref_lcs:        96.8665 MB (0.26763 bpc)
+seq_lcs:        48.0823 MB (0.132846 bpc)
+Relative FM:    198.706 MB (0.548999 bpc)
 
 
 Patters: patterns
@@ -731,8 +731,8 @@ Patters: patterns
 3680515 patterns of total length 397495620
 
 
-Simple FM:      Found 1210086 patterns with 5670911 occ in 57.37 seconds (6.60766 MB / s)
-Relative FM:    Found 1210086 patterns with 5670911 occ in 620.85 seconds (0.610584 MB / s)
+Simple FM:      Found 1210086 patterns with 5670911 occ in 57.23 seconds (6.62382 MB / s)
+Relative FM:    Found 1210086 patterns with 5670911 occ in 1057.33 seconds (0.358527 MB / s)
 
-Memory usage: 3335.61 MB
+Memory usage: 3325.32 MB
 
