@@ -356,13 +356,11 @@ of $\BWT_{x}(S_{1})$ and $\BWT_{x}(S_{2})$ is over $50000$, or $x = N^{32}$
 for DNA sequences), and match the most common characters in that partition
 directly.
 
-
 We implemented the counting structure of the relative FM-index using the SDSL
 library~\cite{Gog2014b}, and compared its performance to a regular FM-index.
 To encode the BWTs and sequences $D_{1}$ and $D_{2}$, we used Huffman-shaped
 wavelet trees with either plain or entropy-compressed (RRR)~\cite{Raman2007}
-bitvectors. We chose entropy-compressed bitvectors for marking the positions
-of the LCS in $\BWT(S_{1})$ and $\BWT(S_{2})$.
+bitvectors. For marking the positions of the LCS in $\BWT(S_{1})$ and $\BWT(S_{2})$, we used either entropy-compressed or sparse~\cite{Okanohara2007} bitvectors.
 
 The implementation was written in C++ and compiled on g++ version 4.7.3. We
 used a system with 32 gigabyes of memory and two quad-core 2.53 GHz Intel
@@ -372,52 +370,65 @@ CPU core was used in the experiments.
 For our experiments, we used the 1000 Genomes Project assembly of the human
 reference genome as the reference sequence $S_{1}$.\footnote{GRCh37,
 \url{ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/}} As
-sequence $S_{2}$, we used the genome of a Han Chinese individual from the
+sequence $S_{2}$, we used the genome of a Han Chinese male from the
 YanHuang
-project.\footnote{\url{ftp://public.genomics.org.cn/BGI/yanhuang/fa/}} The
-lengths of the sequences were 3.10 billion bases and 3.00 billion bases,
-respectively, and our algorithm found a common subsequence of 2.93 billion
-bases. As our pattern set, we used 10 million reads of length 56. Almost 4.20
-million reads had exact matches in sequence $S_{2}$, with a total of 99.7
-million occurrences. The results of the experiments can be seen in
+project\footnote{\url{ftp://public.genomics.org.cn/BGI/yanhuang/fa/}}, and the genome of the 1000 Genomes Project individual NA12878 (Utah female, maternal haplotype)~\cite{Rozowsky2011}. The properties of the datasets can be seen in Table~\ref{table:datasets}. As our pattern set, we used 3.68 million reads of length 108 from the 1000 Genomes Project individual HG00122 (British female). The results of the experiments can be seen in
 Table~\ref{table:experiments}.
 
 \begin{table}[t]
 \centering
-\caption{Experiments with human genomes. Bitvector used in the wavelet tree; time and space requirements for building the relative FM-index; time required for counting queries and index size for a regular and a relative FM-index; the performance of the relative FM-index compared to the regular index. The query times are averages over five runs.}\label{table:experiments}
-\begin{tabular}{ccccccccccccc}
+\caption{Properties of the datasets. The length of the sequence and the common subsequence of the BWTs; the number of matching patterns and the total number of occurrences for those patterns.}\label{table:datasets}
+\begin{tabular}{ccccccc}
 \hline
 \noalign{\smallskip}
- &\phantom{00} & \multicolumn{2}{c}{Construction} &\phantom{00} & \multicolumn{2}{c}{Regular}
- &\phantom{00} & \multicolumn{2}{c}{Relative} &\phantom{00} & \multicolumn{2}{c}{Rel vs.~Reg} \\
-Bitvector & & Time & Space & & Time & Size & & Time & Size & & Time & Size \\
+Dataset   & \phantom{00} & Length &   LCS & \phantom{00} & Matches & Occurrences \\
 \noalign{\smallskip}
 \hline
 \noalign{\smallskip}
-Plain & &  762\:s & 9124\:MB & & 146\:s & 1090\:MB & & 1392\:s & 288\:MB & & 954\% & \ 26\% \\
-\noalign{\smallskip}
-RRR   & & 6022\:s & 7823\:MB & & 667\:s &  628\:MB & & 3022\:s & 256\:MB & & 453\% & \ 41\% \\
+Reference &              &  3096M &    -- &              &      -- & -- \\
+YanHuang  &              &  3002M & 2935M &              &   1.14M & 5.49M \\
+NA12878   &              &  3036M & 2992M &              &   1.21M & 5.67M \\
 \noalign{\smallskip}
 \hline
 \end{tabular}
 \end{table}
 
-% FIXME Should we mention that it is easy to extract the regular index from the relative index?
-With plain bitvectors in the wavelet tree, the relative FM-index was 9.5 times slower than a regular FM-index, while requiring a quarter of the space. With entropy-compressed bitvectors, the relative index was 4.5 times slower and required 41\% of the space. Comparing the relative FM-index using plain bitvectors to the regular index using entropy-compressed bitvectors, we see that the relative index is 2.1 times slower, while taking 46\% of the space.
+\begin{table}[t]
+\centering
+\caption{Experiments with human genomes. Dataset, bitvector used in the wavelet trees (WT) and for the LCS; time and space requirements for building the relative FM-index; time required for counting queries and index size for a regular FM-index and a relative FM-index. The query times are averages over five runs.}\label{table:experiments}
+\begin{tabular}{cccccccccccc}
+\hline
+\noalign{\smallskip}
+ & & & \phantom{0} & \multicolumn{2}{c}{Construction} & \phantom{0} & \multicolumn{2}{c}{Regular}
+ & \phantom{0} & \multicolumn{2}{c}{Relative} \\
+Dataset  & WT    & LCS    & &    Time &    Space & &      Time &     Size & &       Time & Size \\
+\noalign{\smallskip}
+\hline
+\noalign{\smallskip}
+YanHuang & Plain & RRR    & &  708\:s & 9124\:MB & &  56.45\:s & 1090\:MB & &  621.47\:s & 288\:MB \\
+YanHuang & Plain & Sparse & &  711\:s & 9124\:MB & &  56.45\:s & 1090\:MB & & 1162.47\:s & 290\:MB \\
+YanHuang & RRR   & RRR    & & 5898\:s & 7823\:MB & & 328.86\:s &  628\:MB & & 1637.44\:s & 256\:MB \\
+YanHuang & RRR   & Sparse & & 5882\:s & 7823\:MB & & 328.86\:s &  628\:MB & & 1994.89\:s & 257\:MB \\
+\noalign{\smallskip}
+NA12878  & Plain & RRR    & &  589\:s & 9124\:MB & &  57.31\:s & 1090\:MB & &  619.81\:s & 218\:MB \\
+NA12878  & Plain & Sparse & &  575\:s & 9124\:MB & &  57.31\:s & 1090\:MB & & 1058.75\:s & 199\:MB \\
+NA12878  & RRR   & RRR    & & 5454\:s & 7823\:MB & & 325.49\:s &  636\:MB & & 1614.56\:s & 192\:MB \\
+NA12878  & RRR   & Sparse & & 5412\:s & 7823\:MB & & 325.49\:s &  636\:MB & & 1921.92\:s & 173\:MB \\
+\noalign{\smallskip}
+\hline
+\end{tabular}
+\end{table}
 
-% FIXME We have numbers. Do we want to show them?
-Bitvectors $B_{1}$ and $B_{2}$ took 70\% to 80\% of the total size of the
-relative index. We tried to encode them as sparse
-bitvectors~\cite{Okanohara2007}, but the result was slightly larger and
-clearly slower than with entropy-compressed bitvectors. By our estimates,
-run-length encoded bitvectors would have taken slightly more space than
-sparse vectors. Hybrid bitvectors using different encodings for different
-parts of the bitvector~\cite{Kaerkkaeinen2014} could improve compression, but
+The fastest variant of the relative FM-index uses plain bitvectors in the wavelet trees and RRR bitvectors for the LCS. It is 3.8--5.0 times smaller and 11 times slower than a regular FM-index using plain bitvectors, and 2.2--2.9 times smaller and 1.9 times slower than a regular index using RRR bitvectors. Switching to compressed bitvectors in the wavelet trees does not yield a good trade-off. Using sparse bitvectors for the LCS is a slightly better option on the NA12878 dataset, making the relative index 1.1 times smaller and 1.7 times slower. On the YanHuang dataset, sparse bitvectors require more space than RRR bitvectors, because the sequence is too different from the reference.
+
+Bitvectors $B_{1}$ and $B_{2}$ take 70\% to 85\% of the total size of the
+relative index, so improving their compression may be the best way to make the index smaller.
+Hybrid bitvectors using different encodings for different
+parts of the bitvector~\cite{Kaerkkaeinen2014} could be one option, but
 the existing implementation does not work with vectors longer than $2^{31}$
-bits.
+bits. It should be noted that the size difference between NA12878 and the reference is mostly due to the inclusion of chromosome Y (59 million base pairs) in the reference. Therefore we can expect the relative FM-index to work significantly better with male genomes than female genomes.
 
-
-
+Building a relative FM-index out of regular FM-indexes for two human genomes takes 10--12 minutes. Using RRR bitvectors for the wavelet trees increases this to 90--98 minutes, as extracting substrings from the wavelet trees becomes the bottleneck. Decompressing the regular FM-index of $S_{2}$ from the regular index of $S_{1}$ and the relative index of $S_{2}$ should be even faster. The space usage of the current construction algorithm has not been optimized, and it can probably be improved significantly.
 
 
 \section{Relative FM-indices supporting locating and extracting}
