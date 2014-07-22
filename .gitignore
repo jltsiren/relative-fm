@@ -8,5 +8,6 @@ query_test
 *.bbl
 *.blg
 *.log
-*.pdf
+relative.pdf
+relative-fm.pdf
 .DS_Store
