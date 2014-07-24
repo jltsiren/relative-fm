@@ -22,10 +22,10 @@
 
 \title{Relative FM-indexes}
 
-\ignore{\author{Djamal Bellazzougui\inst{1} \and Travis Gagie\inst{1} \and
-Simon Gog\inst{2} Giovanni Manzini\inst{3} \and Jouni Sir\'en\inst{4}}
-\institute{University of Helsinki \and University of Melbourne \and
-University of Eastern Piedmont \and University of Chile}}
+\author{Djamal Bellazzougui\inst{1,2} \and Travis Gagie\inst{1,2}\fnmsep\thanks{Funded by Academy of Finland grant 268324.} \and Simon Gog\inst{3} \and\\
+Giovanni Manzini\inst{4} \and Jouni Sir\'en\inst{5}\fnmsep\thanks{Funded by the Jenny and Antti Wihuri Foundation, Finland, and Fondecyt Grant 1-140796, Chile.}}
+\institute{University of Helsinki \and Helsinki Institute for Information Technology \and University of Melbourne \and
+University of Eastern Piedmont \and University of Chile}
 
 \maketitle
 
@@ -71,8 +71,6 @@ $$
 $$
 whose LCS {\sf TCTCGTAAAAGG} is nearly as long as either BWT.
 
-\pagebreak
-
 We introduce the concept of {\em BW-distance} \(\BWD (S_1, S_2)\) between
 $S_1$ and $S_2$ defined as $|S_1| + |S_2| - 2 |\LCS(\BWT (S_1),\BWT (S_2))|$.
 Note that this coincides with the edit distance between $\BWT (S_1)$ and
@@ -105,16 +103,16 @@ the longest BWT-invariant subsequence, which unfortunately turns out to be
 NP-hard (Theorem~\ref{theo:np}). We therefore devise a heuristic to find a
 ``long'' BWT-invariant subsequence in $\Oh{|S_1|\log|S_1|}$ time.
 
-We have tested our approach in practice by building an FM-index for the genome
-of a Han Chinese individual, ``reusing'' an FM-index of the human reference
-genome. The Han genome is about 3.0 billion base pairs, the reference is
-about 3.1 billion base pairs and we found a common subsequence of about 2.9
-billion base pairs. A standard implementation of a stand-alone FM-index for
-the Han genome takes 628~MB or 1090~MB, depending on encoding, while our
-index uses only 256~MB or 288~MB on top of the index for the reference.  On
-the other hand, queries to our index take about 9.5 or 4.5 times longer.
-Since our index is compressed relative to the underlying index for the
-reference, we call it a relative FM-index.
+We have tested our approach in practice by building an FM-index for the genomes
+of two human individuals, ``reusing'' an FM-index of the human reference
+genome. The reference genome is 3096 million base pairs, the individual genomes
+are 3002 million and 3036 million base pairs, and we found common subsequences
+of 2935 million and 2992 million base pairs, respectively. Our index is
+3.8--5.0 times or 2.2--2.9 times smaller than a standard implementation of a
+stand-alone FM-index, depending on the encoding of the stand-alone index. On the
+other hand, queries to our index take about 11 times or 1.9 times longer,
+respectively. Since our index is compressed relative to the underlying index for
+the reference, we call it a relative FM-index.
 
 
 
@@ -269,16 +267,16 @@ Suppose we want to compute $\BWT (S_2).\rank_\mathsf{C} (13)$. Since \(B_1.\sele
 & \quad + D_2.\rank_\mathsf{C} (B_2.\rank_1 (13)) \;=\; 3.
 \end{align*}
 
-Observing that the number of 1s in $B_1$ and $B_2$ is \(\Oh{\max (n_1, n_2) -
-\ell} = \Oh{\BWD (S_1, S_2)}\), we can store data structures for $B_1$,
+Observing that the number of 1s in $B_1$ and $B_2$ is \(\Oh{\max (n_1, n_2) - m}
+= \Oh{\BWD (S_1, S_2)}\), we can store data structures for $B_1$,
 $B_2$, $D_1$ and $D_2$ in $\Oh{\BWD (S_1, S_2)}$ space such that the desired
 \rank/\select\ queries take $\Oh{\log \BWD (S_1, S_2)}$ time.
 
-The only other component required for an FM-index for $S_2$ for counting, is a data
-structure for computing  \(\sum_{a' \prec a} S_2.\rank_{a'} (n)\) for each
-distinct character~$a$. Notice that \(\BWD (S_1, S_2)\) is at least the
-number of distinct characters whose frequencies in $S_1$ and $S_2$ differ. It
-follows that in $\Oh{\BWD (S_1, S_2)}$ space we can store
+The only other component required for an FM-index for $S_2$ for counting, is
+a data structure for computing  \(\sum_{a' \prec a} S_2.\rank_{a'} (n)\) for
+each character~$a$. Notice that \(\BWD (S_1, S_2)\) is at least the number of
+distinct characters whose frequencies in $S_1$ and $S_2$ differ. It follows
+that in $\Oh{\BWD (S_1, S_2)}$ space we can store
 \begin{itemize}
 \item a $\Oh{\log \BWD (S_1, S_2)}$-time predecessor data structure
     storing those distinct characters,
@@ -291,15 +289,15 @@ $a$ whose frequencies in $S_1$ and $S_2$ differ and compute
 using $\Oh{\log \BWD (S_1, S_2)}$ time. Summing up:
 
 \begin{theorem} \label{theo:counting}
-If we already have an FM-index for $S_1$, we can store a relative FM-index
-for $S_2$ using $\Oh{\BWD (S_1, S_2)}$ words of extra space. Counting queries
-on the relative FM-index take time an $\Oh{\log \BWD (S_1, S_2)}$ factor
-larger than on $S_1$.
+If we have an FM-index for $S_1$, we can store a relative FM-index for $S_2$
+using $\Oh{\BWD (S_1, S_2)}$ words of extra space. Counting queries on the
+relative FM-index take time an $\Oh{\log \BWD (S_1, S_2)}$ factor larger than
+on $S_1$.
 \end{theorem}
 
 
-In Section~\ref{sec:djamal&giovanni} we show how to build a relative FM-index
-supporting also locating and extracting.
+\ignore{In Section~\ref{sec:djamal&giovanni} we show how to build a relative
+FM-index supporting also locating and extracting.}
 
 
 
@@ -323,10 +321,12 @@ align the sequences.
 
 Let $S_{1}$ be a random string of length $n$ over alphabet $\Sigma$ of size
 $\sigma$, and let string $S_{2}$ differ from it by $s$ insertions, deletions,
-and substitutions. In the expected case, the edit operations move $O(s
-\log_{\sigma} n)$ suffixes in lexicographic order, and change the preceding
-characters for $O(s)$ suffixes~\cite{MNSV10}. If we remove the characters
-corresponding to those suffixes from $\BWT(S_{1})$ and $\BWT(S_{2})$, we have
+and substitutions. In the expected case, the lexicographic rank of each suffix of $S_1$
+is determined by a prefix of length $\Oh{\log_\sigma n}$ of that suffix.
+Thus, the $s$ edit operations are expected to affect the relative lexicographic order of $\Oh{s \log_\sigma n}$ suffixes~\cite{MNSV10},
+possibly causing the characters immediately preceding those suffixes to appear in different positions in $\BWT (S_1)$ and $\BWT (S_2)$.
+The edits can also change the characters immediately preceding at most $s$ suffixes.
+If we remove the characters preceding the affected suffixes from $\BWT(S_{1})$ and $\BWT(S_{2})$, we have
 a common subsequence of length $n - O(s \log_{\sigma} n)$ in the expected
 case.
 
@@ -352,12 +352,14 @@ find the longest common subsequence of that partition. To avoid hard cases,
 we stop the greedy algorithm if it would need diagonals beyond $\pm 50000$,
 and match only the most common characters for that partition. We also predict
 in advance the common cases where this happens (the difference of the lengths
-of $\BWT_{x}(S_{1})$ and $\BWT_{x}(S_{2})$ is over $50000$, or $x = N^{32}$
-for DNA sequences), and match the most common characters in that partition
-directly.
+of $\BWT_{x}(S_{1})$ and $\BWT_{x}(S_{2})$ is over $50000$, or $x =
+\mathsf{N}^{32}$ for DNA sequences, where $\mathsf{N}$ is the ``any base''
+symbol), and match the most common characters in that partition directly.
 
 We implemented the counting structure of the relative FM-index using the SDSL
-library~\cite{Gog2014b}, and compared its performance to a regular FM-index.
+library~\cite{Gog2014b}, and compared its performance to a regular
+FM-index.\footnote{The implementation is available at
+\url{http://jltsiren.kapsi.fi/relative-fm}}
 To encode the BWTs and sequences $D_{1}$ and $D_{2}$, we used Huffman-shaped
 wavelet trees with either plain or entropy-compressed (RRR)~\cite{Raman2007}
 bitvectors. For marking the positions of the LCS in $\BWT(S_{1})$ and $\BWT(S_{2})$, we used either entropy-compressed or sparse~\cite{Okanohara2007} bitvectors.
@@ -368,11 +370,15 @@ Xeon E5540 processors, running Ubuntu 12.04 with Linux kernel 3.2.0. Only one
 CPU core was used in the experiments.
 
 For our experiments, we used the 1000 Genomes Project assembly of the human
-reference genome as the reference sequence $S_{1}$.\footnote{GRCh37,
+reference genome as sequence $S_{1}$.\footnote{GRCh37,
 \url{ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/}} As
-sequence $S_{2}$, we used the genome of a Han Chinese male from the
-YanHuang
-project\footnote{\url{ftp://public.genomics.org.cn/BGI/yanhuang/fa/}}, and the genome of the 1000 Genomes Project individual NA12878 (Utah female, maternal haplotype)~\cite{Rozowsky2011}. The properties of the datasets can be seen in Table~\ref{table:datasets}. As our pattern set, we used 3.68 million reads of length 108 from the 1000 Genomes Project individual HG00122 (British female). The results of the experiments can be seen in
+sequence $S_{2}$, we used the genome of a Han Chinese male from the YanHuang
+project\footnote{\url{ftp://public.genomics.org.cn/BGI/yanhuang/fa/}}, and
+the genome of the 1000 Genomes Project individual NA12878 (Utah female,
+maternal haplotype)~\cite{Rozowsky2011}. The properties of the datasets can
+be seen in Table~\ref{table:datasets}. As our pattern set, we used 3.68
+million reads of length 108 from the 1000 Genomes Project individual HG00122
+(British female). The results of the experiments can be seen in
 Table~\ref{table:experiments}.
 
 \begin{table}[t]
@@ -419,7 +425,17 @@ NA12878  & RRR   & Sparse & & 5412\:s & 7823\:MB & & 325.49\:s &  636\:MB & & 19
 \end{tabular}
 \end{table}
 
-The fastest variant of the relative FM-index uses plain bitvectors in the wavelet trees and RRR bitvectors for the LCS. It is 3.8--5.0 times smaller and 11 times slower than a regular FM-index using plain bitvectors, and 2.2--2.9 times smaller and 1.9 times slower than a regular index using RRR bitvectors. Switching to compressed bitvectors in the wavelet trees does not yield a good trade-off. Using sparse bitvectors for the LCS is a slightly better option on the NA12878 dataset, making the relative index 1.1 times smaller and 1.7 times slower. On the YanHuang dataset, sparse bitvectors require more space than RRR bitvectors, because the sequence is too different from the reference.
+
+The fastest variant of the relative FM-index uses plain bitvectors in the
+wavelet trees and RRR bitvectors for the LCS. It is 3.8--5.0 times smaller
+and 11 times slower than a regular FM-index using plain bitvectors, and
+2.2--2.9 times smaller and 1.9 times slower than a regular index using RRR
+bitvectors. Switching to compressed bitvectors in the wavelet trees does not
+yield a good trade-off. Using sparse bitvectors for the LCS is a slightly
+better option on the NA12878 dataset, making the relative index 1.1 times
+smaller and 1.7 times slower. On the YanHuang dataset, sparse bitvectors
+require more space than RRR bitvectors, because the sequence is too different
+from the reference.
 
 Bitvectors $B_{1}$ and $B_{2}$ take 70\% to 85\% of the total size of the
 relative index, so improving their compression may be the best way to make the index smaller.
@@ -428,7 +444,14 @@ parts of the bitvector~\cite{Kaerkkaeinen2014} could be one option, but
 the existing implementation does not work with vectors longer than $2^{31}$
 bits. It should be noted that the size difference between NA12878 and the reference is mostly due to the inclusion of chromosome Y (59 million base pairs) in the reference. Therefore we can expect the relative FM-index to work significantly better with male genomes than female genomes.
 
-Building a relative FM-index out of regular FM-indexes for two human genomes takes 10--12 minutes. Using RRR bitvectors for the wavelet trees increases this to 90--98 minutes, as extracting substrings from the wavelet trees becomes the bottleneck. Decompressing the regular FM-index of $S_{2}$ from the regular index of $S_{1}$ and the relative index of $S_{2}$ should be even faster. The space usage of the current construction algorithm has not been optimized, and it can probably be improved significantly.
+
+Building a relative FM-index out of regular FM-indexes for two human genomes
+takes 10--12 minutes. Using RRR bitvectors for the wavelet trees increases
+this to 90--98 minutes, as extracting substrings from the wavelet trees
+becomes the bottleneck. Decompressing the regular FM-index of $S_{2}$ from
+the regular index of $S_{1}$ and the relative index of $S_{2}$ should be even
+faster. The space usage of the current construction algorithm has not been
+optimized, and it can probably be improved significantly.
 
 
 \section{Relative FM-indices supporting locating and extracting}
@@ -465,7 +488,7 @@ BWTs). That is, we have $i_1< \;\cdots\; < i_\ell$ and there exists $j_1 <
 $$
 S_1[i_1]=S_2[j_1],\;\ldots,\;S_1[i_\ell]=S_2[j_\ell].
 $$
-Since there is a one-to-one correspondence between a text and its BWT, we can
+Since there is a one-to-one correspondence between the characters in a text and in its BWT, we can
 define the indexes $v_1, \ldots, v_\ell$ (resp. $w_1,\ldots,w_\ell$) such
 that for $k=1,\ldots,\ell$, $\BWT(S_1)[v_k]$ is the character corresponding
 to $S_1[i_k]$ (resp. $\BWT(S_2)[w_k]$ is the character corresponding to
@@ -505,14 +528,13 @@ string $S_2$ provided that we have
 \item bitvector \(M_1 [1..n_1]\) with 0s in positions  $i_1, \ldots, i_\ell$,
     supporting fast \rank\ queries,
 \item bitvector \(M_2 [1..n_2]\) with 0s in positions $j_1, \ldots,
-    j_\ell$, supporting fast $\select_0$ queries;
+    j_\ell$, supporting fast $\select_0$ queries.
 \end{itemize}
-proof idea in the appendix, complete proof in the full paper. Summing up,
-we have:
+Summing up, we have (proof idea in the appendix):
 
 \begin{theorem} \label{theo:locating}
 For any BWT-invariant subsequence $G$, if we already have an FM-index for
-$S_1$, then we can store $\Oh{\BWD_G (S_1, S_2)}$ extra space such that the
+$S_1$, then we can store $\Oh{\BWD_G (S_1, S_2)}$ extra words such that the
 time bounds for locating and extracting queries on $S_2$ are an $\Oh{\log
 \BWD_G (S_1, S_2)}$ factor larger than on $S_1$.
 \end{theorem}
@@ -540,10 +562,10 @@ the relative order of the elements in that subsequence is the same as the
 relative order of the elements in $\pi_2$.  For example, if \(\pi_1 = 6, 3,
 2, 1, 4, 5\) and \(\pi_2 = 4, 2, 1, 3\), then \(6, 2, 1, 4\) is such a
 subsequence. Specifically, we set
-\begin{align*}
-S_1 & = \mathsf{A B^{\pi_1 [1]} A B^{\pi_1 [2]} \cdots A B^{\pi_1 [n]}}\\
-S_2 & = \mathsf{A C^{\pi_2 [1]} A C^{\pi_2 [2]} \cdots A C^{\pi_2 [m]}}\,,
-\end{align*}
+$$
+S_1 = \mathsf{A B^{\pi_1 [1]} A B^{\pi_1 [2]} \cdots A B^{\pi_1 [n]}},\quad\quad
+S_2 = \mathsf{A C^{\pi_2 [1]} A C^{\pi_2 [2]} \cdots A C^{\pi_2 [m]}}\,,
+$$
 so the unique LCS of $S_1$ and $S_2$ is $\mathsf{A}^m$.  For our example,
 \begin{align*}
 S_1 & = \mathsf{A B^6 A B^3 A B^2 A B A B^5} = \mathsf{A B B B B B B A B B B A B B A B A B B B B B}\\
@@ -563,7 +585,7 @@ longest possible BWT-invariant subsequence, so, as for the LCS, we have
 devised the following fast heuristic for computing a ``long'' BWT-invariant
 subsequence.
 
-We first compute the suffix array $SA_{12}$ for the concatenation $S_1\#S_2$
+We first compute the suffix array SA$_{12}$ for the concatenation $S_1\#S_2$
 and we use it to define the array $A$ of size $n_1 \times 2$ as follows
 \begin{itemize}
 \item $A[i][1] = j\quad$ iff $S_1[i] = S_2[j]$ and suffix $S_2[j+1,n_2]$
@@ -571,7 +593,7 @@ and we use it to define the array $A$ of size $n_1 \times 2$ as follows
     $j$ exists $A[i][1]$ is undefined.
 \item $A[i][2] = j\quad$ iff $S_1[i] = S_2[j]$ and suffix $S_2[j+1,n_2]$
     is the lexicographically largest suffix of $S_2$ preceding suffix
-    $S_1[i+1,n_1]$ in $SA_{12}$. In no such $j$ exists $A[i][2]$ is
+    $S_1[i+1,n_1]$ in $SA_{12}$. If no such $j$ exists $A[i][2]$ is
     undefined.
 \end{itemize}
 Next, we compute the longest subsequence $1 \leq i_1 < i_2 < \cdots < i_\ell
@@ -605,11 +627,11 @@ the suffix $S_1[i_h+1,n_1] \prec S_1[i_k+1,n_1]$ and we must prove that this
 implies $S_2[j_h+1,n_2] \prec S_2[j_k+1,n_2]$.
 
 Since $j_h = A[i_h][b_h]$ and $j_k = A[i_k][b_k]$, the proof follows
-considering the four possible cases: $b_h =1,2$ and $b_k=1,2$. We consider
+considering the four possible cases: $b_h, b_k \in \{1,2\}$. We consider
 the case $b_h=1$, $b_k=2$ leaving the others to the reader. If $j_h =
 A[i_h][1]$ and $j_k = A[i_k][2]$ then $S_2[j_h+1,n_2]$ immediately follows
 $S_1[i_h+1,n_1]$ in $SA_{12}$. At same time $S_2[j_k+1,n_2]$ precedes
-$S_1[i_h+1,n_1]$ but there are no other suffixes from $S_2$ between them.
+$S_1[i_k+1,n_1]$ but there are no other suffixes from $S_2$ between them.
 Since $j_h \neq j_k$ the only possible ordering of the suffixes in $SA_{12}$
 is
 $$
@@ -622,8 +644,7 @@ To evaluate whether the subsequence $G$ derived from the above procedure is
 still able to capture the similarity between $S_1$ and $S_2$, we have
 compared the length of $G$ with the \LCS\ length for pairs of {\it
 S.{}cerevisiae\/} genomes from the Saccharomyces Genome Resequencing
-Project.\footnote{https://www.sanger.ac.uk/research/
-projects/genomeinformatics/sgrp.html} In particular we compared the 273614N
+Project.\footnote{https://www.sanger.ac.uk/research/projects/genomeinformatics/sgrp.html} In particular we compared the 273614N
 sequence with sequences 322134S, 378604X, BC187, and DBVPG1106. For each
 sequence we report in Table~\ref{table:G} the ratio between the length of $G$
 and $\LCS(\BWT(S_1),\BWT(S_2))$ and the length of sequence 273614N (roughly
@@ -658,12 +679,12 @@ that it can be used to determine a set of $S_1$ suffix array samples that can
 be easily ``reused'' for an index for $S_2$.
 
 We have tested our approach by building a relative index for a Han Chinese
-individual with respect to an FM-index of the human reference genome. We
-leave as a future work the development of these ideas and the complete
-implementation of a relative FM-index supporting locating and extracting.  We
-also leave as future work proving bounds on the BW-distance and the length of
-the longest BWT-invariant subsequence in terms of the edit distance of the
-strings.
+individual and a 1000 Genomes Project individual with respect to an FM-index
+of the human reference genome. We leave as a future work the development of
+these ideas and the complete implementation of a relative FM-index supporting
+locating and extracting.  We also leave as future work proving bounds on the
+BW-distance and the length of the longest BWT-invariant subsequence in terms
+of the edit distance of the strings.
 
 
 \bibliographystyle{plain}
@@ -674,69 +695,67 @@ strings.
 
 \section*{Appendix: Reusing an SA Sample} \label{sec:sample}
 
-Consider the example strings $S_1$, $S_2$ given in the introduction.  The characters of
-\(\BWT (S_1) [1..16]\) and \(\BWT (S_2) [1..15]\) are mapped to their
-positions by the BWT from
+Consider the strings $S_1$, $S_2$ used as example in Section~\ref{sec:BWdiv},
+and the corresponding LCS $C=\LCS(\BWT (S_1),\BWT (S_2))$ and bitvectors
+$B_1$ and $B_2$. The characters of \(\BWT (S_1) [1..16]\) and \(\BWT (S_2)
+[1..15]\) are mapped to their positions by the BWT from
 \begin{align*}
 & S_1 [16, 2, 6, 8, 13, 1, 12, 3, 7, 9, 14, 10, 15, 5, 11, 4]\\
 & S_2 [15, 7, 2, 5, 12, 1, 11, 8, 3, 6, 13, 9, 14, 4, 10]
 \end{align*}
-respectively.  (Notice the lists of indices are just the SAs of $S_1\$$ and
-$S_2\$$ with each value decremented.)  Therefore, if \(r = 3\) then
+respectively. Notice the lists of indices are just the SAs of $S_1\$$ and
+$S_2\$$ with each value decremented by one.  Therefore, if \(r = 3\) then
 $$
 R = 1000110010010001, \qquad
-A [1..6] = [16, 13, 1, 7, 10, 4]\,.
+A [1..6] = [16, 13, 1, 7, 10, 4]\,
 $$
-Comparing $R$ and
-\(B_1 = 0001000000000111\)
-we see that the sampled characters \(\BWT (S_1) [1, 5, 6, 9, 12]\) that are
-in $C$, are $C$'s 1st, 4th, 5th, 8th and 11th characters.  From
-\(B_2 = 010000000001010\)
-we see that the 1st, 4th, 5th, 8th and 11th characters in $C$ in \(\BWT
-(S_2)\) are \(\BWT (S_2) [1, 5, 6, 9, 13]\), which are mapped to their
-positions by the BWT from \(S_2 [15, 12, 1, 3, 14]\).
+(see beginning of Section~\ref{sec:djamal&giovanni} for the definition of $R$
+and $A$).
+
+Comparing $R$ and \(B_1 = 0001000000000111\) we see that the sampled
+characters \(\BWT (S_1) [1, 5, 6, 9, 12]\) that are in $C$, are $C$'s 1st,
+4th, 5th, 8th and 11th characters. From \(B_2 = 010000000001010\) we see that
+the 1st, 4th, 5th, 8th and 11th characters in $C$ in \(\BWT (S_2)\) are
+\(\BWT (S_2) [1, 5, 6, 9, 13]\), which are mapped to their positions by the
+BWT from \(S_2 [15, 12, 1, 3, 14]\).
 
 The relative order \(5, 3, 1, 2, 4\) of the positions \(15, 12, 1, 3, 14\) in
 $S_2$ of these characters, is {\em almost} the same as the relative order
-\(5, 4, 1, 2. 3\) of the positions \(16, 13, 1, 7, 10\) in $S_1$ of the
-sampled characters in \(\BWT (S_1)\) that are in $C$, which seems promising.
-What if we choose $C$ and its occurrences in \(\BWT (S_1)\) and \(\BWT
-(S_2)\) such that the relative order in $S_1$ of all \(\BWT (S_1)\)'s
-characters that are in $C$, is the same as the relative order in $S_2$ of all
-\(\BWT (S_2)\)'s characters that are in $C$?
+\(5, 4, 1, 2, 3\) of the positions \(16, 13, 1, 7, 10\) in $S_1$ of the
+sampled characters in \(\BWT (S_1)\) that are in $C$.
 
-For example, we can choose instead
+We can get rid of the ``almost'' if instead of $C$ we consider a subsequence
+$G'$ derived from a BWT-invariant sequence $G$. For example, we can choose
 \begin{align*}
-C' & = \mathsf{TCTCGTAAAGG}\\
+G' & = \mathsf{TCTCGTAAAGG}\\
 B_1' & = 0001000001010101 & B_2' & = 010000010001010\\
 D_1' & = \mathsf{GAGTC} & D_2' & = \mathsf{GACC}
 \end{align*}
-even though $C'$ is not then an LCS of \(\BWT (S_1)\) and \(\BWT (S_2)\) and,
-thus, our data structures for supporting \rank\ in \(\BWT (S_2)\) are
-slightly larger.  With these choices, the characters in \(\BWT (S_1)\) and
-\(\BWT (S_2)\) that are in $C'$, are mapped to their positions by the BWT
-from
+Clearly $G'$ is not an LCS of \(\BWT (S_1)\) and \(\BWT (S_2)\) and, thus,
+our data structures for supporting \rank\ in \(\BWT (S_2)\) are slightly
+larger. However, now the characters in \(\BWT (S_1)\) and \(\BWT (S_2)\) that
+are in $G'$, are mapped to their positions by the BWT from
 $$
 S_1 [16, 2, 6, 13, 1, 12, 3, 7, 14, 15, 11],\qquad
 S_2 [15, 2, 5, 12, 1, 11, 3, 6, 13, 14, 10]
 $$
 and the relative order \(11, 2, 4, 8, 1, 7, 3, 5, 9, 10, 6\) of the indices
-in those two lists is the same, as desired.
-
-Suppose we store yet another pair of bitvectors
+in those two lists is {\em exactly} the same. Now suppose we store yet
+another pair of bitvectors
 $$
 M_1 = 0001100111000000,\qquad
 M_2 = 000100111000000
 $$
 with 1s marking the positions in $S_1$ and $S_2$ of characters that are not
-mapped into $C'$ in \(\BWT (S_1)\) and \(\BWT (S_2)\).  We claim that if we
-can support fast \rank\ queries on $B_2'$, $R$ and $M_1$, fast access to $A$
-and fast $\select_0$ queries on $B_1'$ and $M_2$, then we can support fast
-access to a (possibly irregular) SA sample for $S_2$ with as many
-sampled characters as there are in $C'$ in \(\BWT (S_1)\).  More
-specifically, if \(\BWT (S_2) [i]\) is in $C'$ and
-\(R [B_1'.\select_0 (B_2'.\rank_0 (i))] = 1\)
---- meaning the corresponding character in $C'$ in \(\BWT (S_1)\) is sampled --- then \(\BWT (S_2) [i]\) is mapped to its position by the BWT from
+mapped into $G'$ in \(\BWT (S_1)\) and \(\BWT (S_2)\) (that is, the
+characters that are not in the BWT-invariant subsequence $G$). We claim that
+if we can support fast \rank\ queries on $B_2'$, $R$ and $M_1$, fast access
+to $A$ and fast $\select_0$ queries on $B_1'$ and $M_2$, then we can support
+fast access to a (possibly irregular) SA sample for $S_2$ with as many
+sampled characters as there are in $G'$ in \(\BWT (S_1)\).  More
+specifically, if \(\BWT (S_2) [i]\) is in $G'$ and \(R [B_1'.\select_0
+(B_2'.\rank_0 (i))] = 1\)
+--- meaning the corresponding character in $G'$ in \(\BWT (S_1)\) is sampled --- then \(\BWT (S_2) [i]\) is mapped to its position by the BWT from
 \[S_2 \left[ \rule{0ex}{4ex}
     M_2.\select_0 \left( \rule{0ex}{3.5ex}
       M_1.\rank_0 \left( \rule{0ex}{3ex}
@@ -754,15 +773,79 @@ We leave a detailed explanation to the full version of this paper.  We note,
 however, that this approach works for any sample rate $r$, and even if the SA
 sample for $S_1$ is irregular itself.
 
-In our example, since \(\BWT (S_2) [10]\) is in $C'$, \(B_1'.\select_0
+In our example, since \(\BWT (S_2) [10]\) is in $G'$, \(B_1'.\select_0
 (B_2'.\rank_0 (10)) = 9\) and \(R [9] = 1\), we know \(\BWT (S_2) [10]\) is
-mapped to its position by the BWT from position
-\(M_2.\select_0 \left(
+mapped to its position by the BWT from position \(M_2.\select_0 \left(
     M_1.\rank_0 \left( \rule{0ex}{2ex}
       A [R.\rank_1 (9)]
     \right)
   \right)
-= 6\)
-in \(S_2\).
+= 6\) in \(S_2\).
+
+
+
+
+
+
+
+\ignore{%% slightly shorter version
+(see beginning of Section~\ref{sec:djamal&giovanni} for the definition of $R$
+and $A$). Consider a subsequence $G'$ derived from a BWT-invariant sequence
+$G$. For example, we can choose
+\begin{align*}
+G' & = \mathsf{TCTCGTAAAGG}\\
+B_1' & = 0001000001010101 & B_2' & = 010000010001010\\
+D_1' & = \mathsf{GAGTC} & D_2' & = \mathsf{GACC}
+\end{align*}
+The characters in \(\BWT (S_1)\) and \(\BWT (S_2)\) that are in $G'$, are
+mapped to their positions by the BWT from
+$$
+S_1 [16, 2, 6, 13, 1, 12, 3, 7, 14, 15, 11],\qquad
+S_2 [15, 2, 5, 12, 1, 11, 3, 6, 13, 14, 10]
+$$
+and the relative order \(11, 2, 4, 8, 1, 7, 3, 5, 9, 10, 6\) of the indices
+in those two lists is the same. Hence, suppose we store yet another pair of
+bitvectors
+$$
+M_1 = 0001100111000000,\qquad
+M_2 = 000100111000000
+$$
+with 1s marking the positions in $S_1$ and $S_2$ of characters that are not
+mapped into $G'$ in \(\BWT (S_1)\) and \(\BWT (S_2)\).  We claim that if we
+can support fast \rank\ queries on $B_2'$, $R$ and $M_1$, fast access to $A$
+and fast $\select_0$ queries on $B_1'$ and $M_2$, then we can support fast
+access to a (possibly irregular) SA sample for $S_2$ with as many sampled
+characters as there are in $G'$ in \(\BWT (S_1)\).  More specifically, if
+\(\BWT (S_2) [i]\) is in $G'$ and \(R [B_1'.\select_0 (B_2'.\rank_0 (i))] =
+1\)
+--- meaning the corresponding character in $G'$ in \(\BWT (S_1)\) is sampled --- then \(\BWT (S_2) [i]\) is mapped to its position by the BWT from
+\[S_2 \left[ \rule{0ex}{4ex}
+    M_2.\select_0 \left( \rule{0ex}{3.5ex}
+      M_1.\rank_0 \left( \rule{0ex}{3ex}
+        A \left[ \rule{0ex}{2.5ex}
+          R.\rank_1 \left( \rule{0ex}{2ex}
+            B_1'.\select_0 \left(
+              B_2'.\rank_0 (i)
+            \right)
+          \right)
+        \right]
+      \right)
+    \right)
+  \right]\,.\]
+We leave a detailed explanation to the full version of this paper.  We note,
+however, that this approach works for any sample rate $r$, and even if the SA
+sample for $S_1$ is irregular itself.
+
+In our example, since \(\BWT (S_2) [10]\) is in $G'$, \(B_1'.\select_0
+(B_2'.\rank_0 (10)) = 9\) and \(R [9] = 1\), we know \(\BWT (S_2) [10]\) is
+mapped to its position by the BWT from position \(M_2.\select_0 \left(
+    M_1.\rank_0 \left( \rule{0ex}{2ex}
+      A [R.\rank_1 (9)]
+    \right)
+  \right)
+= 6\) in \(S_2\).}
+
+
+
 
 \end{document}
