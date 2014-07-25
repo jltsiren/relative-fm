@@ -11,7 +11,7 @@ RUN_FLAGS=-DREPORT_RUNS
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 
 # Sparse bitvectors are slower, but they can sometimes be smaller.
-VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
+#VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
 
 # RRR bitvectors make the WT smaller and slower.
 #WT_FLAGS=-DUSE_RRR_WT
@@ -25,7 +25,7 @@ SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
 LIBS=-L$(LIB_DIR) $(RFMOBJS) -lsdsl -ldivsufsort -ldivsufsort64
-PROGRAMS=align_bwts build_bwt query_test
+PROGRAMS=align_bwts build_bwt query_test bwt_benchmark
 EXTRA=lcs
 
 all: $(PROGRAMS)
@@ -40,6 +40,9 @@ build_bwt:build_bwt.o $(RFMOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS)
 
 query_test:query_test.o $(RFMOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS)
+
+bwt_benchmark:bwt_benchmark.o $(RFMOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS)
 
 lcs:lcs.cpp

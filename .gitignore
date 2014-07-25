@@ -3,6 +3,7 @@ align_bwts
 build_bwt
 lcs
 query_test
+bwt_benchmark
 *.aux
 *.bak
 *.bbl
