@@ -1,7 +1,6 @@
 #include <fstream>
 
 #include <sdsl/construct.hpp>
-#include <sdsl/csa_wt.hpp>
 
 #include "utils.h"
 
@@ -16,17 +15,25 @@ main(int argc, char** argv)
     return 1;
   }
 
-  int_vector<8> text;
   std::cout << "File: " << argv[1] << std::endl;
-  load_vector_from_file(text, argv[1], 1);
+  uint64_t file_size = sdsl::util::file_size(argv[1]); 
+  std::cout << "File size: " << file_size << std::endl;
+  int_vector<8> text(file_size + 1, 0); // append 0 byte
+  uint64_t n = text.size();
+  std::ifstream in(argv[1], std::ios_base::binary);
+  in.read((char*)text.data(), file_size); 
   std::cout << "Text size: " << text.size() << std::endl;
 
+  // construct SA & BWT
   double start = readTimer();
-  csa_wt<bwt_type, 4096, 4096> csa;
-  construct_im(csa, text);
+  int_vector<64> sa(n);
+  divsufsort64((const unsigned char*)text.data(), (int64_t*)sa.data(), n);
+  uint8_t* bwt = (uint8_t*)sa.data(); // override SA with BWT values
+  uint64_t to_add[2] = {(uint64_t)-1,n-1};
+  for (uint64_t i=0; i < n; ++i) { bwt[i] = text[sa[i] + to_add[sa[i] == 0]]; }
   double seconds = readTimer() - start;
 
-  std::cout << "Index built in " << seconds << " seconds" << std::endl;
+  std::cout << "BWT built in " << seconds << " seconds" << std::endl;
   double memory = inMegabytes(memoryUsage());
   std::cout << "Memory usage: " << memory << " MB" << std::endl;
 
