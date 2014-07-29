@@ -1,0 +1,90 @@
+General Information
+===================
+
+This is an implementation of the Relative FM-index [1]. So far only the basic counting structure has been implemented.
+
+Copyright 2014, Jouni Siren and Simon Gog, unless otherwise noted. See LICENSE for further information.
+
+
+Compiling
+---------
+
+The implementation uses SDSL [2], which can be downloaded from https://github.com/simongog/sdsl-lite . It should compile with g++ in a Linux environment, and with clang++ in OS X. Set SDSL_DIR in the makefile to point to SDSL before compiling.
+
+By default, the implementation uses plain bitvectors for the wavelet trees and entropy-compressed bitvectors for marking the LCS. These can be changed to entropy-compressed and sparse bitvectors by uncommenting WT_FLAGS and VECTOR_FLAGS in the makefile, respectively. Other compiling options are documented in the makefile.
+
+
+Index Construction
+------------------
+
+The naming conventions for files are:
+
+  base_name - input
+  base_name.bwt - regular FM-index
+  base_name.rfm - relative FM-index
+  *.sdsl - temporary files that can be deleted after program execution
+
+To build regular FM-indexes for one or more input sequences, use
+
+  build_bwt seq1 [seq2 ...]
+
+The memory requirements are 9-10 times the size of the longest input sequence. Several temporary files are written during the construction, but they should be deleted automatically after a successful execution.
+
+To compress the regular FM-indexes of sequences seq2 ... relative to the FM-index of sequence seq1, use
+
+  align_bwts seq1 seq2 [seq3 ...]
+
+This is significantly faster and uses much less memory than building the original FM-indexes.
+
+
+Other Programs
+--------------
+
+To test the basic counting queries, use
+
+  query_test ref seq patterns
+
+This loads the regular FM-indexes for ref and seq, as well as the relative FM-index of seq relative to ref, and queries both of the indexes for ref. The pattern file should contain one pattern per line. The program outputs some statistics and the time required to execute the queries.
+
+For benchmarking the time and space required for BWT construction, use
+
+  bwt_benchmark input
+
+This requires about 9n bytes of memory for an input of length n.
+
+
+Interface
+---------
+
+Regular FM-indexes (SimpleFM) and relative FM-indexes support the same interface. Currently only the basic counting functionality has been implemented.
+
+  SimpleFM(const std::string& base_name)
+  SimpleFM(std::ifstream& input)
+  RelativeFM(const SimpleFM& ref, const std::string& base_name)
+  RelativeFM(const SimpleFM& ref, std::ifstream& input)
+  These load a prebuilt index from a file (base_name.bwt or base_name.rfm) or from the given input stream. The first parameter for the RelativeFM constructors is a regular FM-index for the reference sequence.
+
+  RelativeFM(const SimpleFM& ref, const SimpleFM& seq, bool print = false)
+  This compresses the regular FM-index given as the second parameter relative to the FM-index given as the first parameter. Setting print = true will print some information during the construction.
+
+  uint64_t reportSize(bool print = false) const
+  This returns the size of the structure in bytes. Setting print = true will output some further information, depending on the flags set in the makefile.
+
+  void writeTo(const std::string& base_name) const
+  void writeTo(std::ofstream& output) const
+  These will write the structure to a corresponding file (base_name.bwt or base_name.rfm) or to the given output stream.
+
+  range_type find(Iter begin, Iter end) const
+  This returns the closed lexicographic range of suffixes starting with the pattern. The pattern is given as a pair of STL-style InputIterators representing the semiopen range [begin, end).
+
+The functions of the query interface are const and should hence be thread-safe.
+
+
+References
+==========
+
+[1] Djamal Belazzougui, Travis Gagie, Simon Gog, Giovanni Manzini, and Jouni Sirén: Relative FM-indexes.
+Accepted to SPIRE 2014.
+
+[2] Simon Gog, Timo Beller, Alistair Moffat, and Matthias Petri: From Theory to Practice: Plug and Play with Succinct Data Structures.
+Proc. SEA 2014, Springer LNCS 8504, pp. 326-337, Copenhagen, Denmark, June 29 - July 1, 2014.

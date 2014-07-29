@@ -5,7 +5,8 @@ SDSL_DIR=../sdsl-lite
 #RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
 # Compute run and gap measures for the bitvectors in RelativeFM::reportSize().
-RUN_FLAGS=-DREPORT_RUNS
+# This makes reportSize() significantly slower.
+#RUN_FLAGS=-DREPORT_RUNS
 
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
@@ -50,7 +51,7 @@ lcs:lcs.cpp
 
 package:
 	mkdir relative-fm
-	cp $(SOURCES) $(HEADERS) Makefile targz relative-fm.tex relative-fm
+	cp $(SOURCES) $(HEADERS) Makefile targz relative-fm.tex README LICENSE relative-fm
 	./targz relative-fm
 	rm relative-fm/*
 	rmdir relative-fm
