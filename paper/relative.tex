@@ -22,9 +22,9 @@
 
 \title{Relative FM-indexes}
 
-\author{Djamal Bellazzougui\inst{1,2} \and Travis Gagie\inst{1,2}\fnmsep\thanks{Funded by Academy of Finland grant 268324.} \and Simon Gog\inst{3} \and\\
+\author{Djamal Bellazzougui\inst{1,2}\fnmsep\thanks{Partially supported by Academy of Finland under grant 250345 (CoECGR).} \and Travis Gagie\inst{1,2}\fnmsep\thanks{Funded by Academy of Finland grant 268324.} \and Simon Gog\inst{3}\fnmsep\thanks{This work was carried out while the third author was employed at the University of Melbourne, supported by ARC Grant DP110101743.} \and\\
 Giovanni Manzini\inst{4} \and Jouni Sir\'en\inst{5}\fnmsep\thanks{Funded by the Jenny and Antti Wihuri Foundation, Finland, and Fondecyt Grant 1-140796, Chile.}}
-\institute{University of Helsinki \and Helsinki Institute for Information Technology \and University of Melbourne \and
+\institute{University of Helsinki \and Helsinki Institute for Information Technology \and Karlsruhe Institute of Technology \and
 University of Eastern Piedmont \and University of Chile}
 
 \maketitle
@@ -399,32 +399,47 @@ NA12878   &              &  3036M & 2992M &              &   1.21M & 5.67M \\
 \end{tabular}
 \end{table}
 
+
 \begin{table}[t]
 \centering
 \caption{Experiments with human genomes. Dataset, bitvector used in the wavelet trees (WT) and for the LCS; time and space requirements for building the relative FM-index; time required for counting queries and index size for a regular FM-index and a relative FM-index. The query times are averages over five runs.}\label{table:experiments}
-\begin{tabular}{cccccccccccc}
+\begin{tabular}{l@{\hspace{2ex}}l@{\hspace{2ex}}l@{\hspace{2ex}}crcr@{\hspace{4ex}}crcr@{\hspace{4ex}}crcr}
 \hline
 \noalign{\smallskip}
- & & & \phantom{0} & \multicolumn{2}{c}{Construction} & \phantom{0} & \multicolumn{2}{c}{Regular}
- & \phantom{0} & \multicolumn{2}{c}{Relative} \\
-Dataset  & WT    & LCS    & &    Time &    Space & &      Time &     Size & &       Time & Size \\
+ & & & \phantom{0} & \multicolumn{3}{c}{Construction} & \phantom{0} & \multicolumn{3}{c}{Regular}
+ & \phantom{0} & \multicolumn{3}{c}{Relative} \\
+Dataset  & WT    & LCS    & & 
+\multicolumn{1}{c}{Time}&\phantom{0}&
+\multicolumn{1}{c}{Space}& &
+\multicolumn{1}{c}{Time}& \phantom{0}&
+\multicolumn{1}{c}{Size}& &
+\multicolumn{1}{c}{Time}& \phantom{0}&
+\multicolumn{1}{c}{Size} \\
+ &   &  & &
+\multicolumn{1}{c}{[s]} &&
+\multicolumn{1}{c}{[MB]} &
+&
+\multicolumn{1}{c}{[s]} &&
+\multicolumn{1}{c}{[MB]} &
+&
+\multicolumn{1}{c}{[s]} &&
+\multicolumn{1}{c}{[MB]} \\
 \noalign{\smallskip}
 \hline
 \noalign{\smallskip}
-YanHuang & Plain & RRR    & &  708\:s & 9124\:MB & &  56.45\:s & 1090\:MB & &  621.47\:s & 288\:MB \\
-YanHuang & Plain & Sparse & &  711\:s & 9124\:MB & &  56.45\:s & 1090\:MB & & 1162.47\:s & 290\:MB \\
-YanHuang & RRR   & RRR    & & 5898\:s & 7823\:MB & & 328.86\:s &  628\:MB & & 1637.44\:s & 256\:MB \\
-YanHuang & RRR   & Sparse & & 5882\:s & 7823\:MB & & 328.86\:s &  628\:MB & & 1994.89\:s & 257\:MB \\
+YanHuang & Plain & RRR    & &  708 && 9124 & &  56.45 && 1090 & &  621.47 && 288 \\
+YanHuang & Plain & Sparse & &  711 && 9124 & &  56.45 && 1090 & & 1162.47 && 290 \\
+YanHuang & RRR   & RRR    & & 5898 && 7823 & & 328.86 &&  628 & & 1637.44 && 256 \\
+YanHuang & RRR   & Sparse & & 5882 && 7823 & & 328.86 &&  628 & & 1994.89 && 257 \\
 \noalign{\smallskip}
-NA12878  & Plain & RRR    & &  589\:s & 9124\:MB & &  57.31\:s & 1090\:MB & &  619.81\:s & 218\:MB \\
-NA12878  & Plain & Sparse & &  575\:s & 9124\:MB & &  57.31\:s & 1090\:MB & & 1058.75\:s & 199\:MB \\
-NA12878  & RRR   & RRR    & & 5454\:s & 7823\:MB & & 325.49\:s &  636\:MB & & 1614.56\:s & 192\:MB \\
-NA12878  & RRR   & Sparse & & 5412\:s & 7823\:MB & & 325.49\:s &  636\:MB & & 1921.92\:s & 173\:MB \\
+NA12878  & Plain & RRR    & &  589 && 9124 & &  57.31 && 1090 & &  619.81 && 218 \\
+NA12878  & Plain & Sparse & &  575 && 9124 & &  57.31 && 1090 & & 1058.75 && 199 \\
+NA12878  & RRR   & RRR    & & 5454 && 7823 & & 325.49 &&  636 & & 1614.56 && 192 \\
+NA12878  & RRR   & Sparse & & 5412 && 7823 & & 325.49 &&  636 & & 1921.92 && 173 \\
 \noalign{\smallskip}
 \hline
 \end{tabular}
 \end{table}
-
 
 The fastest variant of the relative FM-index uses plain bitvectors in the
 wavelet trees and RRR bitvectors for the LCS. It is 3.8--5.0 times smaller
@@ -444,13 +459,15 @@ parts of the bitvector~\cite{Kaerkkaeinen2014} could be one option, but
 the existing implementation does not work with vectors longer than $2^{31}$
 bits. It should be noted that the size difference between NA12878 and the reference is mostly due to the inclusion of chromosome Y (59 million base pairs) in the reference. Therefore we can expect the relative FM-index to work significantly better with male genomes than female genomes.
 
-
 Building a relative FM-index out of regular FM-indexes for two human genomes
 takes 10--12 minutes. Using RRR bitvectors for the wavelet trees increases
 this to 90--98 minutes, as extracting substrings from the wavelet trees
 becomes the bottleneck. Decompressing the regular FM-index of $S_{2}$ from
 the regular index of $S_{1}$ and the relative index of $S_{2}$ should be even
-faster. The space usage of the current construction algorithm has not been
+faster. As a comparison, building BWT for a human genome takes 19--20
+minutes and 25--26 gigabytes of memory using libdivsufsort
+2.0.1\footnote{\url{https://code.google.com/p/libdivsufsort/}}, depending on
+the sequence. The space usage of relative FM-index construction has not been
 optimized, and it can probably be improved significantly.
 
 

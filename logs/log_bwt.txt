@@ -1,0 +1,25 @@
+File: human
+File size: 3095693981
+Text size: 3095693982
+BWT built in 1198.28 seconds
+Memory usage: 26572.4 MB
+File: yanhuang
+File size: 3001661309
+Text size: 3001661310
+BWT built in 1150.38 seconds
+Memory usage: 25765.4 MB
+File: venter
+File size: 2809547336
+Text size: 2809547337
+BWT built in 1151.45 seconds
+Memory usage: 24116.3 MB
+File: maternal
+File size: 3036191207
+Text size: 3036191208
+BWT built in 1145.23 seconds
+Memory usage: 26061.6 MB
+File: paternal
+File size: 3036185259
+Text size: 3036185260
+BWT built in 1144.28 seconds
+Memory usage: 26061.6 MB
