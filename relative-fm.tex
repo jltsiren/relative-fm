@@ -1,6 +1,6 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage{fullpage}
-\parindent = 0ex
+%\parindent = 0ex
 
 \newcommand{\Oh}[1]
   {\ensuremath{\mathcal{O}\!\left( {#1} \right)}}
@@ -19,7 +19,7 @@
 \begin{document}
 
 \title{Relative FM-index}
-\author{}
+\author{Jouni Sir\'en}
 \maketitle
 
 \section*{Computing $\mrank_{c}(\BWT(S'), i)$}
@@ -42,6 +42,35 @@ Let $j = \mrank_{1}(B_{B}', i)$. Then $\mrank_{c}(\BWT(S'), i) = \mrank_{c}(\LCS
 %\mrank_{1}(B_{LF}, LF_{S}(k)) - \mrank_{1}(B_{LF}, C_{S}[c]).
 %$$
 
+
+\section*{Direct construction}
+
+Assume that we have $\BWT(S)$, the inverse suffix array samples used for computing $\SA(S)^{-1}$, and an alignment of $S$ and $S'$. With these structures, we can build the relative FM-index for $S'$ directly. We start by building bitvectors $B_{A}$ and $B_{A}'$ that mark the non-gap characters of $S$ and $S'$ in the alignment, respectively. Then we scan the alignment from right to left, starting from the common endmarker.
+
+In the following, $p$ denotes a position in the alignment. Positions $i$ and $i'$ are the corresponding positions in $S$ and $S'$, which can be determined by $\mrank$ operations on bitvectors $B_{A}$ and $B_{A}'$. We use shorthands $c = S[i]$ and $c' = S'[i']$ for the current characters. Values $j$ and $j'$ are the lexicographic ranks of the current suffixes of $S$ and $S'$. Arrays $M$ and $M'$ are used for building the relative FM-index. For each position $p$, we do the following.
+
+\begin{enumerate}
+
+\item We are in a common segment.
+\begin{enumerate}
+\item If $c = c'$, we do nothing.
+\item Otherwise we determine $j = j' = \SA(S)^{-1}[i + 1]$ and continue to the divergent case.
+\end{enumerate}
+
+\item We are in a divergent segment. We update $j$ and $j'$ by backward searching: $j \leftarrow C[c] + \mrank_{c}(\BWT(S), j)$ and $j' \leftarrow C[c'] + \mrank_{c'}(\BWT(S), j')$, unless the character is a gap.
+\begin{enumerate}
+\item If $c = c'$ and $j = j'$, we do nothing, as we have returned to a common segment.
+\item If $c'$ is a gap, we add $(j, S[i-1])$ to $M$.\label{case:deletion}
+\item If $c$ is a gap, we add $(i', c', j', S'[i'-1])$ to $M'$. If $M'$ does not contain position $i'+1$, we add an endmarker corresponding to that position as well, but use a null value as the fourth component.\footnote{See my PhD thesis, section 5.3, for details on handling the endmarkers.}\label{case:insertion}
+\item Otherwise we do both \ref{case:deletion} and \ref{case:insertion}.
+\end{enumerate}
+
+\end{enumerate}
+
+Sequence $\overline{\LCS_{B}}$ and bitvector $B_{B}$ can be obtained by sorting $M$ by component $j$. To obtain $\overline{\LCS_{B}'}$ and $B_{B}'$, we start by sorting $M'$ by component $i'$. Then we build $\SA(M')$ by using the sums $c'+j'$ as character values. Sequence $\overline{\LCS_{B}'}$ is obtained by scanning $M'$ in suffix array order and concatenating components $S'[i'-1]$, ignoring the guards with null values. Bitvector $B_{B}'$ can be obtained from $B_{B}$ and components $j'$, ignoring the guards again.
+
+\iffalse
+
 \section*{Reusing suffix array samples}
 
 Let $\LCS_{S} = \LCS(S, S')$, and let bitvector $B$ mark the sampled positions in $\SA(S)$. We need the following additional structures structures:
@@ -58,5 +87,6 @@ Assume that $B'[i] = 1$. We want to retrieve reused sample $\pi(\mrank_{1}(B', i
 
 Assume now that we want to find the first inverse sample after text position $b'$ in $S'$ (e.g.~to extract substring $S'[a',b']$). The corresponding position in $S$ is $b = \mselect_{1}(B_{S}, \mrank_{1}(B_{S}', b') + 1 - B_{S}'[b'])$, and the first sample after that is $\mselect_{1}(B_{T}, \mrank_{1}(B_{T}, \lceil b/d \rceil) + 1 - B_{T}[\lceil b/d \rceil])$, where $d$ is the sample density. Let $i$ be the same sample in suffix array order, and let $j$ be the value of that sample. We convert it to suffix array position $\mselect_{1}(B', \pi^{-1}(\mrank_{1}(B_{R}, i)))$ and text position $\mselect_{1}(B_{S}', \mrank_{1}(B_{S}, j))$.
 
+\fi
 
 \end{document}
