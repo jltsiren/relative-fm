@@ -53,15 +53,15 @@ In the following, $p$ denotes a position in the alignment. Positions $i$ and $i'
 
 \item We are in a common segment.
 \begin{enumerate}
-\item If $c = c'$, we do nothing.
+\item If neither sequence has a gap and $c = c'$, we do nothing.
 \item Otherwise we determine $j = j' = \SA(S)^{-1}[i + 1]$ and continue to the divergent case.
 \end{enumerate}
 
 \item We are in a divergent segment. We update $j$ and $j'$ by backward searching: $j \leftarrow C[c] + \mrank_{c}(\BWT(S), j)$ and $j' \leftarrow C[c'] + \mrank_{c'}(\BWT(S), j')$, unless the character is a gap.
 \begin{enumerate}
-\item If $c = c'$ and $j = j'$, we do nothing, as we have returned to a common segment.
-\item If $c'$ is a gap, we add $(j, S[i-1])$ to $M$.\label{case:deletion}
-\item If $c$ is a gap, we add $(i', c', j', S'[i'-1])$ to $M'$. If $M'$ does not contain position $i'+1$, we add an endmarker corresponding to that position as well, but use a null value as the fourth component.\footnote{See my PhD thesis, section 5.3, for details on handling the endmarkers.}\label{case:insertion}
+\item If neither sequence has a gap, $c = c'$, and $j = j'$, we do nothing, as we have returned to a common segment.
+\item If $S'$ has a gap, we add $(j, S[i-1])$ to $M$.\label{case:deletion}
+\item If $S$ has a gap, we add $(i', c', j', S'[i'-1])$ to $M'$. If $M'$ does not contain position $i'+1$, we add an endmarker corresponding to that position as well, but use a null value as the fourth component.\footnote{See my PhD thesis, section 5.3, for details on handling the endmarkers.}\label{case:insertion}
 \item Otherwise we do both \ref{case:deletion} and \ref{case:insertion}.
 \end{enumerate}
 
