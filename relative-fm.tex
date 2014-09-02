@@ -67,7 +67,7 @@ In the following, $p$ denotes a position in the alignment. Positions $i$ and $i'
 
 \end{enumerate}
 
-Sequence $\overline{\LCS_{B}}$ and bitvector $B_{B}$ can be obtained by sorting $M$ by component $j$. To obtain $\overline{\LCS_{B}'}$ and $B_{B}'$, we start by sorting $M'$ by component $i'$. Then we build $\SA(M')$ by using the sums $c'+j'$ as character values. Sequence $\overline{\LCS_{B}'}$ is obtained by scanning $M'$ in suffix array order and concatenating components $S'[i'-1]$, ignoring the guards with null values. Bitvector $B_{B}'$ can be obtained from $B_{B}$ and components $j'$, ignoring the guards again.
+Sequence $\overline{\LCS_{B}}$ and bitvector $B_{B}$ can be obtained by sorting $M$ by component $j$. To obtain $\overline{\LCS_{B}'}$ and $B_{B}'$, we start by sorting $M'$ by component $i'$. Then we build $\SA(M')$ by using the sums $c'+j'$ as character values. Sequence $\overline{\LCS_{B}'}$ is obtained by scanning $M'$ in suffix array order and concatenating components $S'[i'-1]$, ignoring the endmarkers with null values. Bitvector $B_{B}'$ can be obtained from $B_{B}$ and components $j'$, ignoring the endmarkers again.
 
 \iffalse
 
