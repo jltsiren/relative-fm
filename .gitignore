@@ -4,6 +4,7 @@ build_bwt
 lcs
 query_test
 bwt_benchmark
+test_rlz
 *.aux
 *.bak
 *.bbl

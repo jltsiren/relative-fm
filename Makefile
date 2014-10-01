@@ -21,12 +21,12 @@ OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(WT_F
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
-RFMOBJS=relative_fm.o utils.o
+RFMOBJS=relative_fm.o utils.o rlz_vector.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
 LIBS=-L$(LIB_DIR) $(RFMOBJS) -lsdsl -ldivsufsort -ldivsufsort64
-PROGRAMS=align_bwts build_bwt query_test bwt_benchmark
+PROGRAMS=align_bwts build_bwt query_test bwt_benchmark test_rlz
 EXTRA=lcs
 
 all: $(PROGRAMS)
@@ -44,6 +44,9 @@ query_test:query_test.o $(RFMOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS)
 
 bwt_benchmark:bwt_benchmark.o $(RFMOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS)
+
+test_rlz:test_rlz.o $(RFMOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS)
 
 lcs:lcs.cpp
