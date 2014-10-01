@@ -74,7 +74,10 @@ readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_
 
 //------------------------------------------------------------------------------
 
-void relativeLZ(const bit_vector& text, const bit_vector& reference, std::vector<range_type>& phrases)
+void relativeLZ(const bit_vector& text, const bit_vector& reference,
+  std::vector<uint64_t>& starts,
+  std::vector<uint64_t>& lengths,
+  bit_vector& mismatches)
 {
   // Handle the reference.
   uint64_t ones = util::cnt_one_bits(reference);
@@ -98,7 +101,8 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference, std::vector
 
   // Parse the text.
   uint64_t pos = 0;
-  phrases.clear();
+  starts.clear(); lengths.clear();
+  std::vector<bool> char_buffer;
   while(pos < text.size())
   {
     range_type range = (text[pos] ? range_type(zeros, reference.size() - 1) : range_type(0, zeros - 1));
@@ -113,7 +117,11 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference, std::vector
         else if(reference[sa[mid] + len] == text[pos + len]) { high = mid; }
         else { last_high = high = std::max(mid, (uint64_t)1) - 1; }
       }
-      if(sa[low] + len >= reference.size() || reference[sa[low] + len] != text[pos + len]) { break; }
+      if(sa[low] + len >= reference.size()) { break; }  // We use the last matched char as the mismatch.
+      if(reference[sa[low] + len] != text[pos + len])
+      {
+        len++; break; // We use the mismatch.
+      }
       range.first = low; high = last_high;
       while(low < high) // Upper bound for pattern text[pos, pos + len].
       {
@@ -123,9 +131,12 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference, std::vector
       }
       range.second = high; len++;
     }
-    phrases.push_back(range_type(sa[range.first], len));
+    starts.push_back(sa[range.first]); lengths.push_back(len);
     pos += len;
+    char_buffer.push_back(text[pos - 1]);
   }
+  mismatches.resize(char_buffer.size());
+  for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
 }
 
 //------------------------------------------------------------------------------

@@ -125,14 +125,14 @@ LF(const bwt_type& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
 
 
 /*
-  Find a LZ77 parsing of 'text' relative to 'reference', and write it into
-  'phrases' as pairs (starting point, length).
-
-  FIXME Implement the following: If the starting point is past
-  the length of the reference, subtract the length from it to get a character
-  value, which is then repeated 'length' times.
+  Find a LZ77 parsing of 'text' relative to 'reference'. The parsing is written into
+  the last three parameters; each phrase is reference[start, start + length - 2], followed
+  by mismatch.
 */
-void relativeLZ(const bit_vector& text, const bit_vector& reference, std::vector<range_type>& phrases);
+void relativeLZ(const bit_vector& text, const bit_vector& reference,
+  std::vector<uint64_t>& starts,
+  std::vector<uint64_t>& lengths,
+  bit_vector& mismatches);
 
 //------------------------------------------------------------------------------
 

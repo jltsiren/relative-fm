@@ -41,17 +41,37 @@ private:
   const bit_vector::rank_1_type&   ref_rank;
   const bit_vector::select_1_type& ref_select;
 
-  int_vector<0> phrases;
-
+  int_vector<0> phrases;  // Phrase starts encoded as (ref_pos - text_pos).
+  bit_vector phrase_rle;  // phrase_rle[i] is set, if phrase i is stored.
+  bit_vector::rank_1_type phrase_rank;
+  
   sd_vector<> lengths;
   sd_vector<>::rank_1_type length_rank;
   sd_vector<>::select_1_type length_select;
+
+  bit_vector mismatches;
 
   sd_vector<> ones;
   sd_vector<>::rank_1_type one_rank;
   sd_vector<>::select_1_type one_select;
 
   void buildRankSelect();
+
+  // Converts text positions into reference positions, assuming that they are
+  // within copied substrings.
+  inline uint64_t refPos(uint64_t phrase, uint64_t text_pos) const
+  {
+    uint64_t temp = this->phrases[this->phrase_rank(phrase + 1) - 1];
+    if(temp & 1) { return text_pos - (temp >> 1); }
+    return (temp >> 1) + text_pos;
+  }
+
+  // Encodes (val - ref) as unsigned integer.
+  inline static uint64_t relativeEncoding(uint64_t val, uint64_t ref)
+  {
+    if(val >= ref) { return (val - ref) << 1; }
+    return ((ref - val) << 1) | 1;
+  }
 
   // Counts the number of 1-bits in reference[ref_pos, ref_pos + phrase_length - 1].
   inline uint64_t oneBits(uint64_t ref_pos, uint64_t phrase_length) const

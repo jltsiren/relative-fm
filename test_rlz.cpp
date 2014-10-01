@@ -5,6 +5,7 @@
 
 const uint64_t SIZE = 128 * 1048576;
 const uint64_t QUERIES = 100000;
+const double   EXTENSION_PROB = 0.3;
 
 int
 main(int argc, char** argv)
@@ -17,27 +18,54 @@ main(int argc, char** argv)
     double prob = atof(argv[arg]);
     srand(0xDEADBEEF);
     bit_vector reference(SIZE);
-    bit_vector text(SIZE);
+    std::vector<bool> text_buffer;
     for(uint64_t i = 0; i < SIZE; i++)
     {
       reference[i] = rand() & 1;
-      if(rand() / (RAND_MAX + 1.0) < prob) { text[i] = !reference[i]; }
-      else { text[i] = reference[i]; }
-    }
-    uint64_t onebits = util::cnt_one_bits(text);
-    std::cout << "Generated sequences of length " << SIZE << " with mutation probability " << prob << "." << std::endl;
-
-    std::vector<range_type> phrases;
-    relativeLZ(text, reference, phrases);
-    std::cout << "Parsed the text as " << phrases.size() << " phrases." << std::endl;
-
-    uint64_t pos = 0, errors = 0;
-    for(auto phrase : phrases)
-    {
-      for(uint64_t i = phrase.first; i < phrase.first + phrase.second; i++, pos++)
+      if(rand() / (RAND_MAX + 1.0) < prob)
       {
-        if(text[pos] != reference[i]) { errors++; }
+        uint64_t choice = rand() % 10;
+        if(choice == 0) // Insertion.
+        {
+          do
+          {
+            text_buffer.push_back(rand() & 1);
+          }
+          while(rand() / (RAND_MAX + 1.0) < EXTENSION_PROB);
+          text_buffer.push_back(reference[i]);
+        }
+        else if(choice == 1)  // Deletion.
+        {
+          while(i < SIZE - 1 && rand() / (RAND_MAX + 1.0) < EXTENSION_PROB) { i++; }
+        }
+        else  // Mismatch
+        {
+          text_buffer.push_back(!reference[i]);
+        }
       }
+      else
+      {
+        text_buffer.push_back(reference[i]);
+      }
+    }
+    bit_vector text(text_buffer.size());
+    for(uint64_t i = 0; i < text.size(); i++) { text[i] = text_buffer[i]; }
+    uint64_t onebits = util::cnt_one_bits(text);
+    std::cout << "Reference length " << SIZE << ", text length " << text.size() << ", mutation probability " << prob << "." << std::endl;
+
+    std::vector<uint64_t> starts, lengths;
+    bit_vector mismatches;
+    relativeLZ(text, reference, starts, lengths, mismatches);
+    std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
+
+    uint64_t text_pos = 0, errors = 0;
+    for(uint64_t phrase = 0; phrase < starts.size(); phrase++)
+    {
+      for(uint64_t ref_pos = starts[phrase]; ref_pos < starts[phrase] + lengths[phrase] - 1; text_pos++, ref_pos++)
+      {
+        if(text[text_pos] != reference[ref_pos]) { errors++; }
+      }
+      if(text[text_pos] != mismatches[phrase]) { errors++; } text_pos++;
     }
     std::cout << "Decompressed the text with " << errors << " error(s)." << std::endl;
 
@@ -46,7 +74,7 @@ main(int argc, char** argv)
     bit_vector::rank_1_type text_rank; util::init_support(text_rank, &text);
     bit_vector::select_1_type text_select; util::init_support(text_select, &text);
     RLZVector relative(text, reference, ref_rank, ref_select);
-    std::cout << "Built the relative bitvector; " <<inBPC(relative.reportSize(), text.size()) << " vs. " <<
+    std::cout << "Built the relative bitvector: " <<inBPC(relative.reportSize(), text.size()) << " vs. " <<
       inBPC(size_in_bytes(text) + size_in_bytes(text_rank) + size_in_bytes(text_select), text.size()) << " bpc." << std::endl;
 
     errors = 0;
