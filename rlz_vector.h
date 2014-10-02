@@ -86,11 +86,6 @@ private:
     return this->ref_select(this->ref_rank(ref_pos) + i) - ref_pos;
   }
 
-  inline uint64_t bitAt(uint64_t ref_pos, uint64_t offset) const
-  {
-    return this->reference[ref_pos + offset];
-  }
-
   RLZVector();
   RLZVector(const RLZVector&);
   RLZVector& operator=(const RLZVector&);
