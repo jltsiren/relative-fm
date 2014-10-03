@@ -37,12 +37,12 @@ public:
   bool operator[](uint64_t i) const;
 
 private:
-  const bit_vector&                reference;
-  const bit_vector::rank_1_type&   ref_rank;
+  const bit_vector& reference;
+  const bit_vector::rank_1_type& ref_rank;
   const bit_vector::select_1_type& ref_select;
 
-  int_vector<0> phrases;  // Phrase starts encoded as (ref_pos - text_pos).
-  bit_vector phrase_rle;  // phrase_rle[i] is set, if phrase i is stored.
+  int_vector<0> phrases; // Phrase starts encoded as (ref_pos - text_pos).
+  bit_vector phrase_rle; // phrase_rle[i] is set, if phrase i is stored.
   bit_vector::rank_1_type phrase_rank;
   
   sd_vector<> lengths;

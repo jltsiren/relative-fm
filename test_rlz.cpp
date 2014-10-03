@@ -1,5 +1,7 @@
 #include <cstdlib>
 
+#include <sdsl/rrr_vector.hpp>
+
 #include "rlz_vector.h"
 
 
