@@ -142,7 +142,7 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference,
 //------------------------------------------------------------------------------
 
 const uint64_t SA_SAMPLE_RATE     = 128;
-const uint64_t DEFAULT_BLOCK_SIZE = 16 * 1048576;
+const uint64_t DEFAULT_BLOCK_SIZE = 64 * 1048576;
 
 inline uint64_t
 _LF1(bit_vector::rank_1_type& rank, uint64_t pos, uint64_t zeros)
@@ -167,6 +167,9 @@ _LF0(bit_vector::rank_1_type& rank, uint64_t pos, uint64_t endmarker)
 uint64_t
 lastBWTBlock(bit_vector& bwt, uint64_t offset)
 {
+#ifdef VERBOSE_OUTPUT
+  std::cout << "Offset: " << offset << std::endl;
+#endif
   if(offset + 1 >= bwt.size()) { return offset; }
 
   // Prepare the text.
@@ -208,6 +211,10 @@ lastBWTBlock(bit_vector& bwt, uint64_t offset)
 uint64_t
 prevBWTBlock(bit_vector& bwt, uint64_t offset, uint64_t block_size, uint64_t first_pos)
 {
+#ifdef VERBOSE_OUTPUT
+  std::cout << "Offset: " << offset << std::endl;
+#endif
+
   // Prepare the BWT.
   bit_vector::rank_1_type bwt_rank(&bwt);
   uint64_t bwt_start = offset + block_size, bwt_size = bwt.size() - offset - block_size;
@@ -269,15 +276,12 @@ prevBWTBlock(bit_vector& bwt, uint64_t offset, uint64_t block_size, uint64_t fir
   uint64_t inc_pos = 0, old_pos = 0;
   while(inc_pos < block_size && old_pos < bwt_size)
   {
-    if(old_pos <= ra[inc_pos])
+    while(old_pos <= ra[inc_pos])
     {
       bwt[offset + inc_pos + old_pos] = bwt[bwt_start + old_pos]; old_pos++;
     }
-    else
-    {
-      if(inc_pos == new_first_pos) { first_pos = offset + inc_pos + old_pos; }
-      bwt[offset + inc_pos + old_pos] = increment[inc_pos]; inc_pos++;
-    }
+    if(inc_pos == new_first_pos) { first_pos = offset + inc_pos + old_pos; }
+    bwt[offset + inc_pos + old_pos] = increment[inc_pos]; inc_pos++;
   }
   while(inc_pos < block_size)
   {
@@ -329,6 +333,9 @@ void
 sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t first_pos, uint64_t zeros,
   int_vector<0>& sa_samples, uint64_t sample_rate)
 {
+#ifdef VERBOSE_OUTPUT
+  std::cout << "Sampling SA... "; std::cout.flush();
+#endif
   if(bwt.size() <= 1 || sample_rate == 0) { return; }
 
   sa_samples.width(bitlength(bwt.size() - 1));
@@ -341,6 +348,9 @@ sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t first_pos,
     else             { bwt_pos = _LF0(bwt_rank, bwt_pos, first_pos); }
     if(bwt_pos % sample_rate == 1) { sa_samples[bwt_pos / sample_rate] = text_pos; }
   }
+#ifdef VERBOSE_OUTPUT
+  std::cout << "done!" << std::endl;
+#endif
 }
 
 void
