@@ -16,7 +16,7 @@ using namespace sdsl;
 typedef std::pair<uint64_t, uint64_t> range_type;
 
 template<class A, class B>
-std::ostream& operator<<(std::ostream& stream, const std::pair<A,B>& data)
+std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
 {
   return stream << "(" << data.first << ", " << data.second << ")";
 }
@@ -33,26 +33,24 @@ length(range_type range)
   return range.second + 1 - range.first;
 }
 
-inline uint
-bitlength(uint64_t i)
+inline uint64_t
+bitlength(uint64_t val)
 {
-  uint res = 0;
-  while(i > 0) { res++; i >>= 1; }
-  return res;
+  return bits::hi(val) + 1;
 }
 
 //------------------------------------------------------------------------------
 
 template<class A>
 void
-readInteger(std::ifstream& input, A& a)
+readInteger(std::ifstream& input, A a)
 {
   input.read((char*)&a, sizeof(A));
 }
 
 template<class A>
 void
-writeInteger(std::ofstream& output, A& a)
+writeInteger(std::ofstream& output, A a)
 {
   output.write((char*)&a, sizeof(A));
 }
@@ -123,16 +121,17 @@ LF(const bwt_type& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
 
 //------------------------------------------------------------------------------
 
-
 /*
   Find a LZ77 parsing of 'text' relative to 'reference'. The parsing is written into
   the last three parameters; each phrase is reference[start, start + length - 2], followed
   by mismatch.
 */
 void relativeLZ(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts,
-  std::vector<uint64_t>& lengths,
-  bit_vector& mismatches);
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
+
+// This version is several times slower but requires much less memory.
+void relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
 
 //------------------------------------------------------------------------------
 

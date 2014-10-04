@@ -5,7 +5,8 @@
 #include "rlz_vector.h"
 
 
-const uint64_t SIZE = 1024 * 1048576;
+const uint64_t SIZE = 6000 * (uint64_t)1048576;
+const uint64_t EXTRA_SIZE = 1024; // Some extra space to avoid problems in text generation.
 const uint64_t QUERIES = 100000;
 const uint64_t TIMING_QUERIES = 100000000;
 const uint64_t TOTAL_TIME_TO_NANOSECS = 10;
@@ -22,7 +23,8 @@ main(int argc, char** argv)
     double prob = atof(argv[arg]);
     srand(0xDEADBEEF);
     bit_vector reference(SIZE);
-    std::vector<bool> text_buffer;
+    bit_vector text(SIZE * (1.0 + 2 * prob) + EXTRA_SIZE);
+    uint64_t j = 0;
     for(uint64_t i = 0; i < SIZE; i++)
     {
       reference[i] = rand() & 1;
@@ -33,10 +35,10 @@ main(int argc, char** argv)
         {
           do
           {
-            text_buffer.push_back(rand() & 1);
+            text[j] = rand() & 1; j++;
           }
           while(rand() / (RAND_MAX + 1.0) < EXTENSION_PROB);
-          text_buffer.push_back(reference[i]);
+          text[j] = reference[i]; j++;
         }
         else if(choice == 1)  // Deletion.
         {
@@ -44,23 +46,26 @@ main(int argc, char** argv)
         }
         else  // Mismatch
         {
-          text_buffer.push_back(!reference[i]);
+          text[j] = !reference[i]; j++;
         }
       }
       else
       {
-        text_buffer.push_back(reference[i]);
+        text[j] = reference[i]; j++;
       }
     }
-    bit_vector text(text_buffer.size());
-    for(uint64_t i = 0; i < text.size(); i++) { text[i] = text_buffer[i]; }
+    text.resize(j);
     uint64_t onebits = util::cnt_one_bits(text), errors = 0;
     std::cout << "Reference length " << SIZE << ", text length " << text.size() << ", mutation probability " << prob << "." << std::endl;
 
-    /*std::vector<uint64_t> starts, lengths;
+    std::vector<uint64_t> starts, lengths;
     bit_vector mismatches;
-    relativeLZ(text, reference, starts, lengths, mismatches);
+    double start_time = readTimer();
+//    relativeLZ(text, reference, starts, lengths, mismatches);
+    relativeLZSuccinct(text, reference, starts, lengths, mismatches);
+    double seconds = readTimer() - start_time;
     std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
+    std::cout << "Parsing took " << seconds << " seconds, " << inMegabytes(memoryUsage()) << " MB." << std::endl;
 
     uint64_t text_pos = 0;
     for(uint64_t phrase = 0; phrase < starts.size(); phrase++)
@@ -71,9 +76,9 @@ main(int argc, char** argv)
       }
       if(text[text_pos] != mismatches[phrase]) { errors++; } text_pos++;
     }
-    std::cout << "Decompressed the text with " << errors << " error(s)." << std::endl;*/
+    std::cout << "Decompressed the text with " << errors << " error(s)." << std::endl;
 
-    bit_vector::rank_1_type ref_rank; util::init_support(ref_rank, &reference);
+    /*bit_vector::rank_1_type ref_rank; util::init_support(ref_rank, &reference);
     bit_vector::select_1_type ref_select; util::init_support(ref_select, &reference);
     bit_vector::rank_1_type text_rank; util::init_support(text_rank, &text);
     bit_vector::select_1_type text_select; util::init_support(text_select, &text);
@@ -133,7 +138,7 @@ main(int argc, char** argv)
       for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += relative[queries[i]]; }
       double seconds = readTimer() - start;
       std::cout << "access(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
-    }
+    }*/
 
     std::cout << std::endl;
   }

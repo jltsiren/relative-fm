@@ -12,7 +12,7 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
 
   std::vector<uint64_t> phrase_buffer;
   this->phrase_rle.resize(phrase_starts.size()); util::set_to_value(this->phrase_rle, 0);
-  bit_vector len_vec(text.size());
+  bit_vector len_vec(text.size());  // FIXME these take a lot of space
   bit_vector one_vec(util::cnt_one_bits(text));
 
   uint64_t bits = 0, onebits = 0, prev = ~(uint64_t)0, max_val = 0;
@@ -30,7 +30,7 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
     if(this->mismatches[phrase]) { onebits++; }
     one_vec[onebits - 1] = 1; // Last 1-bit in this phrase.
   }
-  this->phrases.width(bits::hi(max_val) + 1); this->phrases.resize(phrase_buffer.size());
+  this->phrases.width(bitlength(max_val)); this->phrases.resize(phrase_buffer.size());
   for(uint64_t i = 0; i < phrase_buffer.size(); i++) { this->phrases[i] = phrase_buffer[i]; }
   this->lengths = len_vec;
   this->ones = one_vec;
