@@ -1,11 +1,11 @@
 #include <cstdlib>
 
-#include <sdsl/rrr_vector.hpp>
-
+#include "rlz.h"
 #include "rlz_vector.h"
+#include "utils.h"
 
 
-const uint64_t SIZE = 6000 * (uint64_t)1048576;
+const uint64_t SIZE = 128 * (uint64_t)1048576;
 const uint64_t EXTRA_SIZE = 1024; // Some extra space to avoid problems in text generation.
 const uint64_t QUERIES = 100000;
 const uint64_t TIMING_QUERIES = 100000000;
@@ -78,7 +78,7 @@ main(int argc, char** argv)
     }
     std::cout << "Decompressed the text with " << errors << " error(s)." << std::endl;
 
-    /*bit_vector::rank_1_type ref_rank; util::init_support(ref_rank, &reference);
+    bit_vector::rank_1_type ref_rank; util::init_support(ref_rank, &reference);
     bit_vector::select_1_type ref_select; util::init_support(ref_select, &reference);
     bit_vector::rank_1_type text_rank; util::init_support(text_rank, &text);
     bit_vector::select_1_type text_select; util::init_support(text_select, &text);
@@ -138,7 +138,7 @@ main(int argc, char** argv)
       for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += relative[queries[i]]; }
       double seconds = readTimer() - start;
       std::cout << "access(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
-    }*/
+    }
 
     std::cout << std::endl;
   }

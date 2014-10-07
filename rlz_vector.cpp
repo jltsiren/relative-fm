@@ -1,4 +1,6 @@
+#include "rlz.h"
 #include "rlz_vector.h"
+#include "utils.h"
 
 //------------------------------------------------------------------------------
 
@@ -8,12 +10,10 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
   reference(_reference), ref_rank(_ref_rank), ref_select(_ref_select)
 {
   std::vector<uint64_t> phrase_starts, phrase_lengths;
-  relativeLZ(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
+  relativeLZSuccinct(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
 
   std::vector<uint64_t> phrase_buffer;
   this->phrase_rle.resize(phrase_starts.size()); util::set_to_value(this->phrase_rle, 0);
-  bit_vector len_vec(text.size());  // FIXME these take a lot of space
-  bit_vector one_vec(util::cnt_one_bits(text));
 
   uint64_t bits = 0, onebits = 0, prev = ~(uint64_t)0, max_val = 0;
   for(uint64_t phrase = 0; phrase < phrase_starts.size(); phrase++)
@@ -25,15 +25,16 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
       this->phrase_rle[phrase] = 1;
       max_val = std::max(max_val, temp);
     }
-    bits += phrase_lengths[phrase]; len_vec[bits - 1] = 1;  // Last bit in this phrase.
+    bits += phrase_lengths[phrase];
     onebits += this->oneBits(phrase_starts[phrase], phrase_lengths[phrase] - 1);
     if(this->mismatches[phrase]) { onebits++; }
-    one_vec[onebits - 1] = 1; // Last 1-bit in this phrase.
+    phrase_starts[phrase] = bits - 1;     // The last bit in this phrase.
+    phrase_lengths[phrase] = onebits - 1; // The last 1-bit in this phrase.
   }
   this->phrases.width(bitlength(max_val)); this->phrases.resize(phrase_buffer.size());
   for(uint64_t i = 0; i < phrase_buffer.size(); i++) { this->phrases[i] = phrase_buffer[i]; }
-  this->lengths = len_vec;
-  this->ones = one_vec;
+  this->lengths = sd_vector<>(phrase_starts.begin(), phrase_starts.end());
+  this->ones = sd_vector<>(phrase_lengths.begin(), phrase_lengths.end());
 
   this->buildRankSelect();
 }

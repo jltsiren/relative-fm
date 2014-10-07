@@ -8,8 +8,6 @@
 #include <sdsl/int_vector.hpp>
 #include <sdsl/sd_vector.hpp>
 
-#include "utils.h"
-
 //------------------------------------------------------------------------------
 
 class RLZVector

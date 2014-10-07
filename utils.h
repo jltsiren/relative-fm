@@ -121,18 +121,4 @@ LF(const bwt_type& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
 
 //------------------------------------------------------------------------------
 
-/*
-  Find a LZ77 parsing of 'text' relative to 'reference'. The parsing is written into
-  the last three parameters; each phrase is reference[start, start + length - 2], followed
-  by mismatch.
-*/
-void relativeLZ(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
-
-// This version is several times slower but requires much less memory.
-void relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
-
-//------------------------------------------------------------------------------
-
 #endif // _RELATIVE_FM_UTILS_H
