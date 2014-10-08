@@ -1,6 +1,115 @@
 #include "rlz.h"
 #include "rlz_vector.h"
-#include "utils.h"
+
+
+namespace sdsl
+{
+
+//------------------------------------------------------------------------------
+
+rlz_vector::rlz_vector()
+{
+}
+
+rlz_vector::rlz_vector(const rlz_vector& v)
+{
+  this->copy(v);
+}
+
+rlz_vector::rlz_vector(rlz_vector&& v)
+{
+  *this = std::move(v);
+}
+
+rlz_vector::rlz_vector(const bit_vector& v)
+{
+  this->m_size = v.size();
+  this->m_plain = v;
+  this->init_support();
+}
+
+rlz_vector::rlz_vector(bit_vector&& v)
+{
+  this->m_size = v.size();
+  this->m_plain = std::move(v);
+  this->init_support();
+}
+
+void
+rlz_vector::copy(const rlz_vector& v)
+{
+  this->m_size = v.m_size;
+  this->m_plain = v.m_plain;
+  this->m_plain_rank = v.m_plain_rank; this->m_plain_rank.set_vector(&(this->m_plain));
+  this->m_plain_select_1 = v.m_plain_select_1; this->m_plain_select_1.set_vector(&(this->m_plain));
+  this->m_plain_select_0 = v.m_plain_select_0; this->m_plain_select_0.set_vector(&(this->m_plain));
+}
+
+void
+rlz_vector::init_support()
+{
+  util::init_support(this->m_plain_rank, &(this->m_plain));
+  util::init_support(this->m_plain_select_1, &(this->m_plain));
+  util::init_support(this->m_plain_select_0, &(this->m_plain));
+}
+
+void
+rlz_vector::swap(rlz_vector& v)
+{
+  if(this != &v)
+  {
+    std::swap(this->m_size, v.m_size);
+    this->m_plain.swap(v.m_plain);
+    util::swap_support(this->m_plain_rank, v.m_plain_rank, &(this->m_plain), &(v.m_plain));
+    util::swap_support(this->m_plain_select_1, v.m_plain_select_1, &(this->m_plain), &(v.m_plain));
+    util::swap_support(this->m_plain_select_0, v.m_plain_select_0, &(this->m_plain), &(v.m_plain));
+  }
+}
+
+rlz_vector&
+rlz_vector::operator=(const rlz_vector& v)
+{
+  if(this != &v) { this->copy(v); }
+  return *this;
+}
+
+rlz_vector&
+rlz_vector::operator=(rlz_vector&& v)
+{
+  if(this != &v)
+  {
+    this->m_size = v.m_size;
+    this->m_plain = std::move(v.m_plain);
+    this->m_plain_rank = std::move(v.m_plain_rank); this->m_plain_rank.set_vector(&(this->m_plain));
+    this->m_plain_select_1 = std::move(v.m_plain_select_1); this->m_plain_select_1.set_vector(&(this->m_plain));
+    this->m_plain_select_0 = std::move(v.m_plain_select_0); this->m_plain_select_0.set_vector(&(this->m_plain));
+  }
+  return *this;
+}
+
+rlz_vector::size_type
+rlz_vector::serialize(std::ostream& out, structure_tree_node* v, std::string name) const
+{
+  structure_tree_node* child = structure_tree::add_child(v, name, util::class_name(*this));
+  size_type written_bytes = 0;
+  written_bytes += write_member(this->m_size, out, child, "size");
+  written_bytes += this->m_plain.serialize(out, child, "plain");
+  written_bytes += this->m_plain_rank.serialize(out, child, "plain_rank");
+  written_bytes += this->m_plain_select_1.serialize(out, child, "plain_select_1");
+  written_bytes += this->m_plain_select_0.serialize(out, child, "plain_select_0");
+  structure_tree::add_size(child, written_bytes);
+  return written_bytes;
+}
+
+void
+rlz_vector::load(std::istream& in)
+{
+  read_member(this->m_size, in);
+  this->m_plain.load(in);
+  this->m_plain_rank.load(in, &(this->m_plain));
+  this->m_plain_select_1.load(in, &(this->m_plain));
+  this->m_plain_select_0.load(in, &(this->m_plain));
+}
 
 //------------------------------------------------------------------------------
 
@@ -31,7 +140,7 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
     phrase_starts[phrase] = bits - 1;     // The last bit in this phrase.
     phrase_lengths[phrase] = onebits - 1; // The last 1-bit in this phrase.
   }
-  this->phrases.width(bitlength(max_val)); this->phrases.resize(phrase_buffer.size());
+  this->phrases.width(bits::hi(max_val) + 1); this->phrases.resize(phrase_buffer.size());
   for(uint64_t i = 0; i < phrase_buffer.size(); i++) { this->phrases[i] = phrase_buffer[i]; }
   this->lengths = sd_vector<>(phrase_starts.begin(), phrase_starts.end());
   this->ones = sd_vector<>(phrase_lengths.begin(), phrase_lengths.end());
@@ -132,3 +241,5 @@ RLZVector::operator[](uint64_t i) const
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace sdsl

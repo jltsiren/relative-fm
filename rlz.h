@@ -7,7 +7,8 @@
 #include <sdsl/vectors.hpp>
 
 
-using namespace sdsl;
+namespace sdsl
+{
 
 //------------------------------------------------------------------------------
 
@@ -27,7 +28,7 @@ void relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
 
 //------------------------------------------------------------------------------
 
-const uint64_t INCBWT_BLOCK_SIZE = 16 * 1048576;
+const uint64_t INCBWT_BLOCK_SIZE = 64 * 1048576;
 
 /*
   Input:    Bit sequence bwt[0, n-1], with bwt[n] = 0 as an endmarker.
@@ -58,5 +59,7 @@ _LF0(bit_vector::rank_1_type& rank, uint64_t pos, uint64_t endmarker)
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace sdsl
 
 #endif // _RELATIVE_FM_RLZ_H

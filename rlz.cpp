@@ -1,10 +1,16 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <sdsl/qsufsort.hpp>
+#include <sdsl/construct_sa.hpp>
 
 #include "rlz.h"
-#include "utils.h"
+
+
+namespace sdsl
+{
+
+typedef std::pair<uint64_t, uint64_t> range_type;
+inline bool isEmpty(range_type range) { return (range.first > range.second); }
 
 //------------------------------------------------------------------------------
 
@@ -27,7 +33,7 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference,
   buffer[reference.size()] = 0;
 
   // Build SA.
-  int_vector<> sa(reference.size(), 0, bitlength(reference.size()));
+  int_vector<> sa(reference.size(), 0, bits::hi(reference.size()) + 1);
   algorithm::calculate_sa(buffer, reference.size(), sa);
   delete[] buffer; buffer = 0;  
 
@@ -169,7 +175,7 @@ lastBWTBlock(bit_vector& bwt, uint64_t offset)
   buffer[block_size - 1] = 0;
 
   // Build SA.
-  int_vector<> sa(block_size - 1, 0, bitlength(block_size - 1));
+  int_vector<> sa(block_size - 1, 0, bits::hi(block_size - 1) + 1);
   algorithm::calculate_sa(buffer, block_size - 1, sa);
 
   // Build BWT.
@@ -315,7 +321,7 @@ sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t endmarker,
 #endif
 
   uint64_t zeros = bwt.size() - util::cnt_one_bits(bwt) - 1;
-  sa_samples.width(bitlength(bwt.size() - 1));
+  sa_samples.width(bits::hi(bwt.size() - 1) + 1);
   sa_samples.resize((bwt.size() + sample_rate - 2) / sample_rate);
   uint64_t bwt_pos = 0, text_pos = bwt.size() - 1;
   while(text_pos > 0)
@@ -331,3 +337,5 @@ sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t endmarker,
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace sdsl
