@@ -12,8 +12,6 @@ namespace sdsl
 
 //------------------------------------------------------------------------------
 
-const uint64_t RLZ_SA_SAMPLE_RATE = 128;
-
 /*
   Find a LZ77 parsing of 'text' relative to 'reference'. The parsing is written into
   the last three parameters; each phrase is reference[start, start + length - 2], followed
@@ -26,37 +24,63 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference,
 void relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
 
+struct bv_fmi;
+
+// Use this if BWT and SA samples have already been built.
+void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
+
 //------------------------------------------------------------------------------
 
-const uint64_t INCBWT_BLOCK_SIZE = 64 * 1048576;
-
 /*
-  Input:    Bit sequence bwt[0, n-1], with bwt[n] = 0 as an endmarker.
-  Output:   BWT(bwt + $) stored in the same bit sequence. The endmarker is encoded with a 0-bit.
-  Returns:  Position in bwt that contains the endmarker.
+  An FM-index for the reverse of a bitvector.
 */
-uint64_t incrementalBWT(bit_vector& bwt, uint64_t block_size = INCBWT_BLOCK_SIZE);
-
-/*
-  Input:    BWT, the position of the endmarker, and the desired sample rate.
-            The endmarker is assumed to be encoded with a 0-bit.
-  Output:   sa_samples contains SA[i * sample_rate + 1] for all i.
-*/
-void sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t endmarker,
-  int_vector<0>& sa_samples, uint64_t sample_rate);
-
-inline uint64_t
-_LF1(bit_vector::rank_1_type& rank, uint64_t pos, uint64_t zeros)
+struct bv_fmi
 {
-  return zeros + 1 + rank(pos);
-}
+public:
+  typedef std::pair<uint64_t, uint64_t> range_type;
 
-// The endmarker is encoded as a 0-bit, which should be ignored in rank_0.
-inline uint64_t
-_LF0(bit_vector::rank_1_type& rank, uint64_t pos, uint64_t endmarker)
-{
-  return 1 + pos - rank(pos) - (pos > endmarker ? 1 : 0);
-}
+  const static uint64_t DEFAULT_BLOCK_SIZE  = 64 * 1048576;
+  const static uint64_t DEFAULT_SAMPLE_RATE = 128;
+
+  explicit bv_fmi(const bit_vector& source,
+    uint64_t block_size = DEFAULT_BLOCK_SIZE, uint64_t _sample_rate = DEFAULT_SAMPLE_RATE);
+
+  bit_vector              bwt;
+  bit_vector::rank_1_type rank;
+  uint64_t                zeros;      // Number of 0-bits, excluding the endmarker.
+  uint64_t                endmarker;  // Position of the endmarker, encoded by a 0-bit.
+
+  int_vector<0>           sa_samples; // Will contain SA[i * sample_rate + 1] for all i.
+  uint64_t                sample_rate;
+
+  inline uint64_t LF1(uint64_t pos) const
+  {
+    return this->zeros + 1 + this->rank(pos);
+  }
+
+  inline uint64_t LF0(uint64_t pos) const
+  {
+    return 1 + pos - this->rank(pos) - (pos > this->endmarker ? 1 : 0);
+  }
+
+  inline range_type bitRange(bool bit) const
+  {
+    return (bit ? range_type(this->zeros + 1, this->bwt.size() - 1) : range_type(1, this->zeros));
+  }
+
+  // pos % sample_rate is assumed to be 1.
+  inline uint64_t sampleAt(uint64_t pos) const
+  {
+    return this->sa_samples[pos / this->sample_rate];
+  }
+
+private:
+  void incrementalBWT(uint64_t block_size);
+  void lastBWTBlock(uint64_t offset);
+  void prevBWTBlock(uint64_t offset, uint64_t block_size);
+  void sampleSA();
+};
 
 //------------------------------------------------------------------------------
 

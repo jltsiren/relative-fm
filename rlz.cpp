@@ -85,26 +85,17 @@ relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
 {
   if(text.size() == 0) { return; }
 
-  // Handle the reference.
-  uint64_t ones = util::cnt_one_bits(reference);
-  uint64_t zeros = reference.size() - ones;
-  if(ones == 0 || zeros == 0)
-  {
-    std::cerr << "relativeLZSuccinct(): Reference must contain both 0-bits and 1-bits!" << std::endl;
-    return;
-  }
-  bit_vector bwt(reference.size() + 1);
-  for(uint64_t i = 0; i < reference.size(); i++) { bwt[i] = reference[reference.size() - i - 1]; }
-  bwt[reference.size()] = 0;
+  // Build the FMI for the reverse reference.
+  bv_fmi fmi(reference);
 
-  // Build BWT for the reverse reference.
-  uint64_t endmarker = incrementalBWT(bwt);
-  bit_vector::rank_1_type bwt_rank(&bwt);
+  // Parse the text.
+  relativeLZSuccinct(text, fmi, starts, lengths, mismatches);
+}
 
-  // Sample the SA.
-  int_vector<0> sa_samples;
-  uint64_t sample_rate = RLZ_SA_SAMPLE_RATE;
-  sampleSA(bwt, bwt_rank, endmarker, sa_samples, sample_rate);
+void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
+{
+  if(text.size() == 0) { return; }
 
   // Use backward searching on the BWT of the reverse reference to parse the text.
   uint64_t text_pos = 0;
@@ -112,33 +103,37 @@ relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
   std::vector<bool> char_buffer;
   while(text_pos < text.size())
   {
-    range_type range = (text[text_pos] ? range_type(zeros + 1, reference.size()) : range_type(1, zeros));
+    bv_fmi::range_type range = reference.bitRange(text[text_pos]);
     uint64_t len = 1; // We have matched len bits in the reverse reference.
     while(text_pos + len < text.size())
     {
-      range_type new_range;
+      bv_fmi::range_type new_range;
       if(text[text_pos + len])
       {
-        new_range.first = _LF1(bwt_rank, range.first, zeros);
-        new_range.second = _LF1(bwt_rank, range.second + 1, zeros) - 1;
+        new_range.first = reference.LF1(range.first);
+        new_range.second = reference.LF1(range.second + 1) - 1;
       }
       else
       {
-        new_range.first = _LF0(bwt_rank, range.first, endmarker);
-        new_range.second = _LF0(bwt_rank, range.second + 1, endmarker) - 1;
+        new_range.first = reference.LF0(range.first);
+        new_range.second = reference.LF0(range.second + 1) - 1;
       }
-      if(isEmpty(new_range)) { break; }
+      if(new_range.first > new_range.second) { break; }
       else { range = new_range; len++; }
     }
     uint64_t reverse_pos = 0; // Position of the reverse pattern in reverse reference.
     while(true)
     {
-      if(range.first == endmarker) { break; }
-      if(range.first % sample_rate == 1) { reverse_pos += sa_samples[range.first / sample_rate]; break; }
-      range.first = (bwt[range.first] ? _LF1(bwt_rank, range.first, zeros) : _LF0(bwt_rank, range.first, endmarker));
+      if(range.first == reference.endmarker) { break; }
+      if(range.first % reference.sample_rate == 1)
+      {
+        reverse_pos += reference.sampleAt(range.first);
+        break;
+      }
+      range.first = (reference.bwt[range.first] ? reference.LF1(range.first) : reference.LF0(range.first));
       reverse_pos++;
     }
-    starts.push_back(reference.size() - reverse_pos - len); // Convert into actual pattern position.
+    starts.push_back(reference.bwt.size() - reverse_pos - len - 1); // Convert into actual pattern position.
     if(text_pos + len < text.size()) { len++; } // Add the mismatching character.
     lengths.push_back(len);
     char_buffer.push_back(text[text_pos + len - 1]);
@@ -150,27 +145,76 @@ relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
 
 //------------------------------------------------------------------------------
 
+bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_rate)
+{
+  if(block_size < 2)
+  {
+    std::cerr << "bv_fmi::bv_fmi(): Block size must be at least 2!" << std::endl;
+    return;
+  }
+
+  // Copy and reverse the source.
+  this->zeros = source.size() - util::cnt_one_bits(source);
+  if(this->zeros == 0 || this->zeros == source.size())
+  {
+    std::cerr << "bv_fmi::bv_fmi(): Source must contain both 0-bits and 1-bits!" << std::endl;
+    return;
+  }
+  this->bwt.resize(source.size() + 1);
+  for(uint64_t i = 0; i < source.size(); i++) { this->bwt[i] = source[source.size() - i - 1]; }
+  this->bwt[source.size()] = 0;
+
+  // Build BWT for the reverse source.
+  this->incrementalBWT(block_size);
+  util::clear(this->rank); util::init_support(this->rank, &(this->bwt));
+
+  // Sample the SA.
+  this->sample_rate = _sample_rate;
+  this->sampleSA();
+}
+
+void
+bv_fmi::incrementalBWT(uint64_t block_size)
+{
+  // Handle small inputs.
+  if(this->bwt.size() <= block_size)
+  {
+    this->lastBWTBlock(0);
+  }
+
+  // Handle the last block.
+  uint64_t offset = (this->bwt.size() / block_size) * block_size;
+  if(offset >= this->bwt.size() - 1) { offset -= block_size; }
+  lastBWTBlock(offset);
+
+  // Handle the rest of the blocks.
+  while(offset > 0)
+  {
+    offset -= block_size;
+    prevBWTBlock(offset, block_size);
+  }
+}
+
 /*
   Input:    Bit sequence bwt[0, n-1], with bwt[n] = 0 as an endmarker.
   Output:   bwt[0, offset - 1] remains intact.
             bwt[offset, n] contains BWT(bwt[offset, n-1] + $).
-            The endmarker is encoded with a 0-bit.
-  Returns:  Position in bwt that contains the endmarker.
+            The endmarker is encoded with a 0-bit and its position is stored.
 */
-uint64_t
-lastBWTBlock(bit_vector& bwt, uint64_t offset)
+void
+bv_fmi::lastBWTBlock(uint64_t offset)
 {
 #ifdef VERBOSE_OUTPUT
   std::cout << "Offset: " << offset << std::endl;
 #endif
-  if(offset + 1 >= bwt.size()) { return offset; }
+  if(offset + 1 >= this->bwt.size()) { this->endmarker = offset; return; }
 
   // Prepare the text.
-  uint64_t block_size = bwt.size() - offset;
+  uint64_t block_size = this->bwt.size() - offset;
   unsigned char* buffer = new unsigned char[block_size];
   for(uint64_t i = offset; i < bwt.size() - 1; i++)
   {
-    buffer[i - offset] = bwt[i] + 1;
+    buffer[i - offset] = this->bwt[i] + 1;
   }
   buffer[block_size - 1] = 0;
 
@@ -179,51 +223,44 @@ lastBWTBlock(bit_vector& bwt, uint64_t offset)
   algorithm::calculate_sa(buffer, block_size - 1, sa);
 
   // Build BWT.
-  uint64_t endmarker = offset;
   bwt[offset] = buffer[block_size - 2] - 1;
   for(uint64_t i = 0, j = offset + 1; i < sa.size(); i++, j++)
   {
-    if(sa[i] == 0) { endmarker = j; bwt[j] = 0; }
-    else { bwt[j] = buffer[sa[i] - 1] - 1; }
+    if(sa[i] == 0) { this->endmarker = j; this->bwt[j] = 0; }
+    else { this->bwt[j] = buffer[sa[i] - 1] - 1; }
   }
   delete[] buffer; buffer = 0;
-
-  return endmarker;
 }
 
 /*
   Input:    bwt[0, offset + block_size - 1] contains a prefix of a binary sequence.
             bwt[offset + block_size, n] contains the BWT of the suffix.
             The endmarker is stored at bwt[endmarker].
-            No sanity checks are done for the input (call incrementalBWT() instead).
   Output:   Prefix bwt[0, offset - 1] remains intact.
             bwt[offset, n] contains the BWT of the suffix.
-            The endmarker is encoded by a 0-bit.
-  Returns:  Position in bwt that contains the endmarker.
+            The endmarker is updated and encoded by a 0-bit.
 */
-uint64_t
-prevBWTBlock(bit_vector& bwt, uint64_t offset, uint64_t block_size, uint64_t endmarker)
+void
+bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
 {
 #ifdef VERBOSE_OUTPUT
   std::cout << "Offset: " << offset << std::endl;
 #endif
 
   // Prepare the BWT.
-  bit_vector::rank_1_type bwt_rank(&bwt);
-  uint64_t bwt_start = offset + block_size, bwt_size = bwt.size() - offset - block_size;
-  uint64_t false_ones = bwt_rank(bwt_start);      // 1-bits before the BWT.
+  util::clear(this->rank); util::init_support(this->rank, &(this->bwt));
+  uint64_t bwt_start = offset + block_size, bwt_size = this->bwt.size() - offset - block_size;
+  uint64_t false_ones = this->rank(bwt_start);    // 1-bits before the BWT.
   uint64_t false_zeros = bwt_start - false_ones;  // 0-bits before the BWT.
-  uint64_t ones = bwt_rank(bwt.size()) - false_ones;
-  uint64_t zeros = bwt_size - ones - 1;
 
   // Build the rank array.
   int_vector<64> ra(block_size + 2, 0);
-  uint64_t text_pos = bwt_start, bwt_pos = endmarker;
+  uint64_t text_pos = bwt_start, bwt_pos = this->endmarker;
   while(text_pos > offset)
   {
     text_pos--;
-    if(bwt[text_pos]) { bwt_pos = _LF1(bwt_rank, bwt_pos + 1, zeros) - 1 + bwt_start - false_ones; }
-    else              { bwt_pos = _LF0(bwt_rank, bwt_pos + 1, endmarker) - 1 + bwt_start - false_zeros; }
+    if(this->bwt[text_pos]) { bwt_pos = this->LF1(bwt_pos + 1) - 1; }
+    else                    { bwt_pos = this->LF0(bwt_pos + 1) - 1 + false_ones; }
     ra[text_pos - offset] = bwt_pos - bwt_start;
   }
 
@@ -232,9 +269,10 @@ prevBWTBlock(bit_vector& bwt, uint64_t offset, uint64_t block_size, uint64_t end
   {
     // Add the character to get the correct sorting order, 1 to handle the endmarker suffix,
     // and 0 or 1 to handle the endmarker in BWT.
-    ra[i] += bwt[i + offset] + 1 + (ra[i] >= endmarker ? 1 : 0);
+    ra[i] += this->bwt[i + offset] + 1 + (ra[i] >= this->endmarker - bwt_start ? 1 : 0);
   }
-  ra[block_size] = endmarker - bwt_start + (endmarker >= bwt_start + zeros + 1 ? 1 : 0) + 1;
+  ra[block_size] = this->endmarker - bwt_start +
+    (this->endmarker >= bwt_start + this->zeros - false_zeros + 1 ? 1 : 0) + 1;
   ra[block_size + 1] = 0;
   int_vector<64> sa(ra.size(), 0);
   qsufsort::sorter<int_vector<64> > sorter;
@@ -248,23 +286,23 @@ prevBWTBlock(bit_vector& bwt, uint64_t offset, uint64_t block_size, uint64_t end
   {
     if(sa[i] == 0) { new_endmarker = i - sa_offset; increment[i - sa_offset] = 0; }
     else if(sa[i] == block_size) { sa_offset++; } // Skip the next suffix.
-    else { increment[i - sa_offset] = bwt[offset + sa[i] - 1]; }
+    else { increment[i - sa_offset] = this->bwt[offset + sa[i] - 1]; }
   }
   util::clear(sa);
 
   // Rebuild the rank array that was overwritten during SA construction.
   ra.resize(block_size);
-  text_pos = bwt_start; bwt_pos = endmarker;
+  text_pos = bwt_start; bwt_pos = this->endmarker;
   while(text_pos > offset)
   {
     text_pos--;
-    if(bwt[text_pos]) { bwt_pos = _LF1(bwt_rank, bwt_pos + 1, zeros) - 1 + bwt_start - false_ones; }
-    else              { bwt_pos = _LF0(bwt_rank, bwt_pos + 1, endmarker) - 1 + bwt_start - false_zeros; }
+    if(this->bwt[text_pos]) { bwt_pos = this->LF1(bwt_pos + 1) - 1; }
+    else                    { bwt_pos = this->LF0(bwt_pos + 1) - 1 + false_ones; }
     ra[text_pos - offset] = bwt_pos;  // No need to correct by offset anymore.
   }
 
   // Merge the BWTs.
-  bwt[endmarker] = bwt[offset + block_size - 1];  // No longer an endmarker.
+  this->bwt[this->endmarker] = this->bwt[offset + block_size - 1];  // No longer an endmarker.
   std::sort(ra.begin(), ra.end());
   uint64_t inc_pos = 0, old_pos = bwt_start, next_pos = offset;
   while(inc_pos < block_size)
@@ -272,64 +310,33 @@ prevBWTBlock(bit_vector& bwt, uint64_t offset, uint64_t block_size, uint64_t end
     while(old_pos <= ra[inc_pos])
     {
       uint64_t bits = std::min((uint64_t)64, ra[inc_pos] + 1 - old_pos);
-      uint64_t temp = bwt.get_int(old_pos, bits); old_pos += bits;
-      bwt.set_int(next_pos, temp, bits); next_pos += bits;
+      uint64_t temp = this->bwt.get_int(old_pos, bits); old_pos += bits;
+      this->bwt.set_int(next_pos, temp, bits); next_pos += bits;
 //        bwt[next_pos++] = bwt[old_pos++];
     }
-    if(inc_pos == new_endmarker) { endmarker = next_pos; }
-    bwt[next_pos++] = increment[inc_pos++];
+    if(inc_pos == new_endmarker) { this->endmarker = next_pos; }
+    this->bwt[next_pos++] = increment[inc_pos++];
   }
   // Note that the remaining bits of the old BWT are already in place.
-
-  return endmarker;
-}
-
-uint64_t
-incrementalBWT(bit_vector& bwt, uint64_t block_size)
-{
-  if(block_size < 2)
-  {
-    std::cerr << "incrementalBWT(): Block size must be at least 2!" << std::endl;
-    return 0;
-  }
-
-  // Handle small inputs.
-  if(bwt.size() <= block_size) { return lastBWTBlock(bwt, 0); }
-
-  // Handle the last block.
-  uint64_t offset = (bwt.size() / block_size) * block_size;
-  if(offset >= bwt.size() - 1) { offset -= block_size; }
-  uint64_t endmarker = lastBWTBlock(bwt, offset);
-
-  // Handle the rest of the blocks.
-  while(offset > 0)
-  {
-    offset -= block_size;
-    endmarker = prevBWTBlock(bwt, offset, block_size, endmarker);
-  }
-
-  return endmarker;
 }
 
 void
-sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t endmarker,
-  int_vector<0>& sa_samples, uint64_t sample_rate)
+bv_fmi::sampleSA()
 {
-  if(bwt.size() <= 1 || sample_rate == 0) { return; }
+  if(this->bwt.size() <= 1 || this->sample_rate == 0) { return; }
 #ifdef VERBOSE_OUTPUT
   std::cout << "Sampling SA... "; std::cout.flush();
 #endif
 
-  uint64_t zeros = bwt.size() - util::cnt_one_bits(bwt) - 1;
-  sa_samples.width(bits::hi(bwt.size() - 1) + 1);
-  sa_samples.resize((bwt.size() + sample_rate - 2) / sample_rate);
-  uint64_t bwt_pos = 0, text_pos = bwt.size() - 1;
+  this->sa_samples.width(bits::hi(this->bwt.size() - 1) + 1);
+  this->sa_samples.resize((this->bwt.size() + sample_rate - 2) / sample_rate);
+  uint64_t bwt_pos = 0, text_pos = this->bwt.size() - 1;
   while(text_pos > 0)
   {
     text_pos--;
-    if(bwt[bwt_pos]) { bwt_pos = _LF1(bwt_rank, bwt_pos, zeros); }
-    else             { bwt_pos = _LF0(bwt_rank, bwt_pos, endmarker); }
-    if(bwt_pos % sample_rate == 1) { sa_samples[bwt_pos / sample_rate] = text_pos; }
+    if(bwt[bwt_pos]) { bwt_pos = this->LF1(bwt_pos); }
+    else             { bwt_pos = this->LF0(bwt_pos); }
+    if(bwt_pos % this->sample_rate == 1) { this->sa_samples[bwt_pos / this->sample_rate] = text_pos; }
   }
 #ifdef VERBOSE_OUTPUT
   std::cout << "done." << std::endl;

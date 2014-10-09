@@ -6,9 +6,9 @@
 
 
 // Which tests to run.
-//#define RLZ_TESTS
+#define RLZ_TESTS
 #define BV_TESTS
-//#define WT_TESTS
+#define WT_TESTS
 
 
 // For RLZ tests.
