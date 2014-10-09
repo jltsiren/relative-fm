@@ -115,8 +115,9 @@ rlz_vector::load(std::istream& in)
 
 RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
   const bit_vector::rank_1_type& _ref_rank,
-  const bit_vector::select_1_type& _ref_select) :
-  reference(_reference), ref_rank(_ref_rank), ref_select(_ref_select)
+  const bit_vector::select_1_type& _ref_select_1,
+  const bit_vector::select_0_type& _ref_select_0) :
+  reference(_reference), ref_rank(_ref_rank), ref_select_1(_ref_select_1), ref_select_0(_ref_select_0)
 {
   std::vector<uint64_t> phrase_starts, phrase_lengths;
   relativeLZSuccinct(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
@@ -124,7 +125,7 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
   std::vector<uint64_t> phrase_buffer;
   this->phrase_rle.resize(phrase_starts.size()); util::set_to_value(this->phrase_rle, 0);
 
-  uint64_t bits = 0, onebits = 0, prev = ~(uint64_t)0, max_val = 0;
+  uint64_t bits = 0, prev = ~(uint64_t)0, max_val = 0;
   for(uint64_t phrase = 0; phrase < phrase_starts.size(); phrase++)
   {
     uint64_t temp = relativeEncoding(phrase_starts[phrase], bits);
@@ -135,30 +136,33 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
       max_val = std::max(max_val, temp);
     }
     bits += phrase_lengths[phrase];
-    onebits += this->oneBits(phrase_starts[phrase], phrase_lengths[phrase] - 1);
-    if(this->mismatches[phrase]) { onebits++; }
-    phrase_starts[phrase] = bits - 1;     // The last bit in this phrase.
-    phrase_lengths[phrase] = onebits - 1; // The last 1-bit in this phrase.
+    phrase_starts[phrase] = this->oneBits(phrase_starts[phrase], phrase_lengths[phrase] - 1);
+    if(this->mismatches[phrase]) { phrase_starts[phrase]++; }
   }
   this->phrases.width(bits::hi(max_val) + 1); this->phrases.resize(phrase_buffer.size());
   for(uint64_t i = 0; i < phrase_buffer.size(); i++) { this->phrases[i] = phrase_buffer[i]; }
-  this->lengths = sd_vector<>(phrase_starts.begin(), phrase_starts.end());
-  this->ones = sd_vector<>(phrase_lengths.begin(), phrase_lengths.end());
+  this->blocks.init(phrase_lengths);
+  this->ones.init(phrase_starts);
+  for(uint64_t i = 0; i < phrase_starts.size(); i++) { phrase_lengths[i] -= phrase_starts[i]; }
+  this->zeros.init(phrase_lengths);
 
-  this->buildRankSelect();
+  util::init_support(this->phrase_rank, &(this->phrase_rle));
 }
 
 RLZVector::RLZVector(std::ifstream& input, const bit_vector& _reference,
   const bit_vector::rank_1_type& _ref_rank,
-  const bit_vector::select_1_type& _ref_select) :
-  reference(_reference), ref_rank(_ref_rank), ref_select(_ref_select)
+  const bit_vector::select_1_type& _ref_select_1,
+  const bit_vector::select_0_type& _ref_select_0) :
+  reference(_reference), ref_rank(_ref_rank), ref_select_1(_ref_select_1), ref_select_0(_ref_select_0)
 {
   this->phrases.load(input);
   this->phrase_rle.load(input);
-  this->lengths.load(input);
-  this->mismatches.load(input);
+  this->blocks.load(input);
   this->ones.load(input);
-  this->buildRankSelect();
+  this->zeros.load(input);
+  this->mismatches.load(input);
+
+  util::init_support(this->phrase_rank, &(this->phrase_rle));
 }
 
 RLZVector::~RLZVector()
@@ -172,9 +176,10 @@ RLZVector::reportSize() const
 {
   uint64_t bytes = sizeof(*this);
   bytes += size_in_bytes(this->phrases) + size_in_bytes(this->phrase_rle) + size_in_bytes(this->phrase_rank);
-  bytes += size_in_bytes(this->lengths) + size_in_bytes(this->length_rank) + size_in_bytes(this->length_select);
+  bytes += this->blocks.reportSize();
+  bytes += this->ones.reportSize();
+  bytes += this->zeros.reportSize();
   bytes += size_in_bytes(this->mismatches);
-  bytes += size_in_bytes(this->ones) + size_in_bytes(this->one_rank) + size_in_bytes(this->one_select);
   return bytes;
 }
 
@@ -184,19 +189,10 @@ RLZVector::writeTo(std::ofstream& output) const
 {
   this->phrases.serialize(output);
   this->phrase_rle.serialize(output);
-  this->lengths.serialize(output);
+  this->blocks.writeTo(output);
+  this->ones.writeTo(output);
+  this->zeros.writeTo(output);
   this->mismatches.serialize(output);
-  this->ones.serialize(output);
-}
-
-void
-RLZVector::buildRankSelect()
-{
-  util::init_support(this->phrase_rank, &(this->phrase_rle));
-  util::init_support(this->length_rank, &(this->lengths));
-  util::init_support(this->length_select, &(this->lengths));
-  util::init_support(this->one_rank, &(this->ones));
-  util::init_support(this->one_select, &(this->ones));
 }
 
 //------------------------------------------------------------------------------
@@ -206,27 +202,45 @@ RLZVector::rank(uint64_t i) const
 {
   if(i >= this->size()) { return this->items(); }
 
-  uint64_t phrase = this->length_rank(i);               // Phrase is 0-based.
+  uint64_t phrase = this->blocks.blockFor(i); // Phrase is 0-based.
   if(phrase == 0) { return this->oneBits(this->refPos(0, 0), i); }
-  uint64_t text_pos = this->length_select(phrase) + 1;  // Starting position of the phrase in the text.
+  uint64_t text_pos = this->blocks.itemsAfter(phrase - 1); // Starting position of the phrase in the text.
 
-  return this->one_select(phrase) + 1 + this->oneBits(this->refPos(phrase, text_pos), i - text_pos);
+  return this->ones.itemsAfter(phrase - 1) +
+    this->oneBits(this->refPos(phrase, text_pos), i - text_pos);
 }
 
 uint64_t
-RLZVector::select(uint64_t i) const
+RLZVector::select_1(uint64_t i) const
 {
   // FIXME what happens for i == 0?
   if(i > this->items()) { return this->size(); }
 
-  uint64_t phrase = this->one_rank(i - 1);              // i is 1-based, phrase is 0-based.
+  uint64_t phrase = this->ones.blockFor(i - 1); // Phrase is 0-based.
   // Check if the requested 1-bit is the mismatching bit at the end of the phrase.
-  if(this->ones[i - 1] && this->mismatches[phrase]) { return this->length_select(phrase + 1); }
+  if(this->ones.isLast(i - 1) && this->mismatches[phrase]) { return this->blocks.itemsAfter(phrase) - 1; }
   if(phrase == 0) { return this->findBit(this->refPos(0, 0), i); }
-  i -= this->one_select(phrase) + 1;                    // i is now relative to the phrase.
-  uint64_t text_pos = this->length_select(phrase) + 1;  // Starting position of the phrase in the text.
+  i -= this->ones.itemsAfter(phrase - 1); // i is now relative to the phrase.
+  uint64_t text_pos = this->blocks.itemsAfter(phrase - 1);  // Starting position of the phrase in the text.
 
   return text_pos + this->findBit(this->refPos(phrase, text_pos), i);
+}
+
+uint64_t
+RLZVector::select_0(uint64_t i) const
+{
+  // FIXME what happens for i == 0?
+  if(i > this->size() - this->items()) { return this->size(); }
+
+  // FIXME find the correct phrase
+  uint64_t phrase = this->zeros.blockFor(i - 1);  // Phrase is 0-based.
+  // Check if the requested 0-bit is the mismatching bit at the end of the phrase.
+  if(this->zeros.isLast(i - 1) && !(this->mismatches[phrase])) { return this->blocks.itemsAfter(phrase) - 1; }
+  if(phrase == 0) { return this->findZero(this->refPos(0, 0), i); }
+  i -= this->zeros.itemsAfter(phrase - 1);  // i is now relative to the phrase.
+  uint64_t text_pos = this->blocks.itemsAfter(phrase - 1);  // Starting position of the phrase in the text.
+
+  return text_pos + this->findZero(this->refPos(phrase, text_pos), i);
 }
 
 bool
@@ -234,10 +248,82 @@ RLZVector::operator[](uint64_t i) const
 {
   if(i >= this->size()) { return false; }
 
-  uint64_t phrase = this->length_rank(i);                   // Phrase is 0-based.
-  if(this->lengths[i]) { return this->mismatches[phrase]; } // We wanted the mismatching bit.
+  uint64_t phrase = this->blocks.blockFor(i); // Phrase is 0-based.
+  if(this->blocks.isLast(i)) { return this->mismatches[phrase]; } // The mismatching bit.
 
   return this->reference[this->refPos(phrase, i)];
+}
+
+//------------------------------------------------------------------------------
+
+void
+rlz_helper::init(const std::vector<uint64_t>& values)
+{
+  if(values.size() == 0) { return; }
+
+  this->nonzero.resize(values.size()); util::set_to_value(this->nonzero, 1);
+  uint64_t zeros = 0;
+  for(uint64_t i = 0; i < values.size(); i++)
+  {
+    if(values[i] == 0) { this->nonzero[i] = 0; zeros++; }
+  }
+  if(zeros > 0)
+  {
+    util::init_support(this->nz_rank, &(this->nonzero));
+    util::init_support(this->nz_select, &(this->nonzero));
+  }
+  else
+  {
+    util::clear(this->nonzero);
+    util::clear(this->nz_rank);
+    util::clear(this->nz_select);
+  }
+
+  std::vector<uint64_t> real_values(values.size() - zeros);
+  for(uint64_t i = 0, j = 0, sum = 0; i < values.size(); i++)
+  {
+    sum += values[i];
+    if(values[i] != 0) { real_values[j] = sum - 1; j++; }
+  }
+  this->v = sd_vector<>(real_values.begin(), real_values.end());
+  util::init_support(this->v_rank, &(this->v));
+  util::init_support(this->v_select, &(this->v));
+}
+
+uint64_t
+rlz_helper::reportSize() const
+{
+  uint64_t bytes = 0;
+  bytes += size_in_bytes(this->v) + size_in_bytes(this->v_rank) + size_in_bytes(this->v_select);
+  bytes += size_in_bytes(this->nonzero) + size_in_bytes(this->nz_rank) + size_in_bytes(this->nz_select);
+  return bytes;
+}
+
+void
+rlz_helper::load(std::istream& input)
+{
+  this->v.load(input);
+  util::init_support(this->v_rank, &(this->v));
+  util::init_support(this->v_select, &(this->v));
+
+  this->nonzero.load(input);
+  if(this->nonzero.size() > 0)
+  {
+    util::init_support(this->nz_rank, &(this->nonzero));
+    util::init_support(this->nz_select, &(this->nonzero));
+  }
+  else
+  {
+    util::clear(this->nz_rank);
+    util::clear(this->nz_select);
+  }
+}
+
+void
+rlz_helper::writeTo(std::ostream& output) const
+{
+  this->v.serialize(output);
+  this->nonzero.serialize(output);
 }
 
 //------------------------------------------------------------------------------

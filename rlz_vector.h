@@ -230,50 +230,93 @@ public:
 
 //------------------------------------------------------------------------------
 
+
+/*
+  This struct encodes an ordered set of items stored in an ordered set of blocks.
+  Both items and blocks are 0-based, and some of the blocks may be empty.
+*/
+struct rlz_helper
+{
+  sd_vector<>                 v;
+  sd_vector<>::rank_1_type    v_rank;
+  sd_vector<>::select_1_type  v_select;
+
+  bit_vector                  nonzero;
+  bit_vector::rank_1_type     nz_rank;
+  bit_vector::select_1_type   nz_select;
+
+  void init(const std::vector<uint64_t>& values);
+
+  inline uint64_t blockFor(uint64_t item) const
+  {
+    uint64_t block = this->v_rank(item);
+    if(this->nonzero.size() > 0) { block = this->nz_select(block + 1); }
+    return block;
+  }
+
+  inline uint64_t itemsAfter(uint64_t block) const
+  {
+    block++;  // Convert to 1-based blocks.
+    if(this->nonzero.size() > 0)
+    {
+      block = this->nz_rank(block);
+      if(block == 0) { return 0; }
+    }
+    return this->v_select(block) + 1;
+  }
+
+  inline bool isLast(uint64_t item) const
+  {
+    return v[item];
+  }
+
+  uint64_t reportSize() const;
+  void load(std::istream& input);
+  void writeTo(std::ostream& output) const;
+};
+
 class RLZVector
 {
 public:
   RLZVector(const bit_vector& text, const bit_vector& _reference,
     const bit_vector::rank_1_type& _ref_rank,
-    const bit_vector::select_1_type& _ref_select);
+    const bit_vector::select_1_type& _ref_select_1,
+    const bit_vector::select_0_type& _ref_select_0);
   RLZVector(std::ifstream& input, const bit_vector& _reference,
     const bit_vector::rank_1_type& _ref_rank,
-    const bit_vector::select_1_type& _ref_select);
+    const bit_vector::select_1_type& _ref_select_1,
+    const bit_vector::select_0_type& _ref_select_0);
   ~RLZVector();
 
   uint64_t reportSize() const;
   void writeTo(std::ofstream& output) const;
 
-  uint64_t size() const { return this->lengths.size() - 1; }
-  uint64_t items() const { return this->ones.size() - 1; }
+  uint64_t size() const { return this->blocks.v.size(); }
+  uint64_t items() const { return this->ones.v.size(); }
 
   /*
     These follow SDSL conventions.
   */
   uint64_t rank(uint64_t i) const;
-  uint64_t select(uint64_t i) const;
+  uint64_t select_1(uint64_t i) const;
+  uint64_t select_0(uint64_t i) const;
   bool operator[](uint64_t i) const;
 
 private:
-  const bit_vector& reference;
-  const bit_vector::rank_1_type& ref_rank;
-  const bit_vector::select_1_type& ref_select;
+  const bit_vector&                 reference;
+  const bit_vector::rank_1_type&    ref_rank;
+  const bit_vector::select_1_type&  ref_select_1;
+  const bit_vector::select_0_type&  ref_select_0;
 
-  int_vector<0> phrases; // Phrase starts encoded as (ref_pos - text_pos).
-  bit_vector phrase_rle; // phrase_rle[i] is set, if phrase i is stored.
-  bit_vector::rank_1_type phrase_rank;
-  
-  sd_vector<> lengths;
-  sd_vector<>::rank_1_type length_rank;
-  sd_vector<>::select_1_type length_select;
+  int_vector<0>                     phrases;    // Phrase starts encoded as (ref_pos - text_pos).
+  bit_vector                        phrase_rle; // phrase_rle[i] is set, if phrase i is stored.
+  bit_vector::rank_1_type           phrase_rank;
 
-  bit_vector mismatches;
+  rlz_helper                        blocks;
+  rlz_helper                        ones;
+  rlz_helper                        zeros;
 
-  sd_vector<> ones;
-  sd_vector<>::rank_1_type one_rank;
-  sd_vector<>::select_1_type one_select;
-
-  void buildRankSelect();
+  bit_vector                        mismatches;
 
   // Converts text positions into reference positions, assuming that they are
   // within copied substrings.
@@ -301,7 +344,13 @@ private:
   // Returns the offset of the i'th 1-bit in reference[ref_pos, ...] (i is 1-based).
   inline uint64_t findBit(uint64_t ref_pos, uint64_t i) const
   {
-    return this->ref_select(this->ref_rank(ref_pos) + i) - ref_pos;
+    return this->ref_select_1(this->ref_rank(ref_pos) + i) - ref_pos;
+  }
+
+  // Returns the offset of the i'th 0-bit in reference[ref_pos, ...] (i is 1-based).
+  inline uint64_t findZero(uint64_t ref_pos, uint64_t i) const
+  {
+    return this->ref_select_0(ref_pos - this->ref_rank(ref_pos) + i) - ref_pos;
   }
 
   RLZVector();

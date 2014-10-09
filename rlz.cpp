@@ -332,7 +332,7 @@ sampleSA(bit_vector& bwt, bit_vector::rank_1_type& bwt_rank, uint64_t endmarker,
     if(bwt_pos % sample_rate == 1) { sa_samples[bwt_pos / sample_rate] = text_pos; }
   }
 #ifdef VERBOSE_OUTPUT
-  std::cout << "done!" << std::endl;
+  std::cout << "done." << std::endl;
 #endif
 }
 
