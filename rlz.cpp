@@ -9,90 +9,22 @@
 namespace sdsl
 {
 
-typedef std::pair<uint64_t, uint64_t> range_type;
-inline bool isEmpty(range_type range) { return (range.first > range.second); }
-
-//------------------------------------------------------------------------------
-
-void relativeLZ(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
-{
-  // Handle the reference.
-  uint64_t ones = util::cnt_one_bits(reference);
-  uint64_t zeros = reference.size() - ones;
-  if(ones == 0 || zeros == 0)
-  {
-    std::cerr << "relativeLZ(): Reference must contain both 0-bits and 1-bits!" << std::endl;
-    return;
-  }
-  unsigned char* buffer = new unsigned char[reference.size() + 1];
-  for(uint64_t i = 0; i < reference.size(); i++)
-  {
-    buffer[i] = reference[i] + 1;
-  }
-  buffer[reference.size()] = 0;
-
-  // Build SA.
-  int_vector<> sa(reference.size(), 0, bits::hi(reference.size()) + 1);
-  algorithm::calculate_sa(buffer, reference.size(), sa);
-  delete[] buffer; buffer = 0;  
-
-  // Parse the text.
-  uint64_t pos = 0;
-  starts.clear(); lengths.clear();
-  std::vector<bool> char_buffer;
-  while(pos < text.size())
-  {
-    range_type range = (text[pos] ? range_type(zeros, reference.size() - 1) : range_type(0, zeros - 1));
-    uint64_t len = 1;
-    while(pos + len < text.size())
-    {
-      uint64_t low = range.first, high = range.second, last_high = range.second;
-      while(low < high) // Lower bound for pattern text[pos, pos + len].
-      {
-        uint64_t mid = low + (high - low) / 2;
-        if(sa[mid] + len >= reference.size() || reference[sa[mid] + len] < text[pos + len]) { low = mid + 1; }
-        else if(reference[sa[mid] + len] == text[pos + len]) { high = mid; }
-        else { last_high = high = std::max(mid, (uint64_t)1) - 1; }
-      }
-      if(sa[low] + len >= reference.size()) { break; }  // We use the last matched char as the mismatch.
-      if(reference[sa[low] + len] != text[pos + len])
-      {
-        len++; break; // We use the mismatch.
-      }
-      range.first = low; high = last_high;
-      while(low < high) // Upper bound for pattern text[pos, pos + len].
-      {
-        uint64_t mid = low + (high - low + 1) / 2;
-        if(reference[sa[mid] + len] == text[pos + len]) { low = mid; }
-        else { high = mid - 1; }
-      }
-      range.second = high; len++;
-    }
-    starts.push_back(sa[range.first]); lengths.push_back(len);
-    pos += len;
-    char_buffer.push_back(text[pos - 1]);
-  }
-  mismatches.resize(char_buffer.size());
-  for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
-}
-
 //------------------------------------------------------------------------------
 
 void
-relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
+relativeLZ(const bit_vector& text, const bit_vector& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
 
-  // Build the FMI for the reverse reference.
+#ifdef VERBOSE_OUTPUT
+  std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
+#endif
   bv_fmi fmi(reference);
-
-  // Parse the text.
-  relativeLZSuccinct(text, fmi, starts, lengths, mismatches);
+  relativeLZ(text, fmi, starts, lengths, mismatches);
 }
 
-void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
+void relativeLZ(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
@@ -124,7 +56,10 @@ void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
     uint64_t reverse_pos = 0; // Position of the reverse pattern in reverse reference.
     while(true)
     {
-      if(range.first == reference.endmarker) { break; }
+      if(range.first == reference.endmarker)
+      {
+        break;
+      }
       if(range.first % reference.sample_rate == 1)
       {
         reverse_pos += reference.sampleAt(range.first);
@@ -141,6 +76,10 @@ void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   }
   mismatches.resize(char_buffer.size());
   for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
+
+#ifdef VERBOSE_OUTPUT
+  std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -184,7 +123,7 @@ bv_fmi::incrementalBWT(uint64_t block_size)
 
   // Handle the last block.
   uint64_t offset = (this->bwt.size() / block_size) * block_size;
-  if(offset >= this->bwt.size() - 1) { offset -= block_size; }
+  if(offset + 2 >= this->bwt.size()) { offset -= block_size; }
   lastBWTBlock(offset);
 
   // Handle the rest of the blocks.

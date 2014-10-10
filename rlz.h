@@ -20,14 +20,10 @@ namespace sdsl
 void relativeLZ(const bit_vector& text, const bit_vector& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
 
-// This version is several times slower but requires much less memory.
-void relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
-
 struct bv_fmi;
 
 // Use this if BWT and SA samples have already been built.
-void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
+void relativeLZ(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
 
 //------------------------------------------------------------------------------
@@ -41,7 +37,7 @@ public:
   typedef std::pair<uint64_t, uint64_t> range_type;
 
   const static uint64_t DEFAULT_BLOCK_SIZE  = 64 * 1048576;
-  const static uint64_t DEFAULT_SAMPLE_RATE = 128;
+  const static uint64_t DEFAULT_SAMPLE_RATE = 127;  // Should be prime with SA order sampling.
 
   explicit bv_fmi(const bit_vector& source,
     uint64_t block_size = DEFAULT_BLOCK_SIZE, uint64_t _sample_rate = DEFAULT_SAMPLE_RATE);

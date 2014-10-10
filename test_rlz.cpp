@@ -1,4 +1,5 @@
 #include <sdsl/suffix_arrays.hpp>
+#include <sdsl/suffix_trees.hpp>
 
 #include "rlz.h"
 #include "rlz_vector.h"
@@ -6,9 +7,10 @@
 
 
 // Which tests to run.
-#define RLZ_TESTS
-#define BV_TESTS
-#define WT_TESTS
+//#define RLZ_TESTS
+//#define BV_TESTS
+//#define WT_TESTS
+#define CST_TESTS
 
 
 // For RLZ tests.
@@ -18,7 +20,7 @@ const uint64_t RLZ_SIZE = 128 * (uint64_t)1048576;
 const uint64_t BV_SIZE = 128 * (uint64_t)1048576;
 
 // For wavelet tree tests.
-const uint64_t WT_SIZE = 128 * (uint64_t)1048576;
+const uint64_t WT_SIZE = 512 * (uint64_t)1048576;
 const uint8_t  WT_ALPHABET = 4;
 
 // For all tests.
@@ -35,6 +37,7 @@ const double   EXTENSION_PROB = 0.3;
 void testRLZ(int argc, char** argv);
 void testBV(int argc, char** argv);
 void testWT(int argc, char** argv);
+void testCST(int argc, char** argv);
 
 int
 main(int argc, char** argv)
@@ -52,6 +55,10 @@ main(int argc, char** argv)
 
 #ifdef WT_TESTS
   testWT(argc, argv);
+#endif
+
+#ifdef CST_TESTS
+  testCST(argc, argv);
 #endif
 
   return 0;
@@ -95,9 +102,8 @@ testRLZ(int argc, char** argv)
     std::vector<uint64_t> starts, lengths;
     bit_vector mismatches;
     double start_time = readTimer();
-    relativeLZSuccinct(text, reference, starts, lengths, mismatches);
+    relativeLZ(text, reference, starts, lengths, mismatches);
     double seconds = readTimer() - start_time;
-    std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
     std::cout << "Parsing took " << seconds << " seconds, " << inMegabytes(memoryUsage()) << " MB." << std::endl;
 
     uint64_t errors = 0;
@@ -223,6 +229,17 @@ testBV(int argc, char** argv)
   }
 }
 
+template<class csa_type>
+void
+printSize(const csa_type& csa, std::string name)
+{
+  uint64_t bytes = size_in_bytes(csa);
+  uint64_t sample_bytes = size_in_bytes(csa.sa_sample) + size_in_bytes(csa.isa_sample);
+
+  std::cout << name << " CSA: " << inMegabytes(bytes) << " MB (" << inMegabytes(bytes - sample_bytes) << 
+    " MB without samples)" << std::endl;
+}
+
 void
 testWT(int argc, char** argv)
 {
@@ -241,15 +258,21 @@ testWT(int argc, char** argv)
 
     csa_wt<> reference_csa;
     construct_im(reference_csa, reference);
-    std::cout << "Reference CSA: " << inMegabytes(size_in_bytes(reference_csa)) << " MB" << std::endl;
+    printSize(reference_csa, "Reference");
 
     csa_wt<> plain_csa;
     construct_im(plain_csa, text);
-    std::cout << "Plain CSA: " << inMegabytes(size_in_bytes(plain_csa)) << " MB" << std::endl;
+    printSize(plain_csa, "Plain");
 
     csa_wt<wt_huff<rlz_vector> > rlz_csa;
     construct_im(rlz_csa, text);
-    std::cout << "RLZ CSA: " << inMegabytes(size_in_bytes(rlz_csa)) << " MB" << std::endl;
+    // Ugly hack is about to begin.
+    rlz_vector& rlz = const_cast<rlz_vector&>(rlz_csa.wavelet_tree.bv);
+    bit_vector::rank_1_type r_r(&(reference_csa.wavelet_tree.bv));
+    bit_vector::select_1_type r_s1(&(reference_csa.wavelet_tree.bv));
+    bit_vector::select_0_type r_s0(&(reference_csa.wavelet_tree.bv));
+    rlz.compress(reference_csa.wavelet_tree.bv, r_r, r_s1, r_s0);
+    printSize(rlz_csa, "RLZ");
 
     uint64_t errors = 0;
     for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
@@ -261,6 +284,86 @@ testWT(int argc, char** argv)
 
     std::cout << std::endl;
   }
+}
+
+void
+compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref)
+{
+  std::cout << name; std::cout.flush();
+
+  bit_vector::rank_1_type vec_rank(&vec);
+  bit_vector::select_1_type vec_select_1(&vec);
+  bit_vector::select_0_type vec_select_0(&vec);
+  uint64_t plain_bytes = size_in_bytes(vec) + size_in_bytes(vec_rank) + size_in_bytes(vec_select_1) + size_in_bytes(vec_select_0);
+  std::cout << "Plain " << inMegabytes(plain_bytes) << " MB"; std::cout.flush();
+
+  rrr_vector<> rrr(vec);
+  rrr_vector<>::rank_1_type rrr_rank(&rrr);
+  rrr_vector<>::select_1_type rrr_select_1(&rrr);
+  rrr_vector<>::select_0_type rrr_select_0(&rrr);
+  uint64_t rrr_bytes = size_in_bytes(rrr) + size_in_bytes(rrr_rank) + size_in_bytes(rrr_select_1) + size_in_bytes(rrr_select_0);
+  std::cout << ", RRR " << inMegabytes(rrr_bytes) << " MB"; std::cout.flush();
+
+  sd_vector<> sd(vec);
+  sd_vector<>::rank_1_type sd_rank(&sd);
+  sd_vector<>::select_1_type sd_select_1(&sd);
+  sd_vector<>::select_0_type sd_select_0(&sd);
+  uint64_t sd_bytes = size_in_bytes(sd) + size_in_bytes(sd_rank) + size_in_bytes(sd_select_1) + size_in_bytes(sd_select_0);
+  std::cout << ", SD " << inMegabytes(sd_bytes) << " MB"; std::cout.flush();
+
+  bit_vector::rank_1_type ref_rank(&ref);
+  bit_vector::select_1_type ref_select_1(&ref);
+  bit_vector::select_0_type ref_select_0(&ref);
+  rlz_vector rlz_vec(vec);
+  rlz_vec.compress(ref, ref_rank, ref_select_1, ref_select_0);
+  uint64_t rlz_bytes = size_in_bytes(rlz_vec);
+  std::cout << ", RLZ " << inMegabytes(rlz_bytes) << " MB"; std::cout.flush();
+
+  std::cout << std::endl;
+}
+
+typedef cst_sada<csa_wt<wt_huff<>, 32, 64, text_order_sa_sampling<bit_vector> > > cst_type;
+
+void
+testCST(int argc, char** argv)
+{
+  std::cout << "Compressed suffix tree tests" << std::endl;
+  std::cout << std::endl;
+
+  if(argc < 3)
+  {
+    std::cerr << "testCST(): Usage: " << argv[0] << " reference_file text_file" << std::endl;
+    return;
+  }
+
+  std::cout << "Reference:        " << argv[1] << std::endl;
+  cst_type reference_cst;
+  construct(reference_cst, argv[1], 1);
+  std::cout << "Reference CST:    " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
+
+  std::cout << "Text:             " << argv[2] << std::endl;
+  cst_type text_cst;
+  construct(text_cst, argv[2], 1);
+  std::cout << "Text CST:         " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
+
+  std::cout << std::endl;
+
+  compressBitvector("CSA               ", text_cst.csa.wavelet_tree.bv, reference_cst.csa.wavelet_tree.bv);
+  compressBitvector("Sampled positions ", text_cst.csa.sa_sample.marked, reference_cst.csa.sa_sample.marked);
+  compressBitvector("Tree              ", text_cst.bp, reference_cst.bp);
+
+  std::ofstream out("temp.dat", std::ios_base::binary);
+  text_cst.lcp.serialize(out); reference_cst.lcp.serialize(out);
+  out.close();
+  std::ifstream in("temp.dat", std::ios_base::binary);
+  bit_vector text_lcp, ref_lcp;
+  bit_vector::select_1_type sel;
+  text_lcp.load(in); sel.load(in);
+  ref_lcp.load(in);
+  in.close();
+  compressBitvector("LCP               ", text_lcp, ref_lcp);
+
+  std::cout << std::endl;
 }
 
 //------------------------------------------------------------------------------
