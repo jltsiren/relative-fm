@@ -22,7 +22,7 @@ OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(WT_F
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
 RFMOBJS=relative_fm.o utils.o
-RLZOBJS=rlz.o rlz_vector.o
+RLZOBJS=rlz_vector.o rlz.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
@@ -36,19 +36,19 @@ all: $(PROGRAMS)
 	$(MY_CXX) $(CXX_FLAGS) -c $<
 
 align_bwts:align_bwts.o $(RFMOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS) $(RFMOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(RFMOBJS) $(LIBS)
 
 build_bwt:build_bwt.o $(RFMOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS) $(RFMOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(RFMOBJS) $(LIBS)
 
 query_test:query_test.o $(RFMOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS) $(RFMOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(RFMOBJS) $(LIBS)
 
 bwt_benchmark:bwt_benchmark.o $(RFMOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS) $(RFMOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(RFMOBJS) $(LIBS)
 
 test_rlz:test_rlz.o utils.o $(RLZOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBS) utils.o $(RLZOBJS)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< utils.o $(RLZOBJS) $(LIBS)
 
 lcs:lcs.cpp
 	$(MY_CXX) -O3 -o $@ $<

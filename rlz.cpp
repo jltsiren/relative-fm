@@ -188,7 +188,7 @@ bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
 
   // Prepare the BWT.
   util::clear(this->rank); util::init_support(this->rank, &(this->bwt));
-  uint64_t bwt_start = offset + block_size, bwt_size = this->bwt.size() - offset - block_size;
+  uint64_t bwt_start = offset + block_size;
   uint64_t false_ones = this->rank(bwt_start);    // 1-bits before the BWT.
   uint64_t false_zeros = bwt_start - false_ones;  // 0-bits before the BWT.
 
