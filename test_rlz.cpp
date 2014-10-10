@@ -322,6 +322,15 @@ compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref
   std::cout << std::endl;
 }
 
+bool
+file_exists(std::string name)
+{
+  std::ifstream in(name.c_str(), std::ios_base::binary);
+  if(!in) { return false; }
+  in.close();
+  return true;
+}
+
 typedef cst_sada<csa_wt<wt_huff<>, 32, 64, text_order_sa_sampling<bit_vector> > > cst_type;
 
 void
@@ -340,7 +349,7 @@ testCST(int argc, char** argv)
   std::string ref_file = ref_name + ".cst";
   std::cout << "Reference:        " << ref_name << std::endl;
   cst_type reference_cst;
-  if(util::file_size(ref_file) > 0)
+  if(file_exists(ref_file))
   {
     load_from_file(reference_cst, ref_file);
   }
@@ -358,7 +367,7 @@ testCST(int argc, char** argv)
     std::string text_file = text_name + ".cst";
     std::cout << "Text:             " << text_name << std::endl;
     cst_type text_cst;
-    if(util::file_size(text_file) > 0)
+    if(file_exists(text_file))
     {
       load_from_file(text_cst, text_file);
     }
