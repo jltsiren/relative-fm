@@ -332,38 +332,60 @@ testCST(int argc, char** argv)
 
   if(argc < 3)
   {
-    std::cerr << "testCST(): Usage: " << argv[0] << " reference_file text_file" << std::endl;
+    std::cerr << "testCST(): Usage: " << argv[0] << " reference_file text_file1 [text_file2 ...]" << std::endl;
     return;
   }
 
-  std::cout << "Reference:        " << argv[1] << std::endl;
+  std::string ref_name = argv[1];
+  std::string ref_file = ref_name + ".cst";
+  std::cout << "Reference:        " << ref_name << std::endl;
   cst_type reference_cst;
-  construct(reference_cst, argv[1], 1);
+  if(util::file_size(ref_file) > 0)
+  {
+    load_from_file(reference_cst, ref_file);
+  }
+  else
+  {
+    construct(reference_cst, ref_name, 1);
+    store_to_file(reference_cst, ref_file);
+  }
   std::cout << "Reference CST:    " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
-
-  std::cout << "Text:             " << argv[2] << std::endl;
-  cst_type text_cst;
-  construct(text_cst, argv[2], 1);
-  std::cout << "Text CST:         " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
-
   std::cout << std::endl;
 
-  compressBitvector("CSA               ", text_cst.csa.wavelet_tree.bv, reference_cst.csa.wavelet_tree.bv);
-  compressBitvector("Sampled positions ", text_cst.csa.sa_sample.marked, reference_cst.csa.sa_sample.marked);
-  compressBitvector("Tree              ", text_cst.bp, reference_cst.bp);
+  for(int arg = 2; arg < argc; arg++)
+  {
+    std::string text_name = argv[arg];
+    std::string text_file = text_name + ".cst";
+    std::cout << "Text:             " << text_name << std::endl;
+    cst_type text_cst;
+    if(util::file_size(text_file) > 0)
+    {
+      load_from_file(text_cst, text_file);
+    }
+    else
+    {
+      construct(text_cst, text_name, 1);
+      store_to_file(text_cst, text_file);
+    }
+    std::cout << "Text CST:         " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
 
-  std::ofstream out("temp.dat", std::ios_base::binary);
-  text_cst.lcp.serialize(out); reference_cst.lcp.serialize(out);
-  out.close();
-  std::ifstream in("temp.dat", std::ios_base::binary);
-  bit_vector text_lcp, ref_lcp;
-  bit_vector::select_1_type sel;
-  text_lcp.load(in); sel.load(in);
-  ref_lcp.load(in);
-  in.close();
-  compressBitvector("LCP               ", text_lcp, ref_lcp);
+    compressBitvector("CSA               ", text_cst.csa.wavelet_tree.bv, reference_cst.csa.wavelet_tree.bv);
+    compressBitvector("Sampled positions ", text_cst.csa.sa_sample.marked, reference_cst.csa.sa_sample.marked);
+    compressBitvector("Tree              ", text_cst.bp, reference_cst.bp);
 
-  std::cout << std::endl;
+    std::ofstream out("temp.dat", std::ios_base::binary);
+    text_cst.lcp.serialize(out); reference_cst.lcp.serialize(out);
+    out.close();
+    std::ifstream in("temp.dat", std::ios_base::binary);
+    bit_vector text_lcp, ref_lcp;
+    bit_vector::select_1_type sel;
+    text_lcp.load(in); sel.load(in);
+    ref_lcp.load(in);
+    in.close();
+    compressBitvector("LCP               ", text_lcp, ref_lcp);
+
+    std::cout << std::endl;
+  }
 }
 
 //------------------------------------------------------------------------------
