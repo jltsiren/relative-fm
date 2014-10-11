@@ -24,7 +24,8 @@ relativeLZ(const bit_vector& text, const bit_vector& reference,
   relativeLZ(text, fmi, starts, lengths, mismatches);
 }
 
-void relativeLZ(const bit_vector& text, const bv_fmi& reference,
+void
+relativeLZ(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
@@ -110,6 +111,29 @@ bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_r
   // Sample the SA.
   this->sample_rate = _sample_rate;
   this->sampleSA();
+}
+
+bv_fmi::bv_fmi(std::istream& in)
+{
+  this->bwt.load(in);
+  this->rank.load(in, &(this->bwt));
+  read_member(this->zeros, in);
+  read_member(this->endmarker, in);
+  this->sa_samples.load(in);
+  read_member(this->sample_rate, in);
+}
+
+uint64_t
+bv_fmi::serialize(std::ostream& out)
+{
+  uint64_t bytes = 0;
+  bytes += this->bwt.serialize(out);
+  bytes += this->rank.serialize(out);
+  bytes += write_member(this->zeros, out);
+  bytes += write_member(this->endmarker, out);
+  bytes += this->sa_samples.serialize(out);
+  bytes += write_member(this->sample_rate, out);
+  return bytes;
 }
 
 void

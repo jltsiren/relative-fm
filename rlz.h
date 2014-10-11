@@ -22,7 +22,7 @@ void relativeLZ(const bit_vector& text, const bit_vector& reference,
 
 struct bv_fmi;
 
-// Use this if BWT and SA samples have already been built.
+// Use this to reuse an existing index for the reference.
 void relativeLZ(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
 
@@ -41,6 +41,9 @@ public:
 
   explicit bv_fmi(const bit_vector& source,
     uint64_t block_size = DEFAULT_BLOCK_SIZE, uint64_t _sample_rate = DEFAULT_SAMPLE_RATE);
+  explicit bv_fmi(std::istream& in);
+
+  uint64_t serialize(std::ostream& out);
 
   bit_vector              bwt;
   bit_vector::rank_1_type rank;

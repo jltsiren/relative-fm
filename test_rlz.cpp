@@ -287,7 +287,7 @@ testWT(int argc, char** argv)
 }
 
 void
-compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref)
+compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref, const bv_fmi* fmi)
 {
   std::cout << name; std::cout.flush();
 
@@ -315,7 +315,7 @@ compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref
   bit_vector::select_1_type ref_select_1(&ref);
   bit_vector::select_0_type ref_select_0(&ref);
   rlz_vector rlz_vec(vec);
-  rlz_vec.compress(ref, ref_rank, ref_select_1, ref_select_0);
+  rlz_vec.compress(ref, ref_rank, ref_select_1, ref_select_0, fmi);
   uint64_t rlz_bytes = size_in_bytes(rlz_vec);
   std::cout << ", RLZ " << inMegabytes(rlz_bytes) << " MB"; std::cout.flush();
 
@@ -329,6 +329,38 @@ file_exists(std::string name)
   if(!in) { return false; }
   in.close();
   return true;
+}
+
+bv_fmi*
+indexBitvector(const bit_vector& v, std::string filename)
+{
+  if(file_exists(filename))
+  {
+    std::ifstream in(filename.c_str(), std::ios_base::binary);
+    if(!in)
+    {
+      std::cerr << "indexBitvector(): Cannot open index file " << filename << " for reading!" << std::endl;
+      return 0;
+    }
+    bv_fmi* fmi = new bv_fmi(in);
+    in.close();
+    return fmi;
+  }
+  else
+  {
+    bv_fmi* fmi = new bv_fmi(v);
+    std::ofstream out(filename.c_str(), std::ios_base::binary);
+    if(!out)
+    {
+      std::cerr << "indexBitvector(): Cannot open index file " << filename << " for writing!" << std::endl;
+    }
+    else
+    {
+      fmi->serialize(out);
+      out.close();
+    }
+    return fmi;
+  }
 }
 
 typedef cst_sada<csa_wt<wt_huff<>, 32, 64, text_order_sa_sampling<bit_vector> > > cst_type;
@@ -359,6 +391,22 @@ testCST(int argc, char** argv)
     store_to_file(reference_cst, ref_file);
   }
   std::cout << "Reference CST:    " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
+
+  bv_fmi* wt_fmi = indexBitvector(reference_cst.csa.wavelet_tree.bv, ref_file + ".wt");
+  bv_fmi* sample_fmi = indexBitvector(reference_cst.csa.sa_sample.marked, ref_file + ".samples");
+  bv_fmi* tree_fmi = indexBitvector(reference_cst.bp, ref_file + ".tree");
+  bv_fmi* lcp_fmi = 0;
+  {
+    std::ofstream out("temp.dat", std::ios_base::binary);
+    reference_cst.lcp.serialize(out);
+    out.close();
+    std::ifstream in("temp.dat", std::ios_base::binary);
+    bit_vector ref_lcp;
+    ref_lcp.load(in);
+    in.close();
+    lcp_fmi = indexBitvector(ref_lcp, ref_file + ".lcp");
+  }
+
   std::cout << std::endl;
 
   for(int arg = 2; arg < argc; arg++)
@@ -376,11 +424,11 @@ testCST(int argc, char** argv)
       construct(text_cst, text_name, 1);
       store_to_file(text_cst, text_file);
     }
-    std::cout << "Text CST:         " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
+    std::cout << "Text CST:         " << inMegabytes(size_in_bytes(text_cst)) << " MB" << std::endl;
 
-    compressBitvector("CSA               ", text_cst.csa.wavelet_tree.bv, reference_cst.csa.wavelet_tree.bv);
-    compressBitvector("Sampled positions ", text_cst.csa.sa_sample.marked, reference_cst.csa.sa_sample.marked);
-    compressBitvector("Tree              ", text_cst.bp, reference_cst.bp);
+    compressBitvector("CSA               ", text_cst.csa.wavelet_tree.bv, reference_cst.csa.wavelet_tree.bv, wt_fmi);
+    compressBitvector("Sampled positions ", text_cst.csa.sa_sample.marked, reference_cst.csa.sa_sample.marked, sample_fmi);
+    compressBitvector("Tree              ", text_cst.bp, reference_cst.bp, tree_fmi);
 
     std::ofstream out("temp.dat", std::ios_base::binary);
     text_cst.lcp.serialize(out); reference_cst.lcp.serialize(out);
@@ -391,10 +439,15 @@ testCST(int argc, char** argv)
     text_lcp.load(in); sel.load(in);
     ref_lcp.load(in);
     in.close();
-    compressBitvector("LCP               ", text_lcp, ref_lcp);
+    compressBitvector("LCP               ", text_lcp, ref_lcp, lcp_fmi);
 
     std::cout << std::endl;
   }
+
+  delete wt_fmi; wt_fmi = 0;
+  delete sample_fmi; sample_fmi = 0;
+  delete tree_fmi; tree_fmi = 0;
+  delete lcp_fmi; lcp_fmi = 0;
 }
 
 //------------------------------------------------------------------------------

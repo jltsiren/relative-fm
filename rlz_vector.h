@@ -66,10 +66,13 @@ private:
 class RLZVector
 {
 public:
+  // The optional bv_fmi allows reusing an already built index for the reference,
+  // making parsing much faster.
   RLZVector(const bit_vector& text, const bit_vector& _reference,
     const bit_vector::rank_1_type& _ref_rank,
     const bit_vector::select_1_type& _ref_select_1,
-    const bit_vector::select_0_type& _ref_select_0);
+    const bit_vector::select_0_type& _ref_select_0,
+    const bv_fmi* fmi = 0);
   RLZVector(std::istream& input, const bit_vector& _reference,
     const bit_vector::rank_1_type& _ref_rank,
     const bit_vector::select_1_type& _ref_select_1,
@@ -207,10 +210,12 @@ public:
   // FIXME construction from iterators.
   ~rlz_vector();
 
+  // Reusing an existing index for the reference makes compression much faster.
   void compress(const bit_vector& reference,
     const bit_vector::rank_1_type& ref_rank,
     const bit_vector::select_1_type& ref_select_1,
-    const bit_vector::select_0_type& ref_select_0);
+    const bit_vector::select_0_type& ref_select_0,
+    const bv_fmi* fmi = 0);
   void decompress();  // FIXME implement
 
   void swap(rlz_vector& v);

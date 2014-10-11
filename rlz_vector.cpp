@@ -54,7 +54,8 @@ void
 rlz_vector::compress(const bit_vector& reference,
   const bit_vector::rank_1_type& ref_rank,
   const bit_vector::select_1_type& ref_select_1,
-  const bit_vector::select_0_type& ref_select_0)
+  const bit_vector::select_0_type& ref_select_0,
+  const bv_fmi* fmi)
 {
   if(this->isCompressed())  // FIXME maybe decompress and recompress
   {
@@ -62,7 +63,7 @@ rlz_vector::compress(const bit_vector& reference,
     return;
   }
 
-  this->m_compressed = new RLZVector(this->plain, reference, ref_rank, ref_select_1, ref_select_0);
+  this->m_compressed = new RLZVector(this->plain, reference, ref_rank, ref_select_1, ref_select_0, fmi);
   this->compressed = this->m_compressed;
   this->clear_plain();
 }
@@ -237,11 +238,19 @@ rlz_vector::load(std::istream& in, const bit_vector& reference,
 RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
   const bit_vector::rank_1_type& _ref_rank,
   const bit_vector::select_1_type& _ref_select_1,
-  const bit_vector::select_0_type& _ref_select_0) :
+  const bit_vector::select_0_type& _ref_select_0,
+  const bv_fmi* fmi) :
   reference(_reference), ref_rank(_ref_rank), ref_select_1(_ref_select_1), ref_select_0(_ref_select_0)
 {
   std::vector<uint64_t> phrase_starts, phrase_lengths;
-  relativeLZ(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
+  if(fmi != 0)
+  {
+    relativeLZ(text, *fmi, phrase_starts, phrase_lengths, this->mismatches);
+  }
+  else
+  {
+    relativeLZ(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
+  }
 
   std::vector<uint64_t> phrase_buffer;
   this->phrase_rle.resize(phrase_starts.size()); util::set_to_value(this->phrase_rle, 0);
