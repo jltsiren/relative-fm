@@ -9,7 +9,7 @@ RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 #RUN_FLAGS=-DREPORT_RUNS
 
 # Print some additional information.
-#VERBOSE_FLAGS=-DVERBOSE_OUTPUT
+VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 
 # Sparse bitvectors are slower, but they can sometimes be smaller.
 #VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS

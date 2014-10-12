@@ -7,20 +7,25 @@
 
 
 // Which tests to run.
-//#define RLZ_TESTS
-//#define BV_TESTS
-//#define WT_TESTS
-#define CST_TESTS
+#define RLZ_TESTS
+#define STRING_TESTS
+#define BV_TESTS
+#define WT_TESTS
+//#define CST_TESTS
 
 
-// For RLZ tests.
+// For bitvector RLZ tests.
 const uint64_t RLZ_SIZE = 128 * (uint64_t)1048576;
+
+// For string RLZ tests.
+const uint64_t STRING_SIZE = 128 * (uint64_t)1048576;
+const uint64_t STRING_ALPHABET = 4;
 
 // For bitvector tests.
 const uint64_t BV_SIZE = 128 * (uint64_t)1048576;
 
 // For wavelet tree tests.
-const uint64_t WT_SIZE = 512 * (uint64_t)1048576;
+const uint64_t WT_SIZE = 128 * (uint64_t)1048576;
 const uint8_t  WT_ALPHABET = 4;
 
 // For all tests.
@@ -35,6 +40,7 @@ const double   EXTENSION_PROB = 0.3;
 //------------------------------------------------------------------------------
 
 void testRLZ(int argc, char** argv);
+void testString(int argc, char** argv);
 void testBV(int argc, char** argv);
 void testWT(int argc, char** argv);
 void testCST(int argc, char** argv);
@@ -47,6 +53,10 @@ main(int argc, char** argv)
 
 #ifdef RLZ_TESTS
   testRLZ(argc, argv);
+#endif
+
+#ifdef STRING_TESTS
+  testString(argc, argv);
 #endif
 
 #ifdef BV_TESTS
@@ -86,7 +96,7 @@ uint64_t totalSize(const A& a, const B& b, const C& c, const D& d)
 void
 testRLZ(int argc, char** argv)
 {
-  std::cout << "Parsing tests" << std::endl;
+  std::cout << "Bitvector parsing tests" << std::endl;
   std::cout << std::endl;
 
   for(int arg = 1; arg < argc; arg++)
@@ -102,7 +112,7 @@ testRLZ(int argc, char** argv)
     std::vector<uint64_t> starts, lengths;
     bit_vector mismatches;
     double start_time = readTimer();
-    relativeLZ(text, reference, starts, lengths, mismatches);
+    relativeLZSuccinct(text, reference, starts, lengths, mismatches);
     double seconds = readTimer() - start_time;
     std::cout << "Parsing took " << seconds << " seconds, " << inMegabytes(memoryUsage()) << " MB." << std::endl;
 
@@ -114,6 +124,54 @@ testRLZ(int argc, char** argv)
         if(text[text_pos] != reference[ref_pos]) { errors++; }
       }
       if(text[text_pos] != mismatches[phrase]) { errors++; } text_pos++;
+    }
+    std::cout << "Decompressed the text with " << errors << " error(s)." << std::endl;
+
+    std::cout << std::endl;
+  }
+}
+
+void
+testString(int argc, char** argv)
+{
+  std::cout << "String parsing tests" << std::endl;
+  std::cout << std::endl;
+
+  for(int arg = 1; arg < argc; arg++)
+  {
+    std::mt19937_64 rng(0xDEADBEEF);
+    double prob = atof(argv[arg]);
+    std::cout << "Mutation rate: " << prob << std::endl;
+
+    int_vector<8> reference = generateReference(rng, STRING_SIZE, STRING_ALPHABET);
+    int_vector<8> text = generateVariant(rng, reference, prob);
+    std::cout << "Reference length " << reference.size() << ", text length " << text.size() << "." << std::endl;
+
+    std::vector<uint64_t> starts, lengths;
+    int_vector<8> mismatches;
+    double start_time = readTimer();
+    relativeLZ(text, reference, starts, lengths, mismatches);
+    double seconds = readTimer() - start_time;
+    std::cout << "Parsing took " << seconds << " seconds, " << inMegabytes(memoryUsage()) << " MB." << std::endl;
+
+    uint64_t errors = 0;
+    for(uint64_t phrase = 0, text_pos = 0; phrase < starts.size(); phrase++)
+    {
+      for(uint64_t ref_pos = starts[phrase]; ref_pos < starts[phrase] + lengths[phrase] - 1; text_pos++, ref_pos++)
+      {
+        if(text[text_pos] != reference[ref_pos])
+        {
+          std::cout << "Phrase " << phrase << ", text[" << text_pos << "] = " << (uint)text[text_pos] << ", reference[" << ref_pos << "] = " << (uint)reference[ref_pos] << std::endl;
+          errors++;
+          if(errors > 20) { return; }
+        }
+      }
+      if(text[text_pos] != mismatches[phrase])
+      {
+        std::cout << "Phrase " << phrase << " (length " << lengths[phrase] << "), text[" << text_pos << "] = " << (uint)text[text_pos] << "(prev " << (uint)text[text_pos - 1] << "), mismatches[" << phrase << "] = " << (uint)mismatches[phrase] << std::endl;
+        errors++;
+        if(errors > 20) { return; }
+      } text_pos++;
     }
     std::cout << "Decompressed the text with " << errors << " error(s)." << std::endl;
 
@@ -517,7 +575,7 @@ generateReference(std::mt19937_64& rng, uint64_t size, uint8_t alphabet_size)
   }
 
   int_vector<8> reference(size);
-  for(uint64_t i = 0; i < reference.size(); i++) { reference[i] = randomChar(rng, alphabet_size) + 1; }
+  for(uint64_t i = 0; i < reference.size(); i++) { reference[i] = randomChar(rng, alphabet_size); }
   return reference;
 }
 

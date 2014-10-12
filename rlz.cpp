@@ -12,7 +12,7 @@ namespace sdsl
 //------------------------------------------------------------------------------
 
 void
-relativeLZ(const bit_vector& text, const bit_vector& reference,
+relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
@@ -20,12 +20,13 @@ relativeLZ(const bit_vector& text, const bit_vector& reference,
 #ifdef VERBOSE_OUTPUT
   std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
 #endif
+
   bv_fmi fmi(reference);
-  relativeLZ(text, fmi, starts, lengths, mismatches);
+  relativeLZSuccinct(text, fmi, starts, lengths, mismatches);
 }
 
 void
-relativeLZ(const bit_vector& text, const bv_fmi& reference,
+relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
@@ -81,6 +82,23 @@ relativeLZ(const bit_vector& text, const bv_fmi& reference,
 #ifdef VERBOSE_OUTPUT
   std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
 #endif
+}
+
+//------------------------------------------------------------------------------
+
+void
+relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches)
+{
+  if(text.size() == 0) { return; }
+
+#ifdef VERBOSE_OUTPUT
+  std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
+#endif
+
+  csa_wt<> csa;
+  reverseIndex(reference, csa);
+  relativeLZ(text, csa, starts, lengths, mismatches);
 }
 
 //------------------------------------------------------------------------------

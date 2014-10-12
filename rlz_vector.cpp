@@ -245,11 +245,11 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
   std::vector<uint64_t> phrase_starts, phrase_lengths;
   if(fmi != 0)
   {
-    relativeLZ(text, *fmi, phrase_starts, phrase_lengths, this->mismatches);
+    relativeLZSuccinct(text, *fmi, phrase_starts, phrase_lengths, this->mismatches);
   }
   else
   {
-    relativeLZ(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
+    relativeLZSuccinct(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
   }
 
   std::vector<uint64_t> phrase_buffer;
