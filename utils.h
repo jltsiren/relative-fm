@@ -87,7 +87,7 @@ uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, b
 #ifdef USE_RRR_WT
 typedef wt_huff<rrr_vector<63> > bwt_type;
 #else
-typedef wt_huff<> bwt_type;
+typedef wt_huff<bit_vector, rank_support_v5<> > bwt_type;
 #endif
 
 typedef byte_alphabet alphabet_type;
