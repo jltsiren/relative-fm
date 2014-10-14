@@ -2,7 +2,7 @@ SDSL_DIR=../sdsl-lite
 
 # In OS X, getrusage() returns maximum resident set size in bytes.
 # In Linux, the value is in kilobytes, so this line should be commented out.
-RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
+#RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
 # Compute run and gap measures for the bitvectors in RelativeFM::reportSize().
 # This makes reportSize() significantly slower.
@@ -10,6 +10,8 @@ RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
+#VERBOSE_FLAGS=-DVERBOSE_OUTPUT -DVERBOSE_STATUS_INFO
+
 
 # Sparse bitvectors are slower, but they can sometimes be smaller.
 #VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS

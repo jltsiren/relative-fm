@@ -17,7 +17,7 @@ relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
 {
   if(text.size() == 0) { return; }
 
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
 #endif
 
@@ -79,7 +79,7 @@ relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   mismatches.resize(char_buffer.size());
   for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
 
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
 #endif
 }
@@ -92,7 +92,7 @@ relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
 {
   if(text.size() == 0) { return; }
 
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
 #endif
 
@@ -185,7 +185,7 @@ bv_fmi::incrementalBWT(uint64_t block_size)
 void
 bv_fmi::lastBWTBlock(uint64_t offset)
 {
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "Offset: " << offset << std::endl;
 #endif
   if(offset + 1 >= this->bwt.size()) { this->endmarker = offset; return; }
@@ -224,7 +224,7 @@ bv_fmi::lastBWTBlock(uint64_t offset)
 void
 bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
 {
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "Offset: " << offset << std::endl;
 #endif
 
@@ -305,7 +305,7 @@ void
 bv_fmi::sampleSA()
 {
   if(this->bwt.size() <= 1 || this->sample_rate == 0) { return; }
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "Sampling SA... "; std::cout.flush();
 #endif
 
@@ -319,7 +319,7 @@ bv_fmi::sampleSA()
     else             { bwt_pos = this->LF0(bwt_pos); }
     if(bwt_pos % this->sample_rate == 1) { this->sa_samples[bwt_pos / this->sample_rate] = text_pos; }
   }
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "done." << std::endl;
 #endif
 }

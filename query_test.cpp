@@ -26,12 +26,14 @@ main(int argc, char** argv)
   std::cout << std::endl;
   SimpleFM<> seq(argv[2]);
   seq.reportSize(true);
+  SimpleFM<wt_huff<rrr_vector<63> > > rrr(argv[2]);
+  rrr.reportSize(true);
   RelativeFM rel(ref, argv[2]);
   rel.reportSize(true);
   RLZFM rlz(ref, argv[2]);
   rlz.reportSize(true);
 
-  SimpleFM<wt_huff<rlz_vector>> rlzv(argv[2]);
+  SimpleFM<wt_huff<rlz_vector> > rlzv(argv[2]);
   bit_vector::rank_1_type b_r(&(ref.bwt.bv));
   bit_vector::select_1_type b_s1(&(ref.bwt.bv));
   bit_vector::select_0_type b_s0(&(ref.bwt.bv));
@@ -59,7 +61,19 @@ main(int argc, char** argv)
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;
-    printTime("Simple FM", found, matches, chars, seconds);
+    printTime("FM<plain>", found, matches, chars, seconds);
+  }
+
+  {
+    double start = readTimer();
+    uint64_t found = 0, matches = 0;
+    for(auto pattern : patterns)
+    {
+      range_type res = rrr.find(pattern.rbegin(), pattern.rend());
+      if(length(res) > 0) { found++; matches += length(res); }
+    }
+    double seconds = readTimer() - start;
+    printTime("FM<rrr>", found, matches, chars, seconds);
   }
 
   {
@@ -95,7 +109,7 @@ main(int argc, char** argv)
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;
-    printTime("RLZ vector", found, matches, chars, seconds);
+    printTime("FM<rlz>", found, matches, chars, seconds);
   }
 
   double memory = inMegabytes(memoryUsage());

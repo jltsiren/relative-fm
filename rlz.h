@@ -76,7 +76,7 @@ relativeLZ(const IntVector& text, const CSA& reference,
   mismatches.resize(char_buffer.size());
   for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
 
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
 #endif
 }
