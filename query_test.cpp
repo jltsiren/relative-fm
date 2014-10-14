@@ -1,4 +1,6 @@
 #include "relative_fm.h"
+#include "rlz_fm.h"
+#include "rlz_vector.h"
 
 
 int
@@ -26,9 +28,21 @@ main(int argc, char** argv)
   seq.reportSize(true);
   RelativeFM rel(ref, argv[2]);
   rel.reportSize(true);
+  RLZFM rlz(ref, argv[2]);
+  rlz.reportSize(true);
+
+  SimpleFM<wt_huff<rlz_vector>> rlzv(argv[2]);
+  bit_vector::rank_1_type b_r(&(ref.bwt.bv));
+  bit_vector::select_1_type b_s1(&(ref.bwt.bv));
+  bit_vector::select_0_type b_s0(&(ref.bwt.bv));
+  {
+    rlz_vector& temp = const_cast<rlz_vector&>(rlzv.bwt.bv);
+    temp.compress(ref.bwt.bv, b_r, b_s1, b_s0);
+  }
+  rlzv.reportSize(true);
   std::cout << std::endl;
 
-  std::cout << "Patters: " << argv[3] << std::endl;
+  std::cout << "Patterns: " << argv[3] << std::endl;
   std::cout << std::endl;
   std::vector<std::string> patterns;
   uint64_t chars = readRows(argv[3], patterns, true);
@@ -58,6 +72,30 @@ main(int argc, char** argv)
     }
     double seconds = readTimer() - start;
     printTime("Relative FM", found, matches, chars, seconds);
+  }
+
+  {
+    double start = readTimer();
+    uint64_t found = 0, matches = 0;
+    for(auto pattern : patterns)
+    {
+      range_type res = rlz.find(pattern.rbegin(), pattern.rend());
+      if(length(res) > 0) { found++; matches += length(res); }
+    }
+    double seconds = readTimer() - start;
+    printTime("RLZ FM", found, matches, chars, seconds);
+  }
+
+  {
+    double start = readTimer();
+    uint64_t found = 0, matches = 0;
+    for(auto pattern : patterns)
+    {
+      range_type res = rlzv.find(pattern.rbegin(), pattern.rend());
+      if(length(res) > 0) { found++; matches += length(res); }
+    }
+    double seconds = readTimer() - start;
+    printTime("RLZ vector", found, matches, chars, seconds);
   }
 
   double memory = inMegabytes(memoryUsage());

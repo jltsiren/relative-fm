@@ -133,9 +133,9 @@ public:
   */
   const static int MAX_D = 50000;
 
-  RelativeFM(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& seq, bool print = false);
-  RelativeFM(const SimpleFM<bwt_type>& ref, const std::string& base_name);
-  RelativeFM(const SimpleFM<bwt_type>& ref, std::istream& input);
+  RelativeFM(const SimpleFM<>& ref, const SimpleFM<>& seq, bool print = false);
+  RelativeFM(const SimpleFM<>& ref, const std::string& base_name);
+  RelativeFM(const SimpleFM<>& ref, std::istream& input);
   ~RelativeFM();
 
   uint64_t reportSize(bool print = false) const;
@@ -150,7 +150,7 @@ public:
   typedef rrr_vector<63> vector_type;
 #endif
 
-  const SimpleFM<bwt_type>&   reference;
+  const SimpleFM<>&           reference;
   bwt_type                    ref_minus_lcs, seq_minus_lcs;
   vector_type                 ref_lcs, seq_lcs;
   alphabet_type               alpha;
@@ -226,7 +226,7 @@ std::vector<std::pair<int, int> >
 greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range, bool onlyNs);
 
 std::pair<bit_vector, bit_vector>
-alignBWTs(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print);
+alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print);
 
 //------------------------------------------------------------------------------
 

@@ -20,7 +20,7 @@ getComplement(const bwt_type& bwt, const bit_vector& positions, uint64_t n)
   return temp;
 }
 
-RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& seq, bool print) :
+RelativeFM::RelativeFM(const SimpleFM<>& ref, const SimpleFM<>& seq, bool print) :
   reference(ref)
 {
   this->size = seq.bwt.size();
@@ -41,7 +41,7 @@ RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& 
   this->alpha = seq.alpha;
 }
 
-RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, const std::string& base_name) :
+RelativeFM::RelativeFM(const SimpleFM<>& ref, const std::string& base_name) :
   reference(ref)
 {
   std::string filename = base_name + EXTENSION;
@@ -55,7 +55,7 @@ RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, const std::string& base_na
   input.close();
 }
 
-RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, std::istream& input) :
+RelativeFM::RelativeFM(const SimpleFM<>& ref, std::istream& input) :
   reference(ref)
 {
   this->loadFrom(input);
@@ -175,7 +175,7 @@ RelativeFM::writeTo(const std::string& base_name) const
   std::ofstream output(filename.c_str(), std::ios_base::binary);
   if(!output)
   {
-    std::cerr << "RelativeFM::writeTo(): Cannot open output file " << filename << "!" << std::endl;
+    std::cerr << "RelativeFM::writeTo(): Cannot open output file " << filename << std::endl;
     return;
   }
   this->writeTo(output);
@@ -398,7 +398,7 @@ greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_
 //------------------------------------------------------------------------------
 
 std::pair<bit_vector, bit_vector>
-alignBWTs(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print)
+alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print)
 {
   if(print)
   {

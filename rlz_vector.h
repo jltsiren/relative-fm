@@ -4,64 +4,13 @@
 
 #include <sdsl/bit_vectors.hpp>
 
+#include "rlz.h"
+
 
 namespace sdsl
 {
 
 //------------------------------------------------------------------------------
-
-/*
-  This struct encodes an ordered set of items stored in an ordered set of blocks.
-  Both items and blocks are 0-based, and some of the blocks may be empty.
-*/
-struct rlz_helper
-{
-  sd_vector<>                 v;
-  sd_vector<>::rank_1_type    v_rank;
-  sd_vector<>::select_1_type  v_select;
-
-  bit_vector                  nonzero;
-  bit_vector::rank_1_type     nz_rank;
-  bit_vector::select_1_type   nz_select;
-
-  rlz_helper();
-  rlz_helper(const rlz_helper& r);
-  rlz_helper(rlz_helper&& r);
-  rlz_helper& operator=(const rlz_helper& r);
-  rlz_helper& operator=(rlz_helper&& r);
-
-  void init(const std::vector<uint64_t>& values);
-
-  inline uint64_t blockFor(uint64_t item) const
-  {
-    uint64_t block = this->v_rank(item);
-    if(this->nonzero.size() > 0) { block = this->nz_select(block + 1); }
-    return block;
-  }
-
-  inline uint64_t itemsAfter(uint64_t block) const
-  {
-    block++;  // Convert to 1-based blocks.
-    if(this->nonzero.size() > 0)
-    {
-      block = this->nz_rank(block);
-      if(block == 0) { return 0; }
-    }
-    return this->v_select(block) + 1;
-  }
-
-  inline bool isLast(uint64_t item) const
-  {
-    return v[item];
-  }
-
-  uint64_t reportSize() const;
-  void load(std::istream& input);
-  uint64_t serialize(std::ostream& output) const;
-
-private:
-  void copy(const rlz_helper& r);
-};
 
 class RLZVector
 {
