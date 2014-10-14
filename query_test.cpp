@@ -16,13 +16,13 @@ main(int argc, char** argv)
 
   std::cout << "Reference: " << argv[1] << std::endl;
   std::cout << std::endl;
-  SimpleFM ref(argv[1]);
+  SimpleFM<> ref(argv[1]);
   ref.reportSize(true);
   std::cout << std::endl;
 
   std::cout << "Sequence: " << argv[2] << std::endl;
   std::cout << std::endl;
-  SimpleFM seq(argv[2]);
+  SimpleFM<> seq(argv[2]);
   seq.reportSize(true);
   RelativeFM rel(ref, argv[2]);
   rel.reportSize(true);

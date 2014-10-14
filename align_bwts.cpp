@@ -16,14 +16,14 @@ main(int argc, char** argv)
   std::cout << "Reference: " << argv[1] << std::endl;
   std::cout << std::endl;
 
-  SimpleFM ref(argv[1]);
+  SimpleFM<> ref(argv[1]);
   ref.reportSize(true);
   std::cout << std::endl;
 
   for(int arg = 2; arg < argc; arg++)
   {
     std::cout << "Target: " << argv[arg] << std::endl;
-    SimpleFM seq(argv[arg]);
+    SimpleFM<> seq(argv[arg]);
     double start = readTimer();
     RelativeFM rel(ref, seq, true);
     double seconds = readTimer() - start;

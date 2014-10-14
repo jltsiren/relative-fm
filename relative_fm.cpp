@@ -4,76 +4,6 @@
 
 //------------------------------------------------------------------------------
 
-const std::string SimpleFM::EXTENSION = ".bwt";
-
-SimpleFM::SimpleFM(const std::string& base_name)
-{
-  std::string filename = base_name + EXTENSION;
-  std::ifstream input(filename.c_str(), std::ios_base::binary);
-  if(!input)
-  {
-    std::cerr << "SimpleFM::SimpleFM(): Cannot open input file " << filename << "!" << std::endl;
-    return;
-  }
-  this->loadFrom(input);
-  input.close();
-}
-
-SimpleFM::SimpleFM(std::ifstream& input)
-{
-  this->loadFrom(input);
-}
-
-SimpleFM::~SimpleFM()
-{
-}
-
-uint64_t
-SimpleFM::reportSize(bool print) const
-{
-  uint64_t bwt_bytes = size_in_bytes(this->bwt);
-  uint64_t bytes = sizeof(*this) + bwt_bytes + size_in_bytes(this->alpha);
-
-  if(print)
-  {
-    printSize("BWT", bwt_bytes, this->bwt.size());
-    printSize("Simple FM", bytes, this->bwt.size());
-    std::cout << std::endl;
-  }
-
-  return bytes;
-}
-
-void
-SimpleFM::writeTo(const std::string& base_name) const
-{
-  std::string filename = base_name + EXTENSION;
-  std::ofstream output(filename.c_str(), std::ios_base::binary);
-  if(!output)
-  {
-    std::cerr << "SimpleFM::writeTo(): Cannot open output file " << filename << "!" << std::endl;
-    return;
-  }
-  this->writeTo(output);
-  output.close();
-}
-
-void
-SimpleFM::writeTo(std::ofstream& output) const
-{
-  this->bwt.serialize(output);
-  this->alpha.serialize(output);
-}
-
-void
-SimpleFM::loadFrom(std::ifstream& input)
-{
-  this->bwt.load(input);
-  this->alpha.load(input);
-}
-
-//------------------------------------------------------------------------------
-
 const std::string RelativeFM::EXTENSION = ".rfm";
 
 bwt_type
@@ -90,7 +20,7 @@ getComplement(const bwt_type& bwt, const bit_vector& positions, uint64_t n)
   return temp;
 }
 
-RelativeFM::RelativeFM(const SimpleFM& ref, const SimpleFM& seq, bool print) :
+RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& seq, bool print) :
   reference(ref)
 {
   this->size = seq.bwt.size();
@@ -111,21 +41,21 @@ RelativeFM::RelativeFM(const SimpleFM& ref, const SimpleFM& seq, bool print) :
   this->alpha = seq.alpha;
 }
 
-RelativeFM::RelativeFM(const SimpleFM& ref, const std::string& base_name) :
+RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, const std::string& base_name) :
   reference(ref)
 {
   std::string filename = base_name + EXTENSION;
   std::ifstream input(filename.c_str(), std::ios_base::binary);
   if(!input)
   {
-    std::cerr << "RelativeFM::RelativeFM(): Cannot open input file " << filename << "!" << std::endl;
+    std::cerr << "RelativeFM::RelativeFM(): Cannot open input file " << filename << std::endl;
     return;
   }
   this->loadFrom(input);
   input.close();
 }
 
-RelativeFM::RelativeFM(const SimpleFM& ref, std::ifstream& input) :
+RelativeFM::RelativeFM(const SimpleFM<bwt_type>& ref, std::istream& input) :
   reference(ref)
 {
   this->loadFrom(input);
@@ -133,10 +63,6 @@ RelativeFM::RelativeFM(const SimpleFM& ref, std::ifstream& input) :
 
 RelativeFM::~RelativeFM()
 {
-  delete ref_rank; ref_rank = 0;
-  delete seq_rank; seq_rank = 0;
-  delete ref_select; ref_select = 0;
-  delete seq_select; seq_select = 0;
 }
 
 void
@@ -185,12 +111,8 @@ RelativeFM::reportSize(bool print) const
   uint64_t seq_bytes = size_in_bytes(this->seq_minus_lcs);
   uint64_t bwt_bytes = ref_bytes + seq_bytes;
 
-  uint64_t reflcs_bytes = size_in_bytes(this->ref_lcs);
-  if(this->ref_rank != 0) { reflcs_bytes += size_in_bytes(*(this->ref_rank)); }
-  if(this->ref_select != 0) { reflcs_bytes += size_in_bytes(*(this->ref_select)); }
-  uint64_t seqlcs_bytes = size_in_bytes(this->seq_lcs);
-  if(this->seq_rank != 0) { seqlcs_bytes += size_in_bytes(*(this->seq_rank)); }
-  if(this->seq_select != 0) { seqlcs_bytes += size_in_bytes(*(this->seq_select)); }
+  uint64_t reflcs_bytes = size_in_bytes(this->ref_lcs) + size_in_bytes(this->ref_select);
+  uint64_t seqlcs_bytes = size_in_bytes(this->seq_lcs) + size_in_bytes(this->seq_rank);
   uint64_t bitvector_bytes = reflcs_bytes + seqlcs_bytes;
 
 #ifdef REPORT_RUNS
@@ -204,7 +126,7 @@ RelativeFM::reportSize(bool print) const
   }
 #endif
 
-  uint64_t bytes = sizeof(*this) + bwt_bytes + bitvector_bytes + size_in_bytes(this->alpha);
+  uint64_t bytes = bwt_bytes + bitvector_bytes + size_in_bytes(this->alpha);
 
   if(print)
   {
@@ -261,7 +183,7 @@ RelativeFM::writeTo(const std::string& base_name) const
 }
 
 void
-RelativeFM::writeTo(std::ofstream& output) const
+RelativeFM::writeTo(std::ostream& output) const
 {
   this->ref_minus_lcs.serialize(output);
   this->seq_minus_lcs.serialize(output);
@@ -271,7 +193,7 @@ RelativeFM::writeTo(std::ofstream& output) const
 }
 
 void
-RelativeFM::loadFrom(std::ifstream& input)
+RelativeFM::loadFrom(std::istream& input)
 {
   this->ref_minus_lcs.load(input);
   this->seq_minus_lcs.load(input);
@@ -285,15 +207,8 @@ RelativeFM::loadFrom(std::ifstream& input)
 void
 RelativeFM::buildRankSelect()
 {
-  this->ref_rank = new vector_type::rank_1_type(&(this->ref_lcs));
-  this->seq_rank = new vector_type::rank_1_type(&(this->seq_lcs));
-#ifdef USE_SPARSE_BITVECTORS
-  this->ref_select = new vector_type::select_0_type(&(this->ref_lcs));
-  this->seq_select = new vector_type::select_0_type(&(this->seq_lcs));
-#else
-  this->ref_select = new vector_type::select_1_type(&(this->ref_lcs));
-  this->seq_select = new vector_type::select_1_type(&(this->seq_lcs));
-#endif
+  util::init_support(this->ref_select, &(this->ref_lcs));
+  util::init_support(this->seq_rank, &(this->seq_lcs));
 }
 
 //------------------------------------------------------------------------------
@@ -483,7 +398,7 @@ greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_
 //------------------------------------------------------------------------------
 
 std::pair<bit_vector, bit_vector>
-alignBWTs(const SimpleFM& ref, const SimpleFM& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print)
+alignBWTs(const SimpleFM<bwt_type>& ref, const SimpleFM<bwt_type>& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print)
 {
   if(print)
   {

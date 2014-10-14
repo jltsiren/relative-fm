@@ -84,6 +84,8 @@ uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, b
 
 //------------------------------------------------------------------------------
 
+const std::string BWT_EXTENSION = ".bwt";
+
 #ifdef USE_RRR_WT
 typedef wt_huff<rrr_vector<63> > bwt_type;
 #else
@@ -104,16 +106,18 @@ hasChar(const alphabet_type& alpha, uint8_t c)
   return (c == 0 || alpha.char2comp[c] > 0);
 }
 
+template<class RankStructure>
 inline range_type
-charRange(const bwt_type& bwt, const alphabet_type& alpha, uint8_t c)
+charRange(const RankStructure& bwt, const alphabet_type& alpha, uint8_t c)
 {
   uint16_t temp = alpha.char2comp[c];
   if(temp < alpha.sigma) { return range_type(alpha.C[temp], alpha.C[temp + 1] - 1); }
   else { return range_type(alpha.C[temp], bwt.size() - 1); }
 }
 
+template<class RankStructure>
 inline range_type
-LF(const bwt_type& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
+LF(const RankStructure& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
 {
   uint64_t begin = cumulative(alpha, c);
   return range_type(begin + bwt.rank(rng.first, c), begin + bwt.rank(rng.second + 1, c) - 1);

@@ -5,9 +5,6 @@
 #include "utils.h"
 
 
-void build_bwt(bwt_type& bwt, alphabet_type& alpha, const std::string& filename);
-
-
 int
 main(int argc, char** argv)
 {
@@ -20,66 +17,43 @@ main(int argc, char** argv)
 
   for(int i = 1; i < argc; i++)
   {
-    bwt_type bwt;
-    alphabet_type alpha;
     std::string base_name = argv[i];
-    build_bwt(bwt, alpha, base_name);
+    std::cout << "File: " << base_name << std::endl;
+    uint64_t size = util::file_size(base_name);
+    std::cout << "Text size: " << size << std::endl;
 
-    std::string bwt_name = base_name + ".bwt";
-    std::ofstream output(bwt_name.c_str(), std::ios_base::binary);
-    bwt.serialize(output);
-    alpha.serialize(output);
-    output.close();
+    // Read text.
+    int_vector<8> text(size + 1, 0);  // Append an endmarker.
+    std::ifstream in(base_name.c_str(), std::ios_base::binary);
+    if(!in)
+    {
+      std::cerr << "build_bwt: Cannot open input file " << base_name << std::endl;
+      std::cout << std::endl;
+      continue;
+    }
+    in.read((char*)(text.data()), size);
+
+    // Build BWT.
+    double start = readTimer();
+    divbwt64((const unsigned char*)(text.data()), (unsigned char*)(text.data()), 0, size + 1);
+    double seconds = readTimer() - start;
+    std::cout << "BWT built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
+
+    // Write BWT.
+    std::string bwt_name = base_name + BWT_EXTENSION;
+    std::ofstream out(bwt_name.c_str(), std::ios_base::binary);
+    if(!out)
+    {
+      std::cerr << "build_bwt: Cannot open output file " << bwt_name << std::endl;
+      std::cout << std::endl;
+      continue;
+    }
+    text.serialize(out);
+    out.close();
+    std::cout << "BWT written to " << bwt_name << std::endl;
+    
+    std::cout << std::endl;
   }
 
   return 0;
-}
-
-
-void
-build_bwt(bwt_type& bwt, alphabet_type& alpha, const std::string& filename)
-{
-  std::cout << "File: " << filename << std::endl;
-
-  cache_config config;
-
-  {
-    int_vector<8> text;
-    load_vector_from_file(text, filename, 1);
-    std::cout << "Text size: " << text.size() << std::endl;
-    if(contains_no_zero_symbol(text, filename)) { append_zero_symbol(text); }
-    store_to_cache(text, conf::KEY_TEXT, config);
-  }
-
-  {
-    std::cout << "Building SA..." << std::endl;
-    construct_sa<8>(config);
-  }
-
-  {
-    std::cout << "Building BWT..." << std::endl;
-    construct_bwt<8>(config);
-    remove(cache_file_name(conf::KEY_TEXT, config));
-    remove(cache_file_name(conf::KEY_SA, config));
-  }
-
-  {
-    std::cout << "Building alphabet..." << std::endl;
-    int_vector_buffer<8> bwt_buf(cache_file_name(conf::KEY_BWT, config));
-    auto n = bwt_buf.size();
-    alphabet_type temp(bwt_buf, n);
-    alpha.swap(temp);
-  }
-
-  {
-    std::cout << "Building WT..." << std::endl;
-    int_vector_buffer<8> bwt_buf(cache_file_name(conf::KEY_BWT, config));
-    auto n = bwt_buf.size();
-    bwt_type temp(bwt_buf, n);
-    bwt.swap(temp);
-  }
-
-  remove(cache_file_name(conf::KEY_BWT, config));
-  std::cout << "BWT size: " << bwt.size() << std::endl;
-  std::cout << std::endl;
 }
