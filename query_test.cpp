@@ -57,7 +57,7 @@ main(int argc, char** argv)
     uint64_t found = 0, matches = 0;
     for(auto pattern : patterns)
     {
-      range_type res = seq.find(pattern.rbegin(), pattern.rend());
+      range_type res = seq.find(pattern.begin(), pattern.end());
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;
@@ -69,7 +69,7 @@ main(int argc, char** argv)
     uint64_t found = 0, matches = 0;
     for(auto pattern : patterns)
     {
-      range_type res = rrr.find(pattern.rbegin(), pattern.rend());
+      range_type res = rrr.find(pattern.begin(), pattern.end());
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;
@@ -81,7 +81,7 @@ main(int argc, char** argv)
     uint64_t found = 0, matches = 0;
     for(auto pattern : patterns)
     {
-      range_type res = rel.find(pattern.rbegin(), pattern.rend());
+      range_type res = rel.find(pattern.begin(), pattern.end());
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;
@@ -93,7 +93,7 @@ main(int argc, char** argv)
     uint64_t found = 0, matches = 0;
     for(auto pattern : patterns)
     {
-      range_type res = rlz.find(pattern.rbegin(), pattern.rend());
+      range_type res = rlz.find(pattern.begin(), pattern.end());
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;
@@ -105,7 +105,7 @@ main(int argc, char** argv)
     uint64_t found = 0, matches = 0;
     for(auto pattern : patterns)
     {
-      range_type res = rlzv.find(pattern.rbegin(), pattern.rend());
+      range_type res = rlzv.find(pattern.begin(), pattern.end());
       if(length(res) > 0) { found++; matches += length(res); }
     }
     double seconds = readTimer() - start;

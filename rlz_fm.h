@@ -87,12 +87,11 @@ RLZFM::find(Iter begin, Iter end) const
   range_type res(0, this->size() - 1);
   while(begin != end)
   {
-    if(!hasChar(this->alpha, *begin)) { return range_type(1, 0); }
-    uint64_t pos = cumulative(this->alpha, *begin);
-    res.first = pos + this->rank(res.first, *begin);
-    res.second = pos + this->rank(res.second + 1, *begin) - 1;
-    if(isEmpty(res)) { return range_type(1, 0); }
-    ++begin;
+    --end;
+    uint64_t pos = cumulative(this->alpha, *end);
+    res.first = pos + this->rank(res.first, *end);
+    res.second = pos + this->rank(res.second + 1, *end) - 1;
+    if(length(res) == 0) { return range_type(1, 0); }
   }
   return res;
 }

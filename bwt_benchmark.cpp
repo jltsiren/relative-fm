@@ -27,7 +27,7 @@ main(int argc, char** argv)
   // construct SA & BWT
   double start = readTimer();
   int_vector<64> sa(n);
-  divsufsort64((const unsigned char*)text.data(), (int64_t*)sa.data(), n);
+  divsufsort64((const unsigned char*)text.data(), (int64_t*)sa.data(), n - 1);
   uint8_t* bwt = (uint8_t*)sa.data(); // override SA with BWT values
   uint64_t to_add[2] = {(uint64_t)-1,n-1};
   for (uint64_t i=0; i < n; ++i) { bwt[i] = text[sa[i] + to_add[sa[i] == 0]]; }

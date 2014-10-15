@@ -429,11 +429,11 @@ alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uin
       std::stringstream ss; ss << curr.pattern << (unsigned char)(alphabet[i]);
       std::string pattern = ss.str();
 
-      range_type left = ref.find(pattern.rbegin(), pattern.rend());
+      range_type left = ref.find(pattern.begin(), pattern.end());
       if(isEmpty(left)) { left = range_type(expect.first, expect.first - 1); }
       else { expect.first = left.second + 1; }
 
-      range_type right = seq.find(pattern.rbegin(), pattern.rend());
+      range_type right = seq.find(pattern.begin(), pattern.end());
       if(isEmpty(right)) { right = range_type(expect.second, expect.second - 1); }
       else { expect.second = right.second + 1; }
 

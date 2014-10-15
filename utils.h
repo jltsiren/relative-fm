@@ -21,16 +21,18 @@ std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
   return stream << "(" << data.first << ", " << data.second << ")";
 }
 
-inline bool
-isEmpty(range_type range)
-{
-  return (range.first > range.second);
-}
-
 inline uint64_t
 length(range_type range)
 {
   return range.second + 1 - range.first;
+}
+
+// An empty range is usually encoded as (x, y), where x > y.
+// Use length for checking the emptiness of ranges of type (0, (uint64_t)-1).
+inline bool
+isEmpty(range_type range)
+{
+  return (range.first > range.second);
 }
 
 inline uint64_t

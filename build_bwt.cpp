@@ -23,7 +23,7 @@ main(int argc, char** argv)
     std::cout << "Text size: " << size << std::endl;
 
     // Read text.
-    int_vector<8> text(size + 1, 0);  // Append an endmarker.
+    int_vector<8> text(size + 1);  // Append an endmarker.
     std::ifstream in(base_name.c_str(), std::ios_base::binary);
     if(!in)
     {
@@ -31,11 +31,16 @@ main(int argc, char** argv)
       std::cout << std::endl;
       continue;
     }
-    in.read((char*)(text.data()), size);
+    in.read((char*)(text.data()), size); text[size] = 0;
 
     // Build BWT.
     double start = readTimer();
-    divbwt64((const unsigned char*)(text.data()), (unsigned char*)(text.data()), 0, size + 1);
+    int_vector<64> sa(size + 1);
+    divsufsort64((const unsigned char*)(text.data()), (int64_t*)(sa.data()), size + 1);
+    uint8_t* bwt = (uint8_t*)(sa.data()); // Overwrite SA with BWT.
+    uint64_t to_add[2] = { (uint64_t)-1, size };
+    for(uint64_t i = 0; i <= size; i++) { bwt[i] = text[sa[i] + to_add[sa[i] == 0]]; }
+    for(uint64_t i = 0; i <= size; i++) { text[i] = bwt[i]; }
     double seconds = readTimer() - start;
     std::cout << "BWT built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
 
