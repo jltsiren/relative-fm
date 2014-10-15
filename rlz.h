@@ -36,6 +36,9 @@ void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
 void relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches);
 
+void relativeLZ(const int_vector<0>& text, const int_vector<0>& reference,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<0>& mismatches);
+
 //------------------------------------------------------------------------------
 
 /*

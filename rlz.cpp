@@ -101,6 +101,21 @@ relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
   relativeLZ(text, csa, starts, lengths, mismatches);
 }
 
+void
+relativeLZ(const int_vector<0>& text, const int_vector<0>& reference,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<0>& mismatches)
+{
+  if(text.size() == 0) { return; }
+
+#ifdef VERBOSE_STATUS_INFO
+  std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
+#endif
+
+  csa_wt<wm_int<> > csa;
+  reverseIndex(reference, csa);
+  relativeLZ(text, csa, starts, lengths, mismatches);
+}
+
 //------------------------------------------------------------------------------
 
 bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_rate)

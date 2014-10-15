@@ -6,12 +6,15 @@
 #include "utils.h"
 
 
-// Which tests to run.
-#define RLZ_TESTS
-#define STRING_TESTS
-#define BV_TESTS
-#define WT_TESTS
+// These tests takes mutation rates as parameters.
+//#define RLZ_TESTS
+//#define STRING_TESTS
+//#define BV_TESTS
+//#define WT_TESTS
+
+// These tests use parameter format "reference seq1 [seq2 ...]".
 //#define CST_TESTS
+#define LCP_TESTS
 
 
 // For bitvector RLZ tests.
@@ -44,6 +47,7 @@ void testString(int argc, char** argv);
 void testBV(int argc, char** argv);
 void testWT(int argc, char** argv);
 void testCST(int argc, char** argv);
+void testLCP(int argc, char** argv);
 
 int
 main(int argc, char** argv)
@@ -69,6 +73,10 @@ main(int argc, char** argv)
 
 #ifdef CST_TESTS
   testCST(argc, argv);
+#endif
+
+#ifdef LCP_TESTS
+  testLCP(argc, argv);
 #endif
 
   return 0;
@@ -506,6 +514,75 @@ testCST(int argc, char** argv)
   delete sample_fmi; sample_fmi = 0;
   delete tree_fmi; tree_fmi = 0;
   delete lcp_fmi; lcp_fmi = 0;
+}
+
+//------------------------------------------------------------------------------
+
+// Encode (val - prev) as a positive integer.
+uint64_t
+differentialValue(uint64_t prev, uint64_t val)
+{
+  if(val >= prev) { return ((val - prev) << 1) + 1; }
+  else            { return ((prev - val) << 1) + 2; }
+}
+
+typedef cst_sada<csa_sada<>, lcp_bitcompressed<> > lcp_cst;
+
+void
+differentialLCP(const std::string& base_name, int_vector<0>& lcp)
+{
+  std::string file_name = base_name + ".lcp";
+  if(file_exists(file_name))
+  {
+    load_from_file(lcp, file_name);
+  }
+  else
+  {
+    lcp_cst cst;
+    construct(cst, base_name, 1);
+    lcp.width(bitlength(2 * cst.size()));
+    lcp.resize(cst.size());
+    uint64_t prev = 0;
+    for(uint64_t i = 0; i < cst.size(); i++)
+    {
+      lcp[i] = differentialValue(prev, cst.lcp[i]); prev = cst.lcp[i];
+    }
+    util::bit_compress(lcp);
+    store_to_file(lcp, file_name);
+  }
+  std::cout << "LCP size " << lcp.size() << ", width " << (uint64_t)(lcp.width()) << "." << std::endl;
+}
+
+void
+testLCP(int argc, char** argv)
+{
+  std::cout << "LCP compression tests" << std::endl;
+  std::cout << std::endl;
+
+  if(argc < 3)
+  {
+    std::cerr << "testLCP(): Usage: " << argv[0] << " reference_file text_file1 [text_file2 ...]" << std::endl;
+    return;
+  }
+
+  std::string ref_name = argv[1];
+  std::cout << "Reference: " << ref_name << std::endl;
+  int_vector<0> ref_lcp;
+  differentialLCP(ref_name, ref_lcp);
+  std::cout << std::endl;
+
+  for(int arg = 2; arg < argc; arg++)
+  {
+    std::string seq_name = argv[arg];
+    std::cout << "Sequence: " << seq_name << std::endl;
+    int_vector<0> seq_lcp;
+    differentialLCP(seq_name, seq_lcp);
+    std::vector<uint64_t> starts, lengths;
+    int_vector<0> mismatches;
+    relativeLZ(seq_lcp, ref_lcp, starts, lengths, mismatches);
+    std::cout << "The RLZ parsing consists of " << starts.size() << " phrases." << std::endl;
+    std::cout << std::endl;
+  }
 }
 
 //------------------------------------------------------------------------------
