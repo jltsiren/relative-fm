@@ -341,6 +341,73 @@ bv_fmi::sampleSA()
 
 //------------------------------------------------------------------------------
 
+relative_encoder::relative_encoder()
+{
+}
+
+relative_encoder::relative_encoder(const relative_encoder& r)
+{
+  this->copy(r);
+}
+
+relative_encoder::relative_encoder(relative_encoder&& r)
+{
+  *this = std::move(r);
+}
+
+relative_encoder&
+relative_encoder::operator=(const relative_encoder& r)
+{
+  if(this != &r) { this->copy(r); }
+  return *this;
+}
+
+relative_encoder&
+relative_encoder::operator=(relative_encoder&& r)
+{
+  if(this != &r)
+  {
+    this->values = std::move(r.values);
+    this->rle = std::move(r.rle);
+    this->rank = std::move(r.rank); this->rank.set_vector(&(this->rle));
+  }
+  return *this;
+}
+
+void
+relative_encoder::copy(const relative_encoder& r)
+{
+  this->values = r.values;
+  this->rle = r.rle;
+  this->rank = r.rank; this->rank.set_vector(&(this->rle));
+}
+
+uint64_t
+relative_encoder::reportSize() const
+{
+  return size_in_bytes(this->values) + size_in_bytes(this->rle) + size_in_bytes(this->rank);
+}
+
+void
+relative_encoder::load(std::istream& input)
+{
+  this->values.load(input);
+  this->rle.load(input);
+  this->rank.load(input, &(this->rle));
+}
+
+uint64_t
+relative_encoder::serialize(std::ostream& output) const
+{
+  uint64_t bytes = 0;
+  bytes += this->values.serialize(output);
+  bytes += this->rle.serialize(output);
+  bytes += this->rank.serialize(output);
+  return bytes;
+}
+
+//------------------------------------------------------------------------------
+
 rlz_helper::rlz_helper()
 {
 }

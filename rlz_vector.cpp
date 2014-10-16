@@ -252,31 +252,19 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
     relativeLZSuccinct(text, this->reference, phrase_starts, phrase_lengths, this->mismatches);
   }
 
-  std::vector<uint64_t> phrase_buffer;
-  this->phrase_rle.resize(phrase_starts.size()); util::set_to_value(this->phrase_rle, 0);
-
-  uint64_t bits = 0, prev = ~(uint64_t)0, max_val = 0;
-  for(uint64_t phrase = 0; phrase < phrase_starts.size(); phrase++)
-  {
-    uint64_t temp = relativeEncoding(phrase_starts[phrase], bits);
-    if(phrase == 0 || (temp != prev && phrase_lengths[phrase] > 1))
-    {
-      phrase_buffer.push_back(temp); prev = temp;
-      this->phrase_rle[phrase] = 1;
-      max_val = std::max(max_val, temp);
-    }
-    bits += phrase_lengths[phrase];
-    phrase_starts[phrase] = this->oneBits(phrase_starts[phrase], phrase_lengths[phrase] - 1);
-    if(this->mismatches[phrase]) { phrase_starts[phrase]++; }
-  }
-  this->phrases.width(bits::hi(max_val) + 1); this->phrases.resize(phrase_buffer.size());
-  for(uint64_t i = 0; i < phrase_buffer.size(); i++) { this->phrases[i] = phrase_buffer[i]; }
+  // Initialize phrases and blocks.
+  this->phrases.init(phrase_starts, phrase_lengths);
   this->blocks.init(phrase_lengths);
-  this->ones.init(phrase_starts);
-  for(uint64_t i = 0; i < phrase_starts.size(); i++) { phrase_lengths[i] -= phrase_starts[i]; }
-  this->zeros.init(phrase_lengths);
 
-  util::init_support(this->phrase_rank, &(this->phrase_rle));
+  // Initialize ones and zeros, using phrase_starts for ones and phrase_lengths for zeros.
+  for(uint64_t i = 0; i < phrase_starts.size(); i++)
+  {
+    phrase_starts[i] = this->oneBits(phrase_starts[i], phrase_lengths[i] - 1);
+    if(this->mismatches[i]) { phrase_starts[i]++; }
+    phrase_lengths[i] -= phrase_starts[i];
+  }
+  this->ones.init(phrase_starts);
+  this->zeros.init(phrase_lengths);
 }
 
 RLZVector::RLZVector(std::istream& input, const bit_vector& _reference,
@@ -286,8 +274,6 @@ RLZVector::RLZVector(std::istream& input, const bit_vector& _reference,
   reference(_reference), ref_rank(_ref_rank), ref_select_1(_ref_select_1), ref_select_0(_ref_select_0)
 {
   this->phrases.load(input);
-  this->phrase_rle.load(input);
-  this->phrase_rank.load(input, &(this->phrase_rle));
   this->blocks.load(input);
   this->ones.load(input);
   this->zeros.load(input);
@@ -298,8 +284,6 @@ RLZVector::RLZVector(const RLZVector& v) :
   reference(v.reference), ref_rank(v.ref_rank), ref_select_1(v.ref_select_1), ref_select_0(v.ref_select_0)
 {
   this->phrases = v.phrases;
-  this->phrase_rle = v.phrase_rle;
-  this->phrase_rank = v.phrase_rank; this->phrase_rank.set_vector(&(this->phrase_rle));
 
   this->blocks = v.blocks;
   this->ones = v.ones;
@@ -312,8 +296,6 @@ RLZVector::RLZVector(RLZVector&& v) :
   reference(v.reference), ref_rank(v.ref_rank), ref_select_1(v.ref_select_1), ref_select_0(v.ref_select_0)
 {
   this->phrases = std::move(v.phrases);
-  this->phrase_rle = std::move(v.phrase_rle);
-  this->phrase_rank = std::move(v.phrase_rank); this->phrase_rank.set_vector(&(this->phrase_rle));
 
   this->blocks = std::move(v.blocks);
   this->ones = std::move(v.ones);
@@ -332,7 +314,7 @@ uint64_t
 RLZVector::reportSize() const
 {
   uint64_t bytes = sizeof(*this);
-  bytes += size_in_bytes(this->phrases) + size_in_bytes(this->phrase_rle) + size_in_bytes(this->phrase_rank);
+  bytes += this->phrases.reportSize();
   bytes += this->blocks.reportSize();
   bytes += this->ones.reportSize();
   bytes += this->zeros.reportSize();
@@ -346,8 +328,6 @@ RLZVector::writeTo(std::ostream& output) const
 {
   uint64_t bytes = 0;
   bytes += this->phrases.serialize(output);
-  bytes += this->phrase_rle.serialize(output);
-  bytes += this->phrase_rank.serialize(output);
   bytes += this->blocks.serialize(output);
   bytes += this->ones.serialize(output);
   bytes += this->zeros.serialize(output);
@@ -363,11 +343,11 @@ RLZVector::rank(uint64_t i) const
   if(i >= this->size()) { return this->items(); }
 
   uint64_t phrase = this->blocks.blockFor(i); // Phrase is 0-based.
-  if(phrase == 0) { return this->oneBits(this->refPos(0, 0), i); }
+  if(phrase == 0) { return this->oneBits(this->phrases.decode(0, 0), i); }
   uint64_t text_pos = this->blocks.itemsAfter(phrase - 1); // Starting position of the phrase in the text.
 
   return this->ones.itemsAfter(phrase - 1) +
-    this->oneBits(this->refPos(phrase, text_pos), i - text_pos);
+    this->oneBits(this->phrases.decode(phrase, text_pos), i - text_pos);
 }
 
 uint64_t
@@ -379,11 +359,11 @@ RLZVector::select_1(uint64_t i) const
   uint64_t phrase = this->ones.blockFor(i - 1); // Phrase is 0-based.
   // Check if the requested 1-bit is the mismatching bit at the end of the phrase.
   if(this->ones.isLast(i - 1) && this->mismatches[phrase]) { return this->blocks.itemsAfter(phrase) - 1; }
-  if(phrase == 0) { return this->findBit(this->refPos(0, 0), i); }
+  if(phrase == 0) { return this->findBit(this->phrases.decode(0, 0), i); }
   i -= this->ones.itemsAfter(phrase - 1); // i is now relative to the phrase.
   uint64_t text_pos = this->blocks.itemsAfter(phrase - 1);  // Starting position of the phrase in the text.
 
-  return text_pos + this->findBit(this->refPos(phrase, text_pos), i);
+  return text_pos + this->findBit(this->phrases.decode(phrase, text_pos), i);
 }
 
 uint64_t
@@ -395,11 +375,11 @@ RLZVector::select_0(uint64_t i) const
   uint64_t phrase = this->zeros.blockFor(i - 1);  // Phrase is 0-based.
   // Check if the requested 0-bit is the mismatching bit at the end of the phrase.
   if(this->zeros.isLast(i - 1) && !(this->mismatches[phrase])) { return this->blocks.itemsAfter(phrase) - 1; }
-  if(phrase == 0) { return this->findZero(this->refPos(0, 0), i); }
+  if(phrase == 0) { return this->findZero(this->phrases.decode(0, 0), i); }
   i -= this->zeros.itemsAfter(phrase - 1);  // i is now relative to the phrase.
   uint64_t text_pos = this->blocks.itemsAfter(phrase - 1);  // Starting position of the phrase in the text.
 
-  return text_pos + this->findZero(this->refPos(phrase, text_pos), i);
+  return text_pos + this->findZero(this->phrases.decode(phrase, text_pos), i);
 }
 
 bool
@@ -410,7 +390,7 @@ RLZVector::operator[](uint64_t i) const
   uint64_t phrase = this->blocks.blockFor(i); // Phrase is 0-based.
   if(this->blocks.isLast(i)) { return this->mismatches[phrase]; } // The mismatching bit.
 
-  return this->reference[this->refPos(phrase, i)];
+  return this->reference[this->phrases.decode(phrase, i)];
 }
 
 //------------------------------------------------------------------------------

@@ -32,6 +32,9 @@ void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   These versions use temporary files on disk. Use reverseIndex(reference, csa)
   to build index for the reverse reference. The sequence and the reference may contain
   character value 0 or character value 1, but not both.
+
+  For the int_vector<0> variant, it is advisable to use util::bit_compress(mismatches)
+  afterwards.
 */
 void relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches);
@@ -167,6 +170,105 @@ private:
   void lastBWTBlock(uint64_t offset);
   void prevBWTBlock(uint64_t offset, uint64_t block_size);
   void sampleSA();
+};
+
+//------------------------------------------------------------------------------
+
+/*
+  This struct encodes the starting positions of phrases in the reference relative to
+  the starting positions in text. The init() function is compatible with the RLZ
+  parser, taking phrase lengths instead of text positions as input.
+*/
+struct relative_encoder
+{
+  int_vector<0>           values; // Phrase starts encoded as (ref_pos - text_pos).
+  bit_vector              rle;    // rle[i] is set, if phrase i is stored.
+  bit_vector::rank_1_type rank;
+
+  relative_encoder();
+  relative_encoder(const relative_encoder& r);
+  relative_encoder(relative_encoder&& r);
+  relative_encoder& operator=(const relative_encoder& r);
+  relative_encoder& operator=(relative_encoder&& r);
+
+  template<class Container>
+  void init(const Container& ref_pos, const Container& lengths)
+  {
+    util::clear(this->values); util::clear(this->rle); util::clear(this->rank);
+
+    // Check whether run-length encoding can help.
+    uint64_t text_pos = 0, prev = ~(uint64_t)0, rle_max = 0, direct_max = 0, runs = 0;
+    for(uint64_t i = 0; i < ref_pos.size(); i++)
+    {
+      uint64_t temp = encode(ref_pos[i], text_pos);
+      if(i == 0 || (temp != prev && lengths[i] > 1))
+      {
+        rle_max = std::max(rle_max, temp);
+        prev = temp; runs++;
+      }
+      direct_max = std::max(direct_max, temp);
+      text_pos += lengths[i];
+    }
+    double rle_bits = runs * (bits::hi(rle_max) + 1) + ref_pos.size() * 1.25;
+    double direct_bits = ref_pos.size() * (bits::hi(direct_max) + 1);
+
+    if(rle_bits >= direct_bits) // Use direct encoding.
+    {
+#ifdef VERBOSE_STATUS_INFO
+      std::cout << "Using direct encoding for starting positions." << std::endl;
+#endif
+      this->values.width(bits::hi(direct_max) + 1); this->values.resize(ref_pos.size());
+      text_pos = 0;
+      for(uint64_t i = 0; i < ref_pos.size(); i++)
+      {
+        this->values[i] = encode(ref_pos[i], text_pos);
+        text_pos += lengths[i];
+      }
+    }
+    else  // Use run-length encoding.
+    {
+#ifdef VERBOSE_STATUS_INFO
+      std::cout << "Using run-length encoding for starting positions." << std::endl;
+#endif
+      this->values.width(bits::hi(rle_max) + 1); this->values.resize(runs);
+      this->rle.resize(ref_pos.size()); util::set_to_value(this->rle, 0);
+      text_pos = 0; prev = 0; runs = 0;
+      for(uint64_t i = 0; i < ref_pos.size(); i++)
+      {
+        uint64_t temp = encode(ref_pos[i], text_pos);
+        if(i == 0 || (temp != prev && lengths[i] > 1))
+        {
+          this->values[runs] = temp;
+          prev = temp; runs++;
+          this->rle[i] = 1;
+        }
+        text_pos += lengths[i];
+      }
+      util::init_support(this->rank, &(this->rle));
+    }
+  }
+
+  uint64_t reportSize() const;
+  void load(std::istream& input);
+  uint64_t serialize(std::ostream& output) const;
+
+  // Returns a reference position for given text position relative to given phrase.
+  inline uint64_t decode(uint64_t phrase, uint64_t text_pos) const
+  {
+    uint64_t temp = (this->rle.size() > 0 ? this->values[this->rank(phrase + 1) - 1] : this->values[phrase]);
+    if(temp & 1) { return text_pos - (temp >> 1); }
+    return (temp >> 1) + text_pos;
+  }
+
+  // Encodes (ref_pos - text_pos) as unsigned integer.
+  inline static uint64_t encode(uint64_t ref_pos, uint64_t text_pos)
+  {
+    if(ref_pos >= text_pos) { return (ref_pos - text_pos) << 1; }
+    return ((text_pos - ref_pos) << 1) | 1;
+  }
+
+private:
+  void copy(const relative_encoder& r);
 };
 
 //------------------------------------------------------------------------------

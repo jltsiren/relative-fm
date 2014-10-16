@@ -13,7 +13,7 @@
 //#define WT_TESTS
 
 // These tests use parameter format "reference seq1 [seq2 ...]".
-//#define CST_TESTS
+#define CST_TESTS
 #define LCP_TESTS
 
 
@@ -577,10 +577,21 @@ testLCP(int argc, char** argv)
     std::cout << "Sequence: " << seq_name << std::endl;
     int_vector<0> seq_lcp;
     differentialLCP(seq_name, seq_lcp);
+
     std::vector<uint64_t> starts, lengths;
     int_vector<0> mismatches;
     relativeLZ(seq_lcp, ref_lcp, starts, lengths, mismatches);
     std::cout << "The RLZ parsing consists of " << starts.size() << " phrases." << std::endl;
+    relative_encoder phrases; phrases.init(starts, lengths);
+    rlz_helper blocks; blocks.init(lengths);
+    util::bit_compress(mismatches);
+
+    uint64_t phrase_bytes = phrases.reportSize(), block_bytes = blocks.reportSize(), mismatch_bytes = size_in_bytes(mismatches);
+    printSize("Phrases", phrase_bytes, seq_lcp.size());
+    printSize("Blocks", block_bytes, seq_lcp.size());
+    printSize("Mismatches", mismatch_bytes, seq_lcp.size());
+    printSize("RLZ parsing", phrase_bytes + block_bytes + mismatch_bytes, seq_lcp.size());
+
     std::cout << std::endl;
   }
 }

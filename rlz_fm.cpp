@@ -27,24 +27,15 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
   }
   util::clear(seq_buffer);
 
-  // Prepare the structures.
-  std::vector<uint64_t> phrase_buffer;
-  this->phrase_rle.resize(phrase_starts.size()); util::set_to_value(this->phrase_rle, 0);
+  // Initialize phrases and blocks.
+  this->phrases.init(phrase_starts, phrase_lengths);
+  this->blocks.init(phrase_lengths);
+
+  // Initialize rank structures.
   this->block_rank = new rlz_helper[this->alpha.sigma - 1];
   std::vector<uint64_t>* rank_buffers = new std::vector<uint64_t>[this->alpha.sigma - 1];
-
-  // Compress the RLZ information.
-  uint64_t pos = 0, prev = ~(uint64_t)0, max_val = 0;
   for(uint64_t phrase = 0; phrase < phrase_starts.size(); phrase++)
   {
-    // Run-length encode relative phrase starts.
-    uint64_t temp = relativeEncoding(phrase_starts[phrase], pos); pos += phrase_lengths[phrase];
-    if(phrase == 0 || (temp != prev && phrase_lengths[phrase] > 1))
-    {
-      phrase_buffer.push_back(temp); prev = temp;
-      this->phrase_rle[phrase] = 1;
-      max_val = std::max(max_val, temp);
-    }
     for(uint64_t c = 1; c < this->alpha.sigma; c++) // Determine rank information.
     {
       uint64_t val = this->countOf(phrase_starts[phrase], phrase_lengths[phrase] - 1, this->alpha.comp2char[c]);
@@ -59,13 +50,8 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
       }
     }
   }
-  this->phrases.width(bits::hi(max_val) + 1); this->phrases.resize(phrase_buffer.size());
-  for(uint64_t i = 0; i < phrase_buffer.size(); i++) { this->phrases[i] = phrase_buffer[i]; }
-  this->blocks.init(phrase_lengths);
   for(uint64_t c = 1; c < this->alpha.sigma; c++) { this->block_rank[c - 1].init(rank_buffers[c - 1]); }
   delete[] rank_buffers; rank_buffers = 0;
-
-  util::init_support(this->phrase_rank, &(this->phrase_rle));
 }
 
 RLZFM::RLZFM(const SimpleFM<>& ref, const std::string& base_name) :
@@ -100,7 +86,7 @@ RLZFM::~RLZFM()
 uint64_t
 RLZFM::reportSize(bool print) const
 {
-  uint64_t phrase_bytes = size_in_bytes(this->phrases) + size_in_bytes(this->phrase_rle) + size_in_bytes(this->phrase_rank);
+  uint64_t phrase_bytes = this->phrases.reportSize();
   uint64_t block_bytes = this->blocks.reportSize();
   uint64_t mismatch_bytes = size_in_bytes(this->mismatches);
 
@@ -145,7 +131,6 @@ RLZFM::writeTo(std::ostream& output) const
 {
   this->alpha.serialize(output);
   this->phrases.serialize(output);
-  this->phrase_rle.serialize(output);
   this->blocks.serialize(output);
   for(uint64_t c = 1; c < this->alpha.sigma; c++) { this->block_rank[c - 1].serialize(output); }
   this->mismatches.serialize(output);
@@ -156,8 +141,6 @@ RLZFM::loadFrom(std::istream& input)
 {
   this->alpha.load(input);
   this->phrases.load(input);
-  this->phrase_rle.load(input);
-  util::init_support(this->phrase_rank, &(this->phrase_rle));
   this->blocks.load(input);
   delete[] this->block_rank; this->block_rank = new rlz_helper[this->alpha.sigma - 1];
   for(uint64_t c = 1; c < this->alpha.sigma; c++) { this->block_rank[c - 1].load(input); }
@@ -174,7 +157,7 @@ RLZFM::rank(uint64_t i, uint8_t c) const
   if(i >= this->size()) { return this->alpha.C[comp + 1] - this->alpha.C[comp]; }
 
   uint64_t phrase = this->blocks.blockFor(i); // Phrase is 0-based.
-  if(phrase == 0) { return this->countOf(this->refPos(0, 0), i, c); }
+  if(phrase == 0) { return this->countOf(this->phrases.decode(0, 0), i, c); }
 
   uint64_t base_phrase = (phrase / BLOCK_SIZE) * BLOCK_SIZE;
   uint64_t text_pos = 0;  // Starting position of the phrase in the text.
@@ -187,12 +170,12 @@ RLZFM::rank(uint64_t i, uint8_t c) const
   for(uint64_t cur = base_phrase; cur < phrase; cur++)
   {
     uint64_t block_size = this->blocks.blockSize(cur);
-    if(block_size > 1) { base_rank += this->countOf(this->refPos(cur, text_pos), block_size - 1, c); }
+    if(block_size > 1) { base_rank += this->countOf(this->phrases.decode(cur, text_pos), block_size - 1, c); }
     if(this->mismatches[cur] == c) { base_rank++; }
     text_pos += block_size;
   }
 
-  return base_rank + this->countOf(this->refPos(phrase, text_pos), i - text_pos, c);
+  return base_rank + this->countOf(this->phrases.decode(phrase, text_pos), i - text_pos, c);
 }
 
 //------------------------------------------------------------------------------
