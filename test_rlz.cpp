@@ -9,12 +9,12 @@
 // These tests takes mutation rates as parameters.
 //#define RLZ_TESTS
 //#define STRING_TESTS
-//#define BV_TESTS
+#define BV_TESTS
 //#define WT_TESTS
 
 // These tests use parameter format "reference seq1 [seq2 ...]".
-#define CST_TESTS
-#define LCP_TESTS
+//#define CST_TESTS
+//#define LCP_TESTS
 
 
 // For bitvector RLZ tests.
@@ -25,7 +25,7 @@ const uint64_t STRING_SIZE = 128 * (uint64_t)1048576;
 const uint64_t STRING_ALPHABET = 4;
 
 // For bitvector tests.
-const uint64_t BV_SIZE = 128 * (uint64_t)1048576;
+const uint64_t BV_SIZE = 1024 * (uint64_t)1048576;
 
 // For wavelet tree tests.
 const uint64_t WT_SIZE = 128 * (uint64_t)1048576;
@@ -139,6 +139,8 @@ testRLZ(int argc, char** argv)
   }
 }
 
+//------------------------------------------------------------------------------
+
 void
 testString(int argc, char** argv)
 {
@@ -187,6 +189,63 @@ testString(int argc, char** argv)
   }
 }
 
+//------------------------------------------------------------------------------
+
+template<class vector_type>
+void speedTest(const std::string& name, const vector_type& v)
+{
+  typename vector_type::rank_1_type   rank(&v);
+  typename vector_type::select_1_type sel1(&v);
+  typename vector_type::select_0_type sel0(&v);
+  uint64_t bytes = totalSize(v, rank, sel1, sel0);
+  uint64_t ones = rank(v.size());
+  std::cout << name << ": " << inMegabytes(bytes) << " MB (" << inBPC(bytes, v.size()) << " bpc)" << std::endl;
+
+  std::mt19937_64 rng(0xDEADBEEF);
+
+  {
+    std::vector<uint64_t> queries(TIMING_QUERIES);
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % v.size(); }
+    double start = readTimer();
+    uint64_t checksum = 0;
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += rank(queries[i]); }
+    double seconds = readTimer() - start;
+    std::cout << "rank(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
+  }
+
+  {
+    std::vector<uint64_t> queries(TIMING_QUERIES);
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % ones + 1; }
+    double start = readTimer();
+    uint64_t checksum = 0;
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += sel1(queries[i]); }
+    double seconds = readTimer() - start;
+    std::cout << "select_1(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
+  }
+
+  {
+    std::vector<uint64_t> queries(TIMING_QUERIES);
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % (v.size() - ones) + 1; }
+    double start = readTimer();
+    uint64_t checksum = 0;
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += sel0(queries[i]); }
+    double seconds = readTimer() - start;
+    std::cout << "select_0(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
+  }
+
+  {
+    std::vector<uint64_t> queries(TIMING_QUERIES);
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % v.size(); }
+    double start = readTimer();
+    uint64_t checksum = 0;
+    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += v[queries[i]]; }
+    double seconds = readTimer() - start;
+    std::cout << "access(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
+  }
+
+  std::cout << std::endl;
+}
+
 void
 testBV(int argc, char** argv)
 {
@@ -216,84 +275,55 @@ testBV(int argc, char** argv)
     std::cout << "Plain bitvector: " <<
       inBPC(totalSize(text, text_rank, text_select_1, text_select_0), text.size()) << " bpc" << std::endl;
 
-    RLZVector relative(text, reference, ref_rank, ref_select_1, ref_select_0);
-    std::cout << "Relative bitvector: " << inBPC(relative.reportSize(), text.size()) << " bpc" << std::endl;
+    rlz_vector relative(text);
+    relative.compress(reference, ref_rank, ref_select_1, ref_select_0);
+    rlz_vector::rank_1_type   rank(&relative);
+    rlz_vector::select_1_type sel1(&relative);
+    rlz_vector::select_0_type sel0(&relative);
+    std::cout << "Relative bitvector: " << inBPC(size_in_bytes(relative), text.size()) << " bpc" << std::endl;
 
     uint64_t errors = 0;
     for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rand() % text.size();
-      if(text_rank(pos) != relative.rank(pos)) { errors++; }
+      uint64_t pos = rng() % text.size();
+      if(text_rank(pos) != rank(pos)) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " rank queries with " << errors << " error(s)." << std::endl;
 
     errors = 0;
     for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rand() % onebits + 1;
-      if(text_select_1(pos) != relative.select_1(pos)) { errors++; }
+      uint64_t pos = rng() % onebits + 1;
+      if(text_select_1(pos) != sel1(pos)) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " select_1 queries with " << errors << " error(s)." << std::endl;
 
     errors = 0;
     for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rand() % (text.size() - onebits) + 1;
-      if(text_select_0(pos) != relative.select_0(pos)) { errors++; }
+      uint64_t pos = rng() % (text.size() - onebits) + 1;
+      if(text_select_0(pos) != sel0(pos)) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " select_0 queries with " << errors << " error(s)." << std::endl;
 
     errors = 0;
     for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rand() % text.size();
+      uint64_t pos = rng() % text.size();
       if(text[pos] != relative[pos]) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " access queries with " << errors << " error(s)." << std::endl;
 
-    {
-      std::vector<uint64_t> queries(TIMING_QUERIES);
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rand() % text.size(); }
-      double start = readTimer();
-      uint64_t checksum = 0;
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += relative.rank(queries[i]); }
-      double seconds = readTimer() - start;
-      std::cout << "rank(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
-    }
-
-    {
-      std::vector<uint64_t> queries(TIMING_QUERIES);
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rand() % onebits + 1; }
-      double start = readTimer();
-      uint64_t checksum = 0;
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += relative.select_1(queries[i]); }
-      double seconds = readTimer() - start;
-      std::cout << "select_1(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
-    }
-
-    {
-      std::vector<uint64_t> queries(TIMING_QUERIES);
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rand() % (text.size() - onebits) + 1; }
-      double start = readTimer();
-      uint64_t checksum = 0;
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += relative.select_0(queries[i]); }
-      double seconds = readTimer() - start;
-      std::cout << "select_0(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
-    }
-
-    {
-      std::vector<uint64_t> queries(TIMING_QUERIES);
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rand() % text.size(); }
-      double start = readTimer();
-      uint64_t checksum = 0;
-      for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += relative[queries[i]]; }
-      double seconds = readTimer() - start;
-      std::cout << "access(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
-    }
-
     std::cout << std::endl;
+
+    speedTest("Plain", text);
+    rrr_vector<63> rrr(text);
+    speedTest("RRR", rrr);
+    speedTest("RLZ", relative);
   }
 }
+
+//------------------------------------------------------------------------------
 
 template<class csa_type>
 void
@@ -351,6 +381,8 @@ testWT(int argc, char** argv)
     std::cout << std::endl;
   }
 }
+
+//------------------------------------------------------------------------------
 
 void
 compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref, const bv_fmi* fmi)
