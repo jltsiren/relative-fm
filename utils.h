@@ -86,6 +86,7 @@ uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, b
 
 //------------------------------------------------------------------------------
 
+const std::string ALPHA_EXTENSION = ".alpha";
 const std::string BWT_EXTENSION = ".bwt";
 
 #ifdef USE_RRR_WT
@@ -96,6 +97,7 @@ typedef wt_huff<bit_vector, rank_support_v5<> > bwt_type;
 
 typedef byte_alphabet alphabet_type;
 
+// c is a real character.
 inline uint64_t
 cumulative(const alphabet_type& alpha, uint8_t c)
 {
@@ -112,16 +114,17 @@ template<class RankStructure>
 inline range_type
 charRange(const RankStructure& bwt, const alphabet_type& alpha, uint8_t c)
 {
-  uint16_t temp = alpha.char2comp[c];
-  if(temp < alpha.sigma) { return range_type(alpha.C[temp], alpha.C[temp + 1] - 1); }
-  else { return range_type(alpha.C[temp], bwt.size() - 1); }
+  uint64_t comp = alpha.char2comp[c];
+  if(comp < alpha.sigma) { return range_type(alpha.C[comp], alpha.C[comp + 1] - 1); }
+  else { return range_type(alpha.C[comp], bwt.size() - 1); }
 }
 
 template<class RankStructure>
 inline range_type
 LF(const RankStructure& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
 {
-  uint64_t begin = cumulative(alpha, c);
+  c = alpha.char2comp[c];
+  uint64_t begin = alpha.C[c];
   return range_type(begin + bwt.rank(rng.first, c), begin + bwt.rank(rng.second + 1, c) - 1);
 }
 

@@ -10,8 +10,7 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
   this->block_rank = 0;
 
   // Extract the BWT.
-  int_vector<8> seq_buffer(seq.bwt.size());
-  for(uint64_t i = 0; i < seq_buffer.size(); i++) { seq_buffer[i] = seq.bwt[i]; }
+  int_vector<8> seq_buffer(seq.bwt.size()); seq.extractBWT(seq_buffer);
 
   // Parse the BWT.
   std::vector<uint64_t> phrase_starts, phrase_lengths;
@@ -21,8 +20,7 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
   }
   else
   {
-    int_vector<8> ref_buffer(ref.bwt.size());
-    for(uint64_t i = 0; i < ref_buffer.size(); i++) { ref_buffer[i] = ref.bwt[i]; }
+    int_vector<8> ref_buffer(ref.bwt.size()); ref.extractBWT(ref_buffer);
     relativeLZ(seq_buffer, ref_buffer, phrase_starts, phrase_lengths, this->mismatches);
   }
   util::clear(seq_buffer);

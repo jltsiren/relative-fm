@@ -21,15 +21,7 @@ main(int argc, char** argv)
   std::cout << std::endl;
   csa_wt<> csa;
   {
-    std::string bwt_name = std::string(argv[1]) + BWT_EXTENSION;
-    std::ifstream in(bwt_name.c_str(), std::ios_base::binary);
-    if(!in)
-    {
-      std::cerr << "build_rlzfm: Cannot open input file " << bwt_name.c_str() << std::endl;
-      return 2;
-    }
-    int_vector<8> buffer; buffer.load(in);
-    in.close();
+    int_vector<8> buffer(ref.size()); ref.extractBWT(buffer);
     reverseIndex(buffer, csa);
   }
 

@@ -14,42 +14,33 @@
 //------------------------------------------------------------------------------
 
 /*
-  A simple FM-index for byte alphabet. The default storage format is an int_vector<8>
-  containing the BWT. In the compressed format, constructor and writeTo() method
-  expect the actual filename instead of the base name.
+  A simple FM-index for byte alphabet.
+
+  The storage format is an int_vector<8> containing the BWT (with a contiguous alphabet)
+  in base_name.bwt, and a byte_alphabet mapping the original alphabet to the contiguous
+  alphabet in base_name.alpha.
 */
 template<class RankStructure = bwt_type>
 class SimpleFM
 {
 public:
-  // If compressed_format == true, base_name is the actual filename.
-  explicit SimpleFM(const std::string& base_name, bool compressed_format = false)
+  explicit SimpleFM(const std::string& base_name)
   {
-    if(compressed_format)
     {
-      std::ifstream in(base_name.c_str(), std::ios_base::binary);
+      int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
+      RankStructure temp(buffer, buffer.size());
+      this->bwt.swap(temp);
+    }
+    {
+      std::string filename = base_name + ALPHA_EXTENSION;
+      std::ifstream in(filename.c_str(), std::ios_base::binary);
       if(!in)
       {
-        std::cerr << "SimpleFM::SimpleFM(): Cannot open input file " << base_name << std::endl;
+        std::cerr << "SimpleFM()::SimpleFM(): Cannot open alphabet file " << filename << std::endl;
         return;
       }
-      this->bwt.load(in);
       this->alpha.load(in);
       in.close();
-    }
-    else
-    {
-      std::string filename = base_name + BWT_EXTENSION;
-      {
-        int_vector_buffer<8> buffer(filename);
-        RankStructure temp(buffer, buffer.size());
-        this->bwt.swap(temp);
-      }
-      {
-        int_vector_buffer<8> buffer(filename);
-        alphabet_type temp(buffer, buffer.size());
-        this->alpha.swap(temp);
-      }
     }
   }
 
@@ -57,45 +48,40 @@ public:
   {
   }
 
+  uint64_t size() const { return this->size(); }
+
   uint64_t reportSize(bool print = false) const
   {
     uint64_t bytes = size_in_bytes(this->bwt) + size_in_bytes(this->alpha);
 
     if(print)
     {
-      printSize("Simple FM", bytes, this->bwt.size());
+      printSize("Simple FM", bytes, this->size());
       std::cout << std::endl;
     }
 
     return bytes;
   }
 
-  void writeTo(const std::string& base_name, bool compressed_format = false) const
+  /* FIXME: Implement the portable format
+  void writeTo(const std::string& base_name) const
   {
-    std::string filename = (compressed_format ? base_name : base_name + BWT_EXTENSION);
+    std::string filename = base_name + EXTENSION;
     std::ofstream output(filename.c_str(), std::ios_base::binary);
     if(!output)
     {
       std::cerr << "SimpleFM::writeTo(): Cannot open output file " << filename << std::endl;
       return;
     }
-    if(compressed_format)
-    {
-      this->bwt.serialize(output);
-      this->alpha.serialize(output);
-    }
-    else
-    {
-      int_vector<8> buffer(this->bwt.size());
-      for(uint64_t i = 0; i < this->bwt.size(); i++) { buffer[i] = this->bwt[i]; }
-      buffer.serialize(output);
-    }
+     this->bwt.serialize(output);
+     this->alpha.serialize(output);
     output.close();
   }
+  */
 
   template<class Iter> range_type find(Iter begin, Iter end) const
   {
-    range_type res(0, this->bwt.size() - 1);
+    range_type res(0, this->size() - 1);
     while(begin != end)
     {
       --end;
@@ -103,6 +89,23 @@ public:
       if(length(res) == 0) { return range_type(1, 0); }
     }
     return res;
+  }
+
+  template<class ByteVector>
+  void extractBWT(range_type range, ByteVector& buffer) const
+  {
+    if(isEmpty(range) || range.second >= this->size()) { return; }
+    buffer.resize(length(range));
+    for(uint64_t i = 0; i < buffer.size(); i++)
+    {
+      buffer[i] = this->alpha.comp2char[this->bwt[range.first + i]];
+    }
+  }
+
+  template<class ByteVector>
+  void extractBWT(ByteVector& buffer) const
+  {
+    this->extractBWT(range_type(0, this->size() - 1), buffer);
   }
 
   RankStructure bwt;
@@ -174,6 +177,8 @@ private:
   inline uint64_t rank(uint64_t i, uint8_t c) const
   {
     uint64_t res = 0;
+    uint8_t ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
+
 #ifdef USE_SPARSE_BITVECTORS  // LCS is marked with 0-bits.
     uint64_t lcs_bits = i + 1 - this->seq_rank.rank(i + 1); // Number of LCS bits up to i in seq.
     bool check_lcs = (this->seq_lcs[i] == 0); // Is position i in LCS.
@@ -183,17 +188,18 @@ private:
 #endif
     if(lcs_bits < i + 1) // There are i + 1 - lcs_bits non-LCS bits in seq.
     {
-      res += this->seq_minus_lcs.rank(i + check_lcs - lcs_bits, c);
+      res += this->seq_minus_lcs.rank(i + check_lcs - lcs_bits, seq_c);
     }
     if(lcs_bits > 0)
     {
       uint64_t ref_pos = this->ref_select.select(lcs_bits);  // Select is 1-based.
-      res += this->reference.bwt.rank(ref_pos + 1 - check_lcs, c);
+      res += this->reference.bwt.rank(ref_pos + 1 - check_lcs, ref_c);
       if(lcs_bits < ref_pos + 1) // At least one non-LCS bit in ref.
       {
-        res -= this->ref_minus_lcs.rank(ref_pos + 1 - lcs_bits, c);
+        res -= this->ref_minus_lcs.rank(ref_pos + 1 - lcs_bits, ref_c);
       }
     }
+
     return res;
   }
 
@@ -212,16 +218,17 @@ RelativeFM::find(Iter begin, Iter end) const
   while(begin != end)
   {
     --end;
-    uint64_t pos = cumulative(this->alpha, *end);
-    res.first = pos + this->rank(res.first, *end);
-    res.second = pos + this->rank(res.second + 1, *end) - 1;
+    uint8_t c = this->alpha.char2comp[*end];
+    uint64_t begin = this->alpha.C[c];
+    res.first = begin + this->rank(res.first, c);
+    res.second = begin + this->rank(res.second + 1, c) - 1;
     if(length(res) == 0) { return range_type(1, 0); }
   }
   return res;
 }
 
 std::vector<std::pair<int, int> >
-greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range, bool onlyNs);
+greedyLCS(const SimpleFM<>& ref, const SimpleFM<>& seq, range_type ref_range, range_type seq_range, bool onlyNs);
 
 std::pair<bit_vector, bit_vector>
 alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print);

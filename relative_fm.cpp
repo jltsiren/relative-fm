@@ -263,19 +263,6 @@ verifyRanges(std::vector<record_type>& ranges, uint64_t ref_len, uint64_t seq_le
 
 //------------------------------------------------------------------------------
 
-std::vector<uint8_t>
-extract(const bwt_type& bwt, range_type range)
-{
-  std::vector<uint8_t> res;
-
-  for(uint64_t i = 0; i < length(range); i++)
-  {
-    res.push_back(bwt[range.first + i]);
-  }
-
-  return res;
-}
-
 uint
 mapToUint(int val)
 {
@@ -319,13 +306,13 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
   FIXME Space optimizations have not been implemented yet.
 */
 std::vector<std::pair<int, int> >
-greedyLCS(const bwt_type& ref, const bwt_type& seq, range_type ref_range, range_type seq_range, bool onlyNs)
+greedyLCS(const SimpleFM<>& ref, const SimpleFM<>& seq, range_type ref_range, range_type seq_range, bool onlyNs)
 {
   std::vector<std::pair<int, int> > res;
   if(isEmpty(ref_range) || isEmpty(seq_range)) { return res; }
 
-  std::vector<uint8_t> ref_buffer = extract(ref, ref_range); int ref_len = length(ref_range);
-  std::vector<uint8_t> seq_buffer = extract(seq, seq_range); int seq_len = length(seq_range);
+  std::vector<uint8_t> ref_buffer; ref.extractBWT(ref_range, ref_buffer); int ref_len = length(ref_range);
+  std::vector<uint8_t> seq_buffer; seq.extractBWT(seq_range, seq_buffer); int seq_len = length(seq_range);
 
   if(onlyNs || abs(ref_len - seq_len) > RelativeFM::MAX_D)
   {
@@ -423,7 +410,7 @@ alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uin
   {
     record_type curr = record_stack.top(); record_stack.pop();
     range_type expect(curr.left.first, curr.right.first);
-  
+
     for(uint i = 0; i < sigma; i++)
     {
       std::stringstream ss; ss << curr.pattern << (unsigned char)(alphabet[i]);
@@ -456,7 +443,7 @@ alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uin
   bit_vector ref_lcs(ref.bwt.size(), 0), seq_lcs(seq.bwt.size(), 0);
   for(auto curr : ranges)
   {
-    auto block = greedyLCS(ref.bwt, seq.bwt, curr.left, curr.right, curr.onlyNs());
+    auto block = greedyLCS(ref, seq, curr.left, curr.right, curr.onlyNs());
     lcs += block.size();
     for(auto xy : block)
     {

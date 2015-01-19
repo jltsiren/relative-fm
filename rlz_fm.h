@@ -44,14 +44,15 @@ public:
   int_vector<8>           mismatches;
 
 private:
-  // Counts the number of occurrences of c in reference[ref_pos, ref_pos + phrase_length - 1].
+  // Counts the number of occurrences of (real character) c in reference[ref_pos, ref_pos + phrase_length - 1].
   inline uint64_t countOf(uint64_t ref_pos, uint64_t phrase_length, uint8_t c) const
   {
     if(phrase_length == 0) { return 0; }
+    c = this->reference.alpha.char2comp[c];
     return this->reference.bwt.rank(ref_pos + phrase_length, c) - this->reference.bwt.rank(ref_pos, c);
   }
 
-  uint64_t rank(uint64_t i, uint8_t c) const;
+  uint64_t rank(uint64_t i, uint8_t c) const; // c is real character.
 
   void loadFrom(std::istream& input);
 
