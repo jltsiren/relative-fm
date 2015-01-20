@@ -8,7 +8,6 @@
 #include <sdsl/csa_alphabet_strategy.hpp>
 #include <sdsl/wavelet_trees.hpp>
 
-
 #include "utils.h"
 
 //------------------------------------------------------------------------------

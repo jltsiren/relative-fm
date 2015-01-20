@@ -1,8 +1,6 @@
 #include "sequence.h"
+#include "relative_fm.h"
 
-
-namespace sdsl
-{
 
 //------------------------------------------------------------------------------
 
@@ -11,12 +9,20 @@ Sequence::Sequence()
   this->sigma = 0;
 }
 
-Sequence::Sequence(int_vector_buffer<8>& buffer, uint64_t _size)
+Sequence::Sequence(int_vector_buffer<8>& buffer, uint64_t _size, uint64_t _sigma)
 {
-  this->data.width(8); this->data.resize(_size);
+  this->sigma = _sigma;
+  if(this->sigma > 0) { this->data.width(bitlength(this->sigma - 1)); }
+  else { this->data.width(8); }
+  this->data.resize(_size);
   for(uint64_t i = 0; i < this->size(); i++) { this->data[i] = buffer[i]; }
-  util::bit_compress(this->data);
-  this->sigma = *std::max_element(this->data.begin(), this->data.end()) + 1;
+
+  if(this->sigma == 0)
+  {
+    util::bit_compress(this->data);
+    this->sigma = *std::max_element(this->data.begin(), this->data.end()) + 1;
+  }
+
   this->buildRank();
 }
 
@@ -108,4 +114,26 @@ Sequence::buildRank()
 
 //------------------------------------------------------------------------------
 
-} // namespace sdsl
+template<>
+SimpleFM<Sequence>::SimpleFM(const std::string& base_name)
+{
+  {
+    std::string filename = base_name + ALPHA_EXTENSION;
+    std::ifstream in(filename.c_str(), std::ios_base::binary);
+    if(!in)
+    {
+      std::cerr << "SimpleFM()::SimpleFM(): Cannot open alphabet file " << filename << std::endl;
+      return;
+    }
+    this->alpha.load(in);
+    in.close();
+  }
+
+  {
+    int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
+    Sequence temp(buffer, buffer.size(), this->alpha.sigma);
+    this->bwt.swap(temp);
+  }
+}
+
+//------------------------------------------------------------------------------

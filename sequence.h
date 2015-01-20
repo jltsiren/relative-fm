@@ -2,11 +2,7 @@
 #define _RELATIVE_FM_SEQUENCE_H
 
 
-#include "utils.h"
-
-
-namespace sdsl
-{
+#include "relative_fm.h"
 
 //------------------------------------------------------------------------------
 
@@ -17,7 +13,7 @@ public:
   typedef uint64_t size_type;
 
   Sequence();
-  Sequence(int_vector_buffer<8>& buffer, uint64_t _size);
+  Sequence(int_vector_buffer<8>& buffer, uint64_t _size, uint64_t _sigma = 0);  // Set sigma in advance to save memory.
   Sequence(const Sequence& s);
   Sequence(Sequence&& s);
   ~Sequence();
@@ -44,7 +40,6 @@ public:
 
   inline uint64_t operator[](uint64_t i) const { return this->data[i]; }
 
-
 private:
   int_vector<0> data, samples;
   uint64_t      sigma;
@@ -53,9 +48,10 @@ private:
   void buildRank();
 };  // class Sequence
 
-//------------------------------------------------------------------------------
+template<>
+SimpleFM<Sequence>::SimpleFM(const std::string& base_name);
 
-} // namespace sdsl
+//------------------------------------------------------------------------------
 
 
 #endif // _RELATIVE_FM_SEQUENCE_H
