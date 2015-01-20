@@ -9,7 +9,7 @@
 
 /*
   A classic FM-index based on relative Lempel-Ziv parsing of the BWT.
-  Neither BWT should not contain character value 1.
+  Neither BWT should not contain (real) character value 1.
 */
 class RLZFM
 {
@@ -26,11 +26,12 @@ public:
   RLZFM(const SimpleFM<>& ref, std::istream& input);
   ~RLZFM();
 
+  uint64_t size() const { return this->blocks.v.size(); }
+  uint64_t sequences() const { return this->alpha.C[1]; }
+
   uint64_t reportSize(bool print = false) const;
   void writeTo(const std::string& base_name) const;
   void writeTo(std::ostream& output) const;
-
-  uint64_t size() const { return this->blocks.v.size(); }
 
   // Do not use with character value 0.
   template<class Iter> range_type find(Iter begin, Iter end) const;
@@ -41,7 +42,7 @@ public:
   relative_encoder        phrases;
   rlz_helper              blocks;
   rlz_helper*             block_rank;
-  int_vector<8>           mismatches;
+  int_vector<8>           mismatches; // FIXME this could be packed
 
 private:
   // Counts the number of occurrences of (real character) c in reference[ref_pos, ref_pos + phrase_length - 1].

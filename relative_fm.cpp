@@ -23,7 +23,7 @@ getComplement(const bwt_type& bwt, const bit_vector& positions, uint64_t n)
 RelativeFM::RelativeFM(const SimpleFM<>& ref, const SimpleFM<>& seq, bool print) :
   reference(ref)
 {
-  this->size = seq.bwt.size();
+  this->m_size = seq.bwt.size();
 
   uint64_t lcs_length = 0;
   auto lcs_vecs = alignBWTs(ref, seq, BLOCK_SIZE, MAX_DEPTH, lcs_length, print);
@@ -131,16 +131,16 @@ RelativeFM::reportSize(bool print) const
   if(print)
   {
 #ifdef VERBOSE_OUTPUT
-    printSize("ref_minus_lcs", ref_bytes, this->size);
-    printSize("seq_minus_lcs", seq_bytes, this->size);
-    printSize("ref_lcs", reflcs_bytes, this->size);
+    printSize("ref_minus_lcs", ref_bytes, this->size());
+    printSize("seq_minus_lcs", seq_bytes, this->size());
+    printSize("ref_lcs", reflcs_bytes, this->size());
 #ifdef REPORT_RUNS
     std::cout << std::string(16, ' ') << ref_runs << " runs (gap0 "
       << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
       << " MB, run " << (inMegabytes(ref_run) / 8) << " MB, delta "
       << inMegabytes(ref_delta) << " MB)" << std::endl;
 #endif
-    printSize("seq_lcs", seqlcs_bytes, this->size);
+    printSize("seq_lcs", seqlcs_bytes, this->size());
 #ifdef REPORT_RUNS
     std::cout << std::string(16, ' ') << seq_runs << " runs (gap0 "
       << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
@@ -148,8 +148,8 @@ RelativeFM::reportSize(bool print) const
       << inMegabytes(seq_delta) << " MB)" << std::endl;
 #endif
 #else
-    printSize("BWT", bwt_bytes, this->size);
-    printSize("Bitvectors", bitvector_bytes, this->size);
+    printSize("BWT", bwt_bytes, this->size());
+    printSize("Bitvectors", bitvector_bytes, this->size());
 #ifdef REPORT_RUNS
     std::cout << std::string(16, ' ') << ref_runs << " runs (gap0 "
       << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
@@ -161,7 +161,7 @@ RelativeFM::reportSize(bool print) const
       << inMegabytes(seq_delta) << " MB)" << std::endl;
 #endif
 #endif
-    printSize("Relative FM", bytes, this->size);
+    printSize("Relative FM", bytes, this->size());
     std::cout << std::endl;
   }
 
@@ -201,7 +201,7 @@ RelativeFM::loadFrom(std::istream& input)
   this->seq_lcs.load(input);
   this->buildRankSelect();
   this->alpha.load(input);
-  this->size = this->reference.bwt.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
+  this->m_size = this->reference.bwt.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
 }
 
 void
@@ -290,7 +290,7 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
     ++ref_p; ++seq_p;
   }
 
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
   std::cout << "  Matched " << max_f << " copies of character " << max_c << " (" << ((char)max_c) << ")";
   std::cout << " from sequences of length " << range_type(ref_buffer.size(), seq_buffer.size()) << std::endl;
 #endif
@@ -316,7 +316,7 @@ greedyLCS(const SimpleFM<>& ref, const SimpleFM<>& seq, range_type ref_range, ra
 
   if(onlyNs || abs(ref_len - seq_len) > RelativeFM::MAX_D)
   {
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
       std::cout << "Reverting to heuristic on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
 #endif
       return mostFrequentChar(ref_buffer, seq_buffer);
@@ -350,7 +350,7 @@ greedyLCS(const SimpleFM<>& ref, const SimpleFM<>& seq, range_type ref_range, ra
     // Too much memory required, match just the most frequent characters.
     if(d >= RelativeFM::MAX_D && !found)
     {
-#ifdef VERBOSE_OUTPUT
+#ifdef VERBOSE_STATUS_INFO
       std::cout << "MAX_D exceeded on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
 #endif
       return mostFrequentChar(ref_buffer, seq_buffer);
@@ -393,6 +393,7 @@ alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uin
     std::cout << "Target size: " << seq.bwt.size() << std::endl;
   }
 
+  // Build the union of the alphabets.
   uint sigma = 0;
   uint8_t alphabet[256];
   for(uint c = 0; c < 256; c++)
@@ -403,6 +404,7 @@ alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uin
     }
   }
 
+  // Partition the BWTs.
   std::stack<record_type> record_stack;
   record_stack.push(record_type(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), ""));
   std::vector<record_type> ranges;
@@ -435,10 +437,13 @@ alignBWTs(const SimpleFM<>& ref, const SimpleFM<>& seq, uint64_t block_size, uin
     }
   }
 
+  // Sort the ranges and check that they cover the entire BWTs.
+  // FIXME Does this work if the alphabets are not the same? Do the gaps really matter?
   std::sort(ranges.begin(), ranges.end(), record_comparator);
   verifyRanges(ranges, ref.bwt.size(), seq.bwt.size());
   if(print) { std::cout << "Number of ranges: " << ranges.size() << std::endl; }
 
+  // Find the approximate LCS using the partitioning.
   lcs = 0;
   bit_vector ref_lcs(ref.bwt.size(), 0), seq_lcs(seq.bwt.size(), 0);
   for(auto curr : ranges)

@@ -97,7 +97,11 @@ typedef wt_huff<bit_vector, rank_support_v5<> > bwt_type;
 
 typedef byte_alphabet alphabet_type;
 
-// c is a real character.
+/*
+  All the following functions assume that c is a real character, not a comp value in a
+  contiguous alphabet.
+*/
+
 inline uint64_t
 cumulative(const alphabet_type& alpha, uint8_t c)
 {

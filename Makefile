@@ -8,10 +8,12 @@ SDSL_DIR=../sdsl-lite
 # This makes reportSize() significantly slower.
 #RUN_FLAGS=-DREPORT_RUNS
 
+# Include the RLZ indexes in query_test.
+#INDEX_FLAGS=-DTEST_RLZ_INDEXES
+
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 #VERBOSE_FLAGS=-DVERBOSE_OUTPUT -DVERBOSE_STATUS_INFO
-
 
 # Sparse bitvectors are slower, but they can sometimes be smaller.
 #VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
@@ -19,11 +21,11 @@ VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 # RRR bitvectors make the WT smaller and slower.
 #WT_FLAGS=-DUSE_RRR_WT
 
-OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(WT_FLAGS)
+OTHER_FLAGS=$(RUSAGE_FLAGS) $(INDEX_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(WT_FLAGS)
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
-LIBOBJS=relative_fm.o rlz_vector.o rlz_fm.o rlz.o utils.o
+LIBOBJS=relative_fm.o rlz_vector.o rlz_fm.o rlz.o utils.o sequence.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)

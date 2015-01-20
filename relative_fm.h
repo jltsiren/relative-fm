@@ -19,6 +19,12 @@
   The storage format is an int_vector<8> containing the BWT (with a contiguous alphabet)
   in base_name.bwt, and a byte_alphabet mapping the original alphabet to the contiguous
   alphabet in base_name.alpha.
+
+  RankStructure must support the following operations:
+    - Queries: [i], rank(i, c)
+    - Constructor: (), (int_vector_buffer<8>, uint64_t)
+    - Basic operations: swap(), size()
+    - With the structure as a parameter: size_in_bytes(bwt), serialize(bwt, .., ..)
 */
 template<class RankStructure = bwt_type>
 class SimpleFM
@@ -48,7 +54,8 @@ public:
   {
   }
 
-  uint64_t size() const { return this->size(); }
+  uint64_t size() const { return this->bwt.size(); }
+  uint64_t sequences() const { return this->alpha.C[1]; }
 
   uint64_t reportSize(bool print = false) const
   {
@@ -63,21 +70,29 @@ public:
     return bytes;
   }
 
-  /* FIXME: Implement the portable format
   void writeTo(const std::string& base_name) const
   {
-    std::string filename = base_name + EXTENSION;
-    std::ofstream output(filename.c_str(), std::ios_base::binary);
-    if(!output)
     {
-      std::cerr << "SimpleFM::writeTo(): Cannot open output file " << filename << std::endl;
-      return;
+      std::string filename = base_name + ALPHA_EXTENSION;
+      std::ofstream output(filename.c_str(), std::ios_base::binary);
+      if(!output)
+      {
+        std::cerr << "SimpleFM::writeTo(): Cannot open alphabet file " << filename << std::endl;
+        return;
+      }
+      this->alpha.serialize(output); output.close();
     }
-     this->bwt.serialize(output);
-     this->alpha.serialize(output);
-    output.close();
+
+    {
+      std::string filename = base_name + BWT_EXTENSION;
+      int_vector_buffer<8> buffer(filename, std::ios::out);
+      for(uint64_t i = 0; i < this->size(); i++)
+      {
+        buffer[i] = this->alpha.comp2char[this->bwt[i]];
+      }
+      buffer.close();
+    }
   }
-  */
 
   template<class Iter> range_type find(Iter begin, Iter end) const
   {
@@ -140,6 +155,9 @@ public:
   RelativeFM(const SimpleFM<>& ref, std::istream& input);
   ~RelativeFM();
 
+  uint64_t size() const { return this->m_size; }
+  uint64_t sequences() const { return this->alpha.C[1]; }
+
   uint64_t reportSize(bool print = false) const;
   void writeTo(const std::string& base_name) const;
   void writeTo(std::ostream& output) const;
@@ -156,7 +174,7 @@ public:
   bwt_type                    ref_minus_lcs, seq_minus_lcs;
   vector_type                 ref_lcs, seq_lcs;
   alphabet_type               alpha;
-  uint64_t                    size;
+  uint64_t                    m_size;
 
   vector_type::rank_1_type    seq_rank;
 #ifdef USE_SPARSE_BITVECTORS
@@ -173,6 +191,7 @@ private:
     The straightforward implementation counts the number of c's up to position i.
     To get the proper result, we need to check whether position i is in LCS or its complement,
     and ignore the last position when doing rank in that sequence.
+    Note that c is a real character.
   */
   inline uint64_t rank(uint64_t i, uint8_t c) const
   {
@@ -214,14 +233,13 @@ template<class Iter>
 range_type
 RelativeFM::find(Iter begin, Iter end) const
 {
-  range_type res(0, this->size - 1);
+  range_type res(0, this->size() - 1);
   while(begin != end)
   {
     --end;
-    uint8_t c = this->alpha.char2comp[*end];
-    uint64_t begin = this->alpha.C[c];
-    res.first = begin + this->rank(res.first, c);
-    res.second = begin + this->rank(res.second + 1, c) - 1;
+    uint64_t begin = cumulative(this->alpha, *end);
+    res.first = begin + this->rank(res.first, *end);
+    res.second = begin + this->rank(res.second + 1, *end) - 1;
     if(length(res) == 0) { return range_type(1, 0); }
   }
   return res;

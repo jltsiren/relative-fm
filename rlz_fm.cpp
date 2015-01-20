@@ -30,25 +30,25 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
   this->blocks.init(phrase_lengths);
 
   // Initialize rank structures.
-  this->block_rank = new rlz_helper[this->alpha.sigma - 1];
-  std::vector<uint64_t>* rank_buffers = new std::vector<uint64_t>[this->alpha.sigma - 1];
+  this->block_rank = new rlz_helper[this->alpha.sigma];
+  std::vector<uint64_t>* rank_buffers = new std::vector<uint64_t>[this->alpha.sigma];
   for(uint64_t phrase = 0; phrase < phrase_starts.size(); phrase++)
   {
-    for(uint64_t c = 1; c < this->alpha.sigma; c++) // Determine rank information.
+    for(uint64_t c = 0; c < this->alpha.sigma; c++) // Determine rank information.
     {
       uint64_t val = this->countOf(phrase_starts[phrase], phrase_lengths[phrase] - 1, this->alpha.comp2char[c]);
       if(this->mismatches[phrase] == this->alpha.comp2char[c]) { val++; }
       if(phrase % BLOCK_SIZE == 0)  // Add a new block.
       {
-        rank_buffers[c - 1].push_back(val);
+        rank_buffers[c].push_back(val);
       }
       else
       {
-        *(rank_buffers[c - 1].rbegin()) += val;
+        *(rank_buffers[c].rbegin()) += val;
       }
     }
   }
-  for(uint64_t c = 1; c < this->alpha.sigma; c++) { this->block_rank[c - 1].init(rank_buffers[c - 1]); }
+  for(uint64_t c = 0; c < this->alpha.sigma; c++) { this->block_rank[c].init(rank_buffers[c]); }
   delete[] rank_buffers; rank_buffers = 0;
 }
 
@@ -90,7 +90,7 @@ RLZFM::reportSize(bool print) const
 
   uint64_t rlz_bytes = phrase_bytes + block_bytes + mismatch_bytes;
   uint64_t rank_bytes = 0;
-  for(uint64_t c = 1; c < this->alpha.sigma; c++) { rank_bytes += this->block_rank[c - 1].reportSize(); }
+  for(uint64_t c = 0; c < this->alpha.sigma; c++) { rank_bytes += this->block_rank[c].reportSize(); }
   uint64_t bytes = size_in_bytes(this->alpha) + rlz_bytes + rank_bytes;
 
   if(print)
@@ -130,7 +130,7 @@ RLZFM::writeTo(std::ostream& output) const
   this->alpha.serialize(output);
   this->phrases.serialize(output);
   this->blocks.serialize(output);
-  for(uint64_t c = 1; c < this->alpha.sigma; c++) { this->block_rank[c - 1].serialize(output); }
+  for(uint64_t c = 0; c < this->alpha.sigma; c++) { this->block_rank[c].serialize(output); }
   this->mismatches.serialize(output);
 }
 
@@ -140,8 +140,8 @@ RLZFM::loadFrom(std::istream& input)
   this->alpha.load(input);
   this->phrases.load(input);
   this->blocks.load(input);
-  delete[] this->block_rank; this->block_rank = new rlz_helper[this->alpha.sigma - 1];
-  for(uint64_t c = 1; c < this->alpha.sigma; c++) { this->block_rank[c - 1].load(input); }
+  delete[] this->block_rank; this->block_rank = new rlz_helper[this->alpha.sigma];
+  for(uint64_t c = 0; c < this->alpha.sigma; c++) { this->block_rank[c].load(input); }
   this->mismatches.load(input);
 }
 
@@ -150,7 +150,7 @@ RLZFM::loadFrom(std::istream& input)
 uint64_t
 RLZFM::rank(uint64_t i, uint8_t c) const
 {
-  if(c == 0 || !(hasChar(this->alpha, c))) { return 0; }
+  if(!(hasChar(this->alpha, c))) { return 0; }
   uint64_t comp = this->alpha.char2comp[c];
   if(i >= this->size()) { return this->alpha.C[comp + 1] - this->alpha.C[comp]; }
 
@@ -163,7 +163,7 @@ RLZFM::rank(uint64_t i, uint8_t c) const
   if(phrase >= BLOCK_SIZE)
   {
     text_pos = this->blocks.itemsAfter(base_phrase - 1);
-    base_rank = this->block_rank[comp - 1].itemsAfter(base_phrase / BLOCK_SIZE - 1);
+    base_rank = this->block_rank[comp].itemsAfter(base_phrase / BLOCK_SIZE - 1);
   }
   for(uint64_t cur = base_phrase; cur < phrase; cur++)
   {

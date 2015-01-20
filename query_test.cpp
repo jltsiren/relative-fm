@@ -1,7 +1,12 @@
 #include "relative_fm.h"
 #include "rlz_fm.h"
 #include "rlz_vector.h"
+#include "sequence.h"
 
+
+template<class Index>
+void
+testIndex(std::string name, const Index& index, std::vector<std::string>& patterns, uint64_t chars);
 
 int
 main(int argc, char** argv)
@@ -24,12 +29,16 @@ main(int argc, char** argv)
 
   std::cout << "Sequence: " << argv[2] << std::endl;
   std::cout << std::endl;
-  SimpleFM<> seq(argv[2]);
-  seq.reportSize(true);
+  SimpleFM<> plain(argv[2]);
+  plain.reportSize(true);
   SimpleFM<wt_huff<rrr_vector<63> > > rrr(argv[2]);
   rrr.reportSize(true);
+  SimpleFM<Sequence> seq(argv[2]);
+  seq.reportSize(true);
   RelativeFM rel(ref, argv[2]);
   rel.reportSize(true);
+
+#ifdef TEST_RLZ_INDEXES
   RLZFM rlz(ref, argv[2]);
   rlz.reportSize(true);
 
@@ -42,6 +51,7 @@ main(int argc, char** argv)
     temp.compress(ref.bwt.bv, b_r, b_s1, b_s0);
   }
   rlzv.reportSize(true);
+#endif
   std::cout << std::endl;
 
   std::cout << "Patterns: " << argv[3] << std::endl;
@@ -52,65 +62,15 @@ main(int argc, char** argv)
   std::cout << std::endl;
   std::cout << std::endl;
 
-  {
-    double start = readTimer();
-    uint64_t found = 0, matches = 0;
-    for(auto pattern : patterns)
-    {
-      range_type res = seq.find(pattern.begin(), pattern.end());
-      if(length(res) > 0) { found++; matches += length(res); }
-    }
-    double seconds = readTimer() - start;
-    printTime("FM<plain>", found, matches, chars, seconds);
-  }
+  testIndex("FM<plain>", plain, patterns, chars);
+  testIndex("FM<rrr>", rrr, patterns, chars);
+  testIndex("FM<seq>", seq, patterns, chars);
+  testIndex("Relative FM", rel, patterns, chars);
 
-  {
-    double start = readTimer();
-    uint64_t found = 0, matches = 0;
-    for(auto pattern : patterns)
-    {
-      range_type res = rrr.find(pattern.begin(), pattern.end());
-      if(length(res) > 0) { found++; matches += length(res); }
-    }
-    double seconds = readTimer() - start;
-    printTime("FM<rrr>", found, matches, chars, seconds);
-  }
-
-  {
-    double start = readTimer();
-    uint64_t found = 0, matches = 0;
-    for(auto pattern : patterns)
-    {
-      range_type res = rel.find(pattern.begin(), pattern.end());
-      if(length(res) > 0) { found++; matches += length(res); }
-    }
-    double seconds = readTimer() - start;
-    printTime("Relative FM", found, matches, chars, seconds);
-  }
-
-  {
-    double start = readTimer();
-    uint64_t found = 0, matches = 0;
-    for(auto pattern : patterns)
-    {
-      range_type res = rlz.find(pattern.begin(), pattern.end());
-      if(length(res) > 0) { found++; matches += length(res); }
-    }
-    double seconds = readTimer() - start;
-    printTime("RLZ FM", found, matches, chars, seconds);
-  }
-
-  {
-    double start = readTimer();
-    uint64_t found = 0, matches = 0;
-    for(auto pattern : patterns)
-    {
-      range_type res = rlzv.find(pattern.begin(), pattern.end());
-      if(length(res) > 0) { found++; matches += length(res); }
-    }
-    double seconds = readTimer() - start;
-    printTime("FM<rlz>", found, matches, chars, seconds);
-  }
+#ifdef TEST_RLZ_INDEXES
+  testIndex("RLZ FM", rlz, patterns, chars);
+  testIndex("FM<rlz>", rlzv, patterns, chars);
+#endif
 
   double memory = inMegabytes(memoryUsage());
   std::cout << std::endl;
@@ -118,4 +78,20 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   return 0;
+}
+
+
+template<class Index>
+void
+testIndex(std::string name, const Index& index, std::vector<std::string>& patterns, uint64_t chars)
+{
+  double start = readTimer();
+  uint64_t found = 0, matches = 0;
+  for(auto pattern : patterns)
+  {
+    range_type res = index.find(pattern.begin(), pattern.end());
+    if(length(res) > 0) { found++; matches += length(res); }
+  }
+  double seconds = readTimer() - start;
+  printTime(name, found, matches, chars, seconds);
 }

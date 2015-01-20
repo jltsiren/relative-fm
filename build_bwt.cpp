@@ -19,11 +19,10 @@ main(int argc, char** argv)
   {
     std::string base_name = argv[i];
     std::cout << "File: " << base_name << std::endl;
-    uint64_t size = util::file_size(base_name);
-    std::cout << "Text size: " << size << std::endl;
+    int_vector<8> text;
+    uint64_t size = 0;
 
     // Read text.
-    int_vector<8> text(size + 1);  // Append an endmarker.
     {
       std::ifstream in(base_name.c_str(), std::ios_base::binary);
       if(!in)
@@ -32,6 +31,8 @@ main(int argc, char** argv)
         std::cout << std::endl;
         continue;
       }
+      size = util::file_size(base_name); text.resize(size + 1);
+      std::cout << "Text size: " << size << std::endl;
       in.read((char*)(text.data()), size); text[size] = 0; in.close();
     }
 
