@@ -119,16 +119,50 @@ public:
     }
   }
 
+  template<class ByteVector>
+  void extract(range_type range, ByteVector& buffer) const
+  {
+    if(isEmpty(range) || range.second >= this->size()) { return; }
+    buffer.resize(length(range));
+
+    // Find the first character.
+    uint64_t block = this->block_rank(range.first);
+    uint64_t rle_pos = block * SAMPLE_RATE;
+    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    while(true)
+    {
+      seq_pos += this->data[rle_pos] / SIGMA; // The last position in the run.
+      if(seq_pos >= range.first) { break; }
+      seq_pos++; rle_pos++; // Move to the first position in the next run.
+    }
+
+    // Fill the buffer.
+    for(uint64_t i = range.first; i <= range.second; i++)
+    {
+      if(i > seq_pos) { rle_pos++; seq_pos += this->data[rle_pos] / SIGMA + 1; }
+      buffer[i - range.first] = this->data[rle_pos] % SIGMA;
+    }
+  }
+
 private:
-  int_vector<8> data;
+  std::vector<uint8_t> data;
   int_vector<0> samples;
-  sd_vector<>   block_boundaries; // Marks the last sequence position in each block.
+  sd_vector<> block_boundaries; // Marks the last sequence position in each block.
   sd_vector<>::rank_1_type block_rank;
   sd_vector<>::select_1_type block_select;
 
   void copy(const RLSequence& v);
   void buildRank();
 };  // class RLSequence
+
+template<>
+template<class ByteVector>
+void
+SimpleFM<RLSequence>::extractBWT(range_type range, ByteVector& buffer) const
+{
+  this->bwt.extract(range, buffer);
+  for(uint64_t i = 0; i < buffer.size(); i++) { buffer[i] = this->alpha.comp2char[buffer[i]]; }
+}
 
 //------------------------------------------------------------------------------
 

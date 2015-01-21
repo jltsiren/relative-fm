@@ -160,22 +160,17 @@ RLSequence::RLSequence(int_vector_buffer<8>& buffer, uint64_t _size)
 {
   // Process the input.
   uint64_t c = 0, run = 0;
-  std::vector<uint8_t> runs;
   std::vector<uint64_t> block_ends;
   for(uint64_t i = 0; i < _size; i++)
   {
     if(buffer[i] == c) { run++; }
     else
     {
-      addRun(c, run, i, runs, block_ends, false);
+      addRun(c, run, i, this->data, block_ends, false);
       c = buffer[i]; run = 1;
     }
   }
-  addRun(c, run, _size, runs, block_ends, true);
-
-  // Run-length encoded sequence.
-  this->data.resize(runs.size());
-  for(uint64_t i = 0; i < runs.size(); i++) { this->data[i] = runs[i]; }
+  addRun(c, run, _size, this->data, block_ends, true);
 
   // Block boundaries.
   sd_vector<> temp(block_ends.begin(), block_ends.end());
@@ -250,7 +245,7 @@ RLSequence::serialize(std::ostream& out, structure_tree_node* s, std::string nam
 {
   structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
   uint64_t written_bytes = 0;
-  written_bytes += this->data.serialize(out, child, "data");
+  written_bytes += write_vector(this->data, out, child, "data");
   written_bytes += this->samples.serialize(out, child, "samples");
   written_bytes += this->block_boundaries.serialize(out, child, "block_boundaries");
   written_bytes += this->block_rank.serialize(out, child, "block_rank");
@@ -262,7 +257,7 @@ RLSequence::serialize(std::ostream& out, structure_tree_node* s, std::string nam
 void
 RLSequence::load(std::istream& in)
 {
-  this->data.load(in);
+  read_vector(this->data, in);
   this->samples.load(in);
   this->block_boundaries.load(in);
   this->block_rank.load(in, &(this->block_boundaries));

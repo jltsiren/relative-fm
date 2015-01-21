@@ -134,4 +134,36 @@ LF(const RankStructure& bwt, const alphabet_type& alpha, range_type rng, uint8_t
 
 //------------------------------------------------------------------------------
 
+namespace sdsl
+{
+
+template<class element>
+uint64_t
+write_vector(const std::vector<element>& vec, std::ostream& out, structure_tree_node* v, std::string name)
+{
+  structure_tree_node* child = structure_tree::add_child(v, name, util::class_name(vec));
+  uint64_t written_bytes = 0;
+  written_bytes += write_member(vec.size(), out, child, "size");
+  out.write((char*)(vec.data()), vec.size() * sizeof(element));
+  written_bytes += vec.size() * sizeof(element);
+  structure_tree::add_size(v, written_bytes);
+  return written_bytes;
+}
+
+template<class element>
+void
+read_vector(std::vector<element>& vec, std::istream& in)
+{
+  uint64_t size = 0;
+  read_member(size, in);
+  vec.clear();
+  std::vector<element> temp(size);
+  in.read((char*)(temp.data()), vec.size() * sizeof(element));
+  vec.swap(temp);
+}
+
+} // namespace sdsl
+
+//------------------------------------------------------------------------------
+
 #endif // _RELATIVE_FM_UTILS_H
