@@ -35,6 +35,8 @@ main(int argc, char** argv)
   rrr.reportSize(true);
   SimpleFM<Sequence> seq(argv[2]);
   seq.reportSize(true);
+  SimpleFM<RLSequence> rle(argv[2]);
+  rle.reportSize(true);
   RelativeFM rel(ref, argv[2]);
   rel.reportSize(true);
 
@@ -65,6 +67,7 @@ main(int argc, char** argv)
   testIndex("FM<plain>", plain, patterns, chars);
   testIndex("FM<rrr>", rrr, patterns, chars);
   testIndex("FM<seq>", seq, patterns, chars);
+  testIndex("FM<rle>", rle, patterns, chars);
   testIndex("Relative FM", rel, patterns, chars);
 
 #ifdef TEST_RLZ_INDEXES

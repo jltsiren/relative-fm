@@ -2,8 +2,8 @@
 #define _RELATIVE_FM_RLZ_FM_H
 
 
-#include "relative_fm.h"
 #include "rlz.h"
+#include "simple_fm.h"
 
 //------------------------------------------------------------------------------
 
