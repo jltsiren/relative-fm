@@ -37,7 +37,7 @@ main(int argc, char** argv)
   seq.reportSize(true);
   SimpleFM<RLSequence> rle(argv[2]);
   rle.reportSize(true);
-  RelativeFM rel(ref, argv[2]);
+  RelativeFM<> rel(ref, argv[2]);
   rel.reportSize(true);
 
 #ifdef TEST_RLZ_INDEXES

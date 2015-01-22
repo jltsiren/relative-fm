@@ -52,16 +52,8 @@ main(int argc, char** argv)
 
     // Write alphabet.
     {
-      std::string ramfile = ram_file_name(base_name + BWT_EXTENSION);
-      store_to_file(text, ramfile);
       alphabet_type alpha;
-      {
-        int_vector_buffer<8> ram_buffer(ramfile);
-        alphabet_type temp(ram_buffer, size + 1);
-        alpha.swap(temp);
-      }
-      ram_fs::remove(ramfile);
-
+      directConstruct(alpha, text);
       std::string filename = base_name + ALPHA_EXTENSION;
       std::ofstream out(filename.c_str(), std::ios_base::binary);
       if(!out)

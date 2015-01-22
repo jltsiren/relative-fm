@@ -23,12 +23,14 @@
     - Queries: [i], rank(i, c)
     - Constructor: (), (int_vector_buffer<8>, uint64_t)
     - Basic operations: swap(), size()
-    - With the structure as a parameter: size_in_bytes(bwt), serialize(bwt, .., ..)
+    - With the structure as a parameter: serialize(bwt, .., ..)
 */
 template<class RankStructure = bwt_type>
 class SimpleFM
 {
 public:
+  typedef RankStructure seq_type;
+
   explicit SimpleFM(const std::string& base_name)
   {
     {

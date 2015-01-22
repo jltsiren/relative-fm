@@ -1,4 +1,5 @@
 #include "relative_fm.h"
+#include "sequence.h"
 
 
 int
@@ -25,7 +26,7 @@ main(int argc, char** argv)
     std::cout << "Target: " << argv[arg] << std::endl;
     SimpleFM<> seq(argv[arg]);
     double start = readTimer();
-    RelativeFM rel(ref, seq, true);
+    RelativeFM<> rel(ref, seq, true);
     double seconds = readTimer() - start;
     std::cout << "Index built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;
