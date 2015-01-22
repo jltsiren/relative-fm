@@ -142,17 +142,12 @@ RLSequence::RLSequence()
 }
 
 void
-addRun(uint64_t c, uint64_t run, uint64_t i,
-       std::vector<uint8_t>& runs, std::vector<uint64_t>& block_ends, bool force_block)
+addRun(uint64_t c, uint64_t run, std::vector<uint8_t>& runs)
 {
   while(run > 0)
   {
     uint64_t temp = (run > RLSequence::MAX_RUN ? RLSequence::MAX_RUN : run); run -= temp;
     runs.push_back(c + RLSequence::SIGMA * (temp - 1));
-    if((force_block && run == 0) || runs.size() % RLSequence::SAMPLE_RATE == 0)
-    {
-      block_ends.push_back(i - run - 1);
-    }
   }
 }
 
@@ -160,25 +155,18 @@ RLSequence::RLSequence(int_vector_buffer<8>& buffer, uint64_t _size)
 {
   // Process the input.
   uint64_t c = 0, run = 0;
-  std::vector<uint64_t> block_ends;
   for(uint64_t i = 0; i < _size; i++)
   {
     if(buffer[i] == c) { run++; }
     else
     {
-      addRun(c, run, i, this->data, block_ends, false);
+      addRun(c, run, this->data);
       c = buffer[i]; run = 1;
     }
   }
-  addRun(c, run, _size, this->data, block_ends, true);
+  addRun(c, run, this->data);
 
-  // Block boundaries.
-  sd_vector<> temp(block_ends.begin(), block_ends.end());
-  this->block_boundaries.swap(temp);
-  util::init_support(this->block_rank, &(this->block_boundaries));
-  util::init_support(this->block_select, &(this->block_boundaries));
-
-  // Rank.
+  // Blocks and samples.
   this->buildRank();
 }
 
@@ -255,30 +243,56 @@ RLSequence::serialize(std::ostream& out, structure_tree_node* s, std::string nam
 }
 
 void
-RLSequence::load(std::istream& in)
+RLSequence::load(std::istream& in, bool rebuild_samples)
 {
   read_vector(this->data, in);
-  this->samples.load(in);
-  this->block_boundaries.load(in);
-  this->block_rank.load(in, &(this->block_boundaries));
-  this->block_select.load(in, &(this->block_boundaries));
+  if(rebuild_samples)
+  {
+    this->buildRank();
+  }
+  else
+  {
+    this->samples.load(in);
+    this->block_boundaries.load(in);
+    this->block_rank.load(in, &(this->block_boundaries));
+    this->block_select.load(in, &(this->block_boundaries));
+  }
 }
 
 void
 RLSequence::buildRank()
 {
-  uint64_t blocks = this->block_rank(this->size());
-  int_vector<0> temp((blocks + 1) * SIGMA, 0, bitlength(this->size()));
-  for(uint64_t block = 0; block < blocks; block++)
+  std::vector<uint64_t> block_ends;
+  for(uint64_t i = 1, pos = 0; i <= this->runs(); i++)
   {
-    for(uint64_t c = 0; c < SIGMA; c++) { temp[(block + 1) * SIGMA + c] = temp[block * SIGMA + c]; }
-    uint64_t limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
-    for(uint64_t i = block * SAMPLE_RATE; i < limit; i++)
-    {
-      temp[(block + 1) * SIGMA + this->data[i] % SIGMA] += this->data[i] / SIGMA + 1;
-    }
+    pos += this->data[i - 1] / SIGMA + 1;
+    if(i == this->runs() || i % SAMPLE_RATE == 0) { block_ends.push_back(pos - 1); }
   }
-  util::bit_compress(temp); this->samples.swap(temp);
+
+  // Block boundaries.
+  uint64_t blocks = block_ends.size();
+  {
+    sd_vector<> temp(block_ends.begin(), block_ends.end());
+    { std::vector<uint64_t> temp; temp.swap(block_ends); }
+    this->block_boundaries.swap(temp);
+    util::init_support(this->block_rank, &(this->block_boundaries));
+    util::init_support(this->block_select, &(this->block_boundaries));
+  }
+
+  // Samples.
+  {
+    int_vector<0> temp((blocks + 1) * SIGMA, 0, bitlength(this->size()));
+    for(uint64_t block = 0; block < blocks; block++)
+    {
+      for(uint64_t c = 0; c < SIGMA; c++) { temp[(block + 1) * SIGMA + c] = temp[block * SIGMA + c]; }
+      uint64_t limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
+      for(uint64_t i = block * SAMPLE_RATE; i < limit; i++)
+      {
+        temp[(block + 1) * SIGMA + this->data[i] % SIGMA] += this->data[i] / SIGMA + 1;
+      }
+    }
+    util::bit_compress(temp); this->samples.swap(temp);
+  }
 }
 
 //------------------------------------------------------------------------------

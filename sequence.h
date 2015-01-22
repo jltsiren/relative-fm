@@ -76,7 +76,7 @@ public:
   RLSequence& operator=(RLSequence&& v);
 
   uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
-  void load(std::istream& in);
+  void load(std::istream& in, bool rebuild_samples = false);
 
   inline uint64_t size() const { return this->block_boundaries.size(); }
   inline uint64_t runs() const { return this->data.size(); }

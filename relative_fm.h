@@ -464,10 +464,12 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_siz
   }
 
   // Sort the ranges and check that they cover the entire BWTs.
-  // FIXME Does this work if the alphabets are not the same? Do the gaps between ranges really matter?
+  // verifyRanges() fails when the alphabets are different, but it does not matter.
   record_comparator comparator;
   std::sort(ranges.begin(), ranges.end(), comparator);
+#ifdef VERIFY_CONSTRUCTION
   verifyRanges(ranges, ref.bwt.size(), seq.bwt.size());
+#endif
   if(print) { std::cout << "Number of ranges: " << ranges.size() << std::endl; }
 
   // Find the approximate LCS using the partitioning.

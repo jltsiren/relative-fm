@@ -8,6 +8,9 @@ RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 # This makes reportSize() significantly slower.
 #RUN_FLAGS=-DREPORT_RUNS
 
+# Run some additional verification routines during construction.
+#VERIFY_FLAGS=-DVERIFY_CONSTRUCTION
+
 # Include the RLZ indexes in query_test.
 #INDEX_FLAGS=-DTEST_RLZ_INDEXES
 
@@ -18,10 +21,7 @@ VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 # Sparse bitvectors are slower, but they can sometimes be smaller.
 #VECTOR_FLAGS=-DUSE_SPARSE_BITVECTORS
 
-# RRR bitvectors make the WT smaller and slower.
-#WT_FLAGS=-DUSE_RRR_WT
-
-OTHER_FLAGS=$(RUSAGE_FLAGS) $(INDEX_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(WT_FLAGS)
+OTHER_FLAGS=$(RUSAGE_FLAGS) $(INDEX_FLAGS) $(RUN_FLAGS) $(VERIFY_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS)
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
