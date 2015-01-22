@@ -61,7 +61,7 @@ lcs:lcs.cpp
 
 package:
 	mkdir relative-fm
-	cp $(SOURCES) $(HEADERS) Makefile targz relative-fm.tex README LICENSE relative-fm
+	cp $(SOURCES) $(HEADERS) Makefile targz README LICENSE relative-fm
 	./targz relative-fm
 	rm relative-fm/*
 	rmdir relative-fm
