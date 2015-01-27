@@ -62,7 +62,7 @@ class RLSequence
 public:
   const static uint64_t SAMPLE_RATE = 64;
   const static uint64_t SIGMA = 6;
-  const static uint64_t MAX_RUN = 256 / SIGMA;
+  const static uint64_t MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
   typedef uint64_t size_type;
 
   RLSequence();
