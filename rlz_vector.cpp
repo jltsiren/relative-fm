@@ -59,7 +59,7 @@ rlz_vector::compress(const bit_vector& reference,
 {
   if(this->isCompressed())  // FIXME maybe decompress and recompress
   {
-    std::cerr << "rlz_vector::compress(): The vector is already compressed!" << std::endl;
+    std::cerr << "rlz_vector::compress(): The vector is already compressed" << std::endl;
     return;
   }
 
@@ -112,7 +112,7 @@ rlz_vector::clear_compressed()
   delete this->m_compressed; this->m_compressed = 0;
   this->compressed = 0;
 }
-  
+
 
 void
 rlz_vector::swap(rlz_vector& v)
@@ -193,7 +193,7 @@ rlz_vector::load(std::istream& in)
 
   if(compressed)
   {
-    std::cerr << "rlz_vector::load(): Cannot load a compressed bitvector without a reference!" << std::endl;
+    std::cerr << "rlz_vector::load(): Cannot load a compressed bitvector without a reference" << std::endl;
     return;
   }
   else

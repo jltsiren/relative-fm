@@ -122,7 +122,7 @@ bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_r
 {
   if(block_size < 2)
   {
-    std::cerr << "bv_fmi::bv_fmi(): Block size must be at least 2!" << std::endl;
+    std::cerr << "bv_fmi::bv_fmi(): Block size must be at least 2" << std::endl;
     return;
   }
 
@@ -130,7 +130,7 @@ bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_r
   this->zeros = source.size() - util::cnt_one_bits(source);
   if(this->zeros == 0 || this->zeros == source.size())
   {
-    std::cerr << "bv_fmi::bv_fmi(): Source must contain both 0-bits and 1-bits!" << std::endl;
+    std::cerr << "bv_fmi::bv_fmi(): Source must contain both 0-bits and 1-bits" << std::endl;
     return;
   }
   this->bwt.resize(source.size() + 1);

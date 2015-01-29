@@ -48,9 +48,6 @@ private:
   void buildRank();
 };  // class Sequence
 
-template<>
-SimpleFM<Sequence>::SimpleFM(const std::string& base_name);
-
 //------------------------------------------------------------------------------
 
 /*
@@ -63,6 +60,7 @@ public:
   const static uint64_t SAMPLE_RATE = 64;
   const static uint64_t SIGMA = 6;
   const static uint64_t MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
+  const static uint64_t BUFFER_SIZE = 1048576;  // A good buffer size for sequential access with extract().
   typedef uint64_t size_type;
 
   RLSequence();
@@ -163,6 +161,9 @@ SimpleFM<RLSequence>::extractBWT(range_type range, ByteVector& buffer) const
   this->bwt.extract(range, buffer);
   for(uint64_t i = 0; i < buffer.size(); i++) { buffer[i] = this->alpha.comp2char[buffer[i]]; }
 }
+
+template<>
+void characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& counts);
 
 //------------------------------------------------------------------------------
 

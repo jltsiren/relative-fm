@@ -38,7 +38,7 @@ public:
 
   const SimpleFM<>&       reference;
 
-  alphabet_type           alpha;
+  Alphabet                alpha;
   relative_encoder        phrases;
   rlz_helper              blocks;
   rlz_helper*             block_rank;

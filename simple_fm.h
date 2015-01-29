@@ -22,7 +22,7 @@
   RankStructure must support the following operations:
     - Queries: [i], rank(i, c)
     - Constructor: (), (int_vector_buffer<8>, uint64_t)
-    - Basic operations: swap(), size()
+    - Basic operations: swap(), size(), load()
     - With the structure as a parameter: serialize(bwt, .., ..)
 */
 template<class RankStructure = bwt_type>
@@ -31,24 +31,26 @@ class SimpleFM
 public:
   typedef RankStructure seq_type;
 
-  explicit SimpleFM(const std::string& base_name)
+  explicit SimpleFM(const std::string& base_name, bool native_format = false)
   {
+    if(native_format)
+    {
+      std::string filename = base_name + NATIVE_BWT_EXTENSION;
+      std::ifstream in(filename.c_str(), std::ios_base::binary);
+      if(!in)
+      {
+        std::cerr << "SimpleFM::SimpleFM(): Cannot open BWT file " << filename << " (native format)" << std::endl;
+        return;
+      }
+      this->bwt.load(in); in.close();
+    }
+    else
     {
       int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
       RankStructure temp(buffer, buffer.size());
       this->bwt.swap(temp);
     }
-    {
-      std::string filename = base_name + ALPHA_EXTENSION;
-      std::ifstream in(filename.c_str(), std::ios_base::binary);
-      if(!in)
-      {
-        std::cerr << "SimpleFM()::SimpleFM(): Cannot open alphabet file " << filename << std::endl;
-        return;
-      }
-      this->alpha.load(in);
-      in.close();
-    }
+    this->loadAlphabet(base_name);
   }
 
   ~SimpleFM()
@@ -125,9 +127,30 @@ public:
   }
 
   RankStructure bwt;
-  alphabet_type alpha;
+  Alphabet alpha;
 
 private:
+
+  void loadAlphabet(const std::string& base_name)
+  {
+    std::string filename = base_name + ALPHA_EXTENSION;
+    std::ifstream in(filename.c_str(), std::ios_base::binary);
+    if(in) { this->alpha.load(in); in.close(); }
+    else  // Try the default alphabet.
+    {
+      Alphabet temp(this->bwt, this->size());
+      if(temp.sigma != SIMPLE_FM_DEFAULT_ALPHABET.length())
+      {
+        std::cerr << "SimpleFM()::SimpleFM(): Alphabet file " << filename
+                  << " does not exist and the default alphabet cannot be used" << std::endl;
+        std::cerr << "SimpleFM()::SimpleFM(): BWT alphabet size is " << temp.sigma
+                  << ", while the default is " << SIMPLE_FM_DEFAULT_ALPHABET.length() << std::endl;
+        return;
+      }
+      if(temp.assign(SIMPLE_FM_DEFAULT_ALPHABET)) { this->alpha = temp; }
+    }
+  }
+
   SimpleFM();
   SimpleFM(const SimpleFM&);
   SimpleFM(SimpleFM&&);

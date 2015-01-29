@@ -102,7 +102,7 @@ reverseIndex(const IntVector& sequence, CSA& csa)
   std::ofstream out(filename.c_str(), std::ios_base::binary);
   if(!out)
   {
-    std::cerr << "reverseIndex(): Cannot open temporary file " << filename << " for writing!" << std::endl;
+    std::cerr << "reverseIndex(): Cannot open temporary file " << filename << " for writing" << std::endl;
     return;
   }
   IntVector reverse(sequence.size());

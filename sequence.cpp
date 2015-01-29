@@ -113,30 +113,6 @@ Sequence::buildRank()
 
 //------------------------------------------------------------------------------
 
-template<>
-SimpleFM<Sequence>::SimpleFM(const std::string& base_name)
-{
-  {
-    std::string filename = base_name + ALPHA_EXTENSION;
-    std::ifstream in(filename.c_str(), std::ios_base::binary);
-    if(!in)
-    {
-      std::cerr << "SimpleFM()::SimpleFM(): Cannot open alphabet file " << filename << std::endl;
-      return;
-    }
-    this->alpha.load(in);
-    in.close();
-  }
-
-  {
-    int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
-    Sequence temp(buffer, buffer.size(), this->alpha.sigma);
-    this->bwt.swap(temp);
-  }
-}
-
-//------------------------------------------------------------------------------
-
 RLSequence::RLSequence()
 {
 }
@@ -292,6 +268,23 @@ RLSequence::buildRank()
       }
     }
     util::bit_compress(temp); this->samples.swap(temp);
+  }
+}
+
+//------------------------------------------------------------------------------
+
+template<>
+void
+characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& counts)
+{
+  for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
+
+  int_vector<8> buffer(RLSequence::BUFFER_SIZE);
+  for(uint64_t i = 0; i < size; i += RLSequence::BUFFER_SIZE)
+  {
+    uint64_t end = std::min(i + RLSequence::BUFFER_SIZE, size);
+    sequence.extract(range_type(i, end - 1), buffer);
+    for(uint64_t j = i; j < end; j++) { counts[buffer[j - i]]++; }
   }
 }
 

@@ -332,7 +332,7 @@ printSize(const csa_type& csa, std::string name)
   uint64_t bytes = size_in_bytes(csa);
   uint64_t sample_bytes = size_in_bytes(csa.sa_sample) + size_in_bytes(csa.isa_sample);
 
-  std::cout << name << " CSA: " << inMegabytes(bytes) << " MB (" << inMegabytes(bytes - sample_bytes) << 
+  std::cout << name << " CSA: " << inMegabytes(bytes) << " MB (" << inMegabytes(bytes - sample_bytes) <<
     " MB without samples)" << std::endl;
 }
 
@@ -437,7 +437,7 @@ indexBitvector(const bit_vector& v, std::string filename)
     std::ifstream in(filename.c_str(), std::ios_base::binary);
     if(!in)
     {
-      std::cerr << "indexBitvector(): Cannot open index file " << filename << " for reading!" << std::endl;
+      std::cerr << "indexBitvector(): Cannot open index file " << filename << " for reading" << std::endl;
       return 0;
     }
     bv_fmi* fmi = new bv_fmi(in);
@@ -450,7 +450,7 @@ indexBitvector(const bit_vector& v, std::string filename)
     std::ofstream out(filename.c_str(), std::ios_base::binary);
     if(!out)
     {
-      std::cerr << "indexBitvector(): Cannot open index file " << filename << " for writing!" << std::endl;
+      std::cerr << "indexBitvector(): Cannot open index file " << filename << " for writing" << std::endl;
     }
     else
     {
@@ -691,7 +691,7 @@ generateReference(std::mt19937_64& rng, uint64_t size, uint8_t alphabet_size)
 {
   if(alphabet_size == 0)
   {
-    std::cerr << "generateReference(): Alphabet size cannot be 0!" << std::endl;
+    std::cerr << "generateReference(): Alphabet size cannot be 0" << std::endl;
   }
 
   int_vector<8> reference(size);
@@ -705,7 +705,7 @@ generateVariant(std::mt19937_64& rng, const int_vector<8>& reference, double mut
   uint8_t alphabet_size = *std::max_element(reference.begin(), reference.end());
   if(alphabet_size < 2)
   {
-    std::cerr << "generateVariant(): Alphabet size must be at least 2!" << std::endl;
+    std::cerr << "generateVariant(): Alphabet size must be at least 2" << std::endl;
   }
   int_vector<8> text(reference.size() * (1.0 + 2 * mutation_rate) + EXTRA_SIZE);
 

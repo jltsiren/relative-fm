@@ -10,13 +10,13 @@ verifyRanges(std::vector<record_type>& ranges, uint64_t ref_len, uint64_t seq_le
   {
     if(curr.left.first != expect.first ||  curr.right.first != expect.second)
     {
-      std::cerr << "verifyRanges(): Expected " << expect << ", got " << curr << "!" << std::endl;
+      std::cerr << "verifyRanges(): Expected " << expect << ", got " << curr << std::endl;
     }
     expect = range_type(curr.left.second + 1, curr.right.second + 1);
   }
   if(expect.first != ref_len || expect.second != seq_len)
   {
-    std::cerr << "verifyRanges(): Final expect was " << expect << "!" << std::endl;
+    std::cerr << "verifyRanges(): Final expect was " << expect << std::endl;
   }
 }
 

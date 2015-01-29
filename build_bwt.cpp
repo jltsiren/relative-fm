@@ -50,20 +50,9 @@ main(int argc, char** argv)
       std::cout << "BWT built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
     }
 
-    // Write alphabet.
+    // Compact the alphabet.
     {
-      alphabet_type alpha;
-      directConstruct(alpha, text);
-      std::string filename = base_name + ALPHA_EXTENSION;
-      std::ofstream out(filename.c_str(), std::ios_base::binary);
-      if(!out)
-      {
-        std::cerr << "build_bwt: Cannot open alphabet file " << filename << std::endl;
-        std::cout << std::endl;
-        continue;
-      }
-      alpha.serialize(out); out.close();
-      std::cout << "Alphabet written to " << filename << std::endl;
+      Alphabet alpha(text, size + 1);
       for(uint64_t i = 0; i <= size; i++) { text[i] = alpha.char2comp[text[i]]; }
     }
 

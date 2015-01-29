@@ -204,7 +204,7 @@ public:
   const ReferenceType&        reference;
   SequenceType                ref_minus_lcs, seq_minus_lcs;
   vector_type                 ref_lcs, seq_lcs;
-  alphabet_type               alpha;
+  Alphabet                    alpha;
   uint64_t                    m_size;
 
   vector_type::rank_1_type    seq_rank;

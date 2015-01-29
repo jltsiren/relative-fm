@@ -5,11 +5,17 @@
 #include <fstream>
 #include <iostream>
 
-#include <sdsl/csa_alphabet_strategy.hpp>
 #include <sdsl/wavelet_trees.hpp>
 
 
 using namespace sdsl;
+
+//------------------------------------------------------------------------------
+
+extern const std::string BWT_EXTENSION;         // .bwt
+extern const std::string NATIVE_BWT_EXTENSION;  // .cbwt
+extern const std::string ALPHA_EXTENSION;       // .alpha
+extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;
 
 //------------------------------------------------------------------------------
 
@@ -90,11 +96,92 @@ uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, b
 
 //------------------------------------------------------------------------------
 
-const std::string ALPHA_EXTENSION = ".alpha";
-const std::string BWT_EXTENSION = ".bwt";
+template<class ByteVector>
+void
+characterCounts(const ByteVector& sequence, uint64_t size, int_vector<64>& counts)
+{
+  for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
+  for(uint64_t i = 0; i < size; i++) { counts[sequence[i]]++; }
+}
+
+class Alphabet
+{
+public:
+  typedef uint64_t size_type;
+  const static size_type MAX_SIGMA = 256;
+
+  Alphabet();
+  Alphabet(const Alphabet& s);
+  Alphabet(Alphabet&& s);
+  ~Alphabet();
+
+  /*
+    ByteVector only has to support operator[]. If there is a clearly faster way for sequential
+    access, function characterCounts() should be specialized.
+  */
+  template<class ByteVector>
+  Alphabet(const ByteVector& sequence, size_type size) :
+    char2comp(m_char2comp), comp2char(m_comp2char), C(m_C), sigma(m_sigma)
+  {
+    util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
+    util::assign(this->m_comp2char, int_vector<8>(MAX_SIGMA, 0));
+    util::assign(this->m_C, int_vector<64>(MAX_SIGMA + 1, 0));
+    this->m_sigma = 0;
+    if(size == 0) { return; }
+
+    // Step 1: Count the occurrences and temporarily store them in m_C.
+    characterCounts(sequence, size, this->m_C);
+
+    // Step 2: Determine the effective alphabet and compact the alphabet.
+    for(size_type i = 0; i < MAX_SIGMA; i++)
+    {
+      if(this->m_C[i] > 0)
+      {
+        this->m_char2comp[i] = this->m_sigma;
+        this->m_comp2char[this->m_sigma] = i;
+        this->m_C[this->m_sigma] = this->m_C[i];
+        this->m_sigma++;
+      }
+    }
+    this->m_comp2char.resize(this->m_sigma);
+    this->m_C.resize(this->m_sigma + 1);
+
+    // Step 3: Determine the cumulative counts.
+    for(size_type i = this->m_sigma; i > 0; i--) { this->m_C[i] = this->m_C[i - 1]; }
+    this->m_C[0] = 0;
+    for(size_type i = 0; i <= this->m_sigma; i++) { this->m_C[i] += this->m_C[i - 1]; }
+  }
+
+  void swap(Alphabet& v);
+  Alphabet& operator=(const Alphabet& v);
+  Alphabet& operator=(Alphabet&& v);
+
+  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  void load(std::istream& in);
+
+  /*
+    Change the alphabet to the one specified by the string. The string must be sorted,
+    and its length must be equal to sigma.
+  */
+  bool assign(const std::string& alphabet_string);
+
+private:
+  int_vector<8>  m_char2comp, m_comp2char;
+  int_vector<64> m_C;
+  size_type      m_sigma;
+
+  void copy(const Alphabet& v);
+
+public:
+  const int_vector<8>&  char2comp;
+  const int_vector<8>&  comp2char;
+  const int_vector<64>& C;
+  const size_type&      sigma;
+};  // class Alphabet
+
+//------------------------------------------------------------------------------
 
 typedef wt_huff<bit_vector, rank_support_v5<> > bwt_type;
-typedef byte_alphabet alphabet_type;
 
 /*
   All the following functions assume that c is a real character, not a comp value in a
@@ -102,20 +189,20 @@ typedef byte_alphabet alphabet_type;
 */
 
 inline uint64_t
-cumulative(const alphabet_type& alpha, uint8_t c)
+cumulative(const Alphabet& alpha, uint8_t c)
 {
   return alpha.C[alpha.char2comp[c]];
 }
 
 inline bool
-hasChar(const alphabet_type& alpha, uint8_t c)
+hasChar(const Alphabet& alpha, uint8_t c)
 {
   return (c == 0 || alpha.char2comp[c] > 0);
 }
 
 template<class RankStructure>
 inline range_type
-charRange(const RankStructure& bwt, const alphabet_type& alpha, uint8_t c)
+charRange(const RankStructure& bwt, const Alphabet& alpha, uint8_t c)
 {
   uint64_t comp = alpha.char2comp[c];
   if(comp < alpha.sigma) { return range_type(alpha.C[comp], alpha.C[comp + 1] - 1); }
@@ -124,7 +211,7 @@ charRange(const RankStructure& bwt, const alphabet_type& alpha, uint8_t c)
 
 template<class RankStructure>
 inline range_type
-LF(const RankStructure& bwt, const alphabet_type& alpha, range_type rng, uint8_t c)
+LF(const RankStructure& bwt, const Alphabet& alpha, range_type rng, uint8_t c)
 {
   c = alpha.char2comp[c];
   uint64_t begin = alpha.C[c];
