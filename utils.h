@@ -104,6 +104,12 @@ characterCounts(const ByteVector& sequence, uint64_t size, int_vector<64>& count
   for(uint64_t i = 0; i < size; i++) { counts[sequence[i]]++; }
 }
 
+/*
+  This replaces the SDSL byte_alphabet. The main improvements are:
+    - The alphabet can be built from an existing sequence.
+    - The comp order does not need to be the same as character order, as long as \0 is the first character.
+*/
+
 class Alphabet
 {
 public:
@@ -149,7 +155,7 @@ public:
     // Step 3: Determine the cumulative counts.
     for(size_type i = this->m_sigma; i > 0; i--) { this->m_C[i] = this->m_C[i - 1]; }
     this->m_C[0] = 0;
-    for(size_type i = 0; i <= this->m_sigma; i++) { this->m_C[i] += this->m_C[i - 1]; }
+    for(size_type i = 1; i <= this->m_sigma; i++) { this->m_C[i] += this->m_C[i - 1]; }
   }
 
   void swap(Alphabet& v);
@@ -160,8 +166,8 @@ public:
   void load(std::istream& in);
 
   /*
-    Change the alphabet to the one specified by the string. The string must be sorted,
-    and its length must be equal to sigma.
+    Change the alphabet to the one specified by the string. The length of the string
+    must be sigma, and each character can occur at most once.
   */
   bool assign(const std::string& alphabet_string);
 
@@ -259,9 +265,11 @@ directConstruct(Type& structure, const int_vector<8>& data)
 {
   std::string ramfile = ram_file_name(util::to_string(&structure));
   store_to_file(data, ramfile);
-  int_vector_buffer<8> buffer(ramfile);
-  Type temp(buffer, data.size());
-  structure.swap(temp);
+  {
+    int_vector_buffer<8> buffer(ramfile); // Must remove the buffer before removing the ramfile.
+    Type temp(buffer, data.size());
+    structure.swap(temp);
+  }
   ram_fs::remove(ramfile);
 }
 

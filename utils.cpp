@@ -176,20 +176,19 @@ Alphabet::assign(const std::string& alphabet_string)
     return false;
   }
 
-  for(size_type i = 1; i < alphabet_string.length(); i++)
-  {
-    if(alphabet_string[i] <= alphabet_string[i - 1])
-    {
-      std::cerr << "Alphabet::assign(): The alphabet string is not sorted" << std::endl;
-      return false;
-    }
-  }
-
+  bit_vector exists(MAX_SIGMA);
   util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
   for(size_type i = 0; i < alphabet_string.length(); i++)
   {
-    this->m_char2comp[(uint8_t)(alphabet_string[i])] = i;
-    this->m_comp2char[i] = (uint8_t)(alphabet_string[i]);
+    uint8_t c = alphabet_string[i];
+    if(exists[c])
+    {
+      std::cerr << "Alphabet::assign(): The alphabet string contains multiple occurrences of " << c << std::endl;
+      return false;
+    }
+    exists[c] = 1;
+    this->m_char2comp[c] = i;
+    this->m_comp2char[i] = c;
   }
   return true;
 }
