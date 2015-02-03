@@ -123,7 +123,7 @@ addRun(uint64_t c, uint64_t run, std::vector<uint8_t>& runs)
   while(run > 0)
   {
     uint64_t temp = (run > RLSequence::MAX_RUN ? RLSequence::MAX_RUN : run); run -= temp;
-    runs.push_back(c + RLSequence::SIGMA * (temp - 1));
+    runs.push_back(RLSequence::encode(c, temp));
   }
 }
 
@@ -241,7 +241,7 @@ RLSequence::buildRank()
   std::vector<uint64_t> block_ends;
   for(uint64_t i = 1, pos = 0; i <= this->runs(); i++)
   {
-    pos += this->data[i - 1] / SIGMA + 1;
+    pos += runLength(this->data[i - 1]);
     if(i == this->runs() || i % SAMPLE_RATE == 0) { block_ends.push_back(pos - 1); }
   }
 
@@ -249,7 +249,7 @@ RLSequence::buildRank()
   uint64_t blocks = block_ends.size();
   {
     sd_vector<> temp(block_ends.begin(), block_ends.end());
-    { std::vector<uint64_t> temp; temp.swap(block_ends); }
+    { std::vector<uint64_t> temp_v; temp_v.swap(block_ends); }
     this->block_boundaries.swap(temp);
     util::init_support(this->block_rank, &(this->block_boundaries));
     util::init_support(this->block_select, &(this->block_boundaries));
@@ -264,7 +264,7 @@ RLSequence::buildRank()
       uint64_t limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
       for(uint64_t i = block * SAMPLE_RATE; i < limit; i++)
       {
-        temp[(block + 1) * SIGMA + this->data[i] % SIGMA] += this->data[i] / SIGMA + 1;
+        temp[(block + 1) * SIGMA + charValue(this->data[i])] += runLength(this->data[i]);
       }
     }
     util::bit_compress(temp); this->samples.swap(temp);
@@ -279,12 +279,10 @@ characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& count
 {
   for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
 
-  int_vector<8> buffer(RLSequence::BUFFER_SIZE);
-  for(uint64_t i = 0; i < size; i += RLSequence::BUFFER_SIZE)
+  for(uint64_t i = 0; i < sequence.runs(); i++)
   {
-    uint64_t end = std::min(i + RLSequence::BUFFER_SIZE, size);
-    sequence.extract(range_type(i, end - 1), buffer);
-    for(uint64_t j = i; j < end; j++) { counts[buffer[j - i]]++; }
+    uint8_t temp = sequence.rawData(i);
+    counts[RLSequence::charValue(temp)] += RLSequence::runLength(temp);
   }
 }
 

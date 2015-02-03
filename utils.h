@@ -162,7 +162,7 @@ public:
   Alphabet& operator=(const Alphabet& v);
   Alphabet& operator=(Alphabet&& v);
 
-  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
   /*
@@ -317,6 +317,88 @@ countRuns(const VectorType& vec, uint64_t& runs, uint64_t& gap0, uint64_t& gap1,
   enc_vector<> delta_vec(buffer);
   delta = size_in_bytes(delta_vec);
 }
+
+//------------------------------------------------------------------------------
+
+/*
+  This class uses an sd_vector to encode the cumulative sum of an array of integers.
+  The array contains sum() items in size() elements.
+*/
+
+class CumulativeArray
+{
+public:
+  typedef uint64_t size_type;
+
+  CumulativeArray();
+  CumulativeArray(const CumulativeArray& s);
+  CumulativeArray(CumulativeArray&& s);
+  ~CumulativeArray();
+
+  /*
+    The IntVector has to support operator[] that returns a non-const reference.
+    The input is the original array, which gets overwritten by a cumulative array.
+  */
+  template<class IntVector>
+  CumulativeArray(IntVector& sequence, size_type _size)
+  {
+    this->m_size = _size;
+
+    for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i] + 1; }
+    this->v = sd_vector<>(sequence.begin(), sequence.end());
+
+    util::init_support(this->rank, &(this->v));
+    util::init_support(this->select_1, &(this->v));
+    util::init_support(this->select_0, &(this->v));
+  }
+
+  void swap(CumulativeArray& v);
+  CumulativeArray& operator=(const CumulativeArray& v);
+  CumulativeArray& operator=(CumulativeArray&& v);
+
+  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  void load(std::istream& in);
+
+  inline size_type size() const { return this->m_size; }
+
+  // The sum of all elements.
+  inline size_type sum() const { return this->v.size() - this->size(); }
+
+  // The sum of the first k elements.
+  inline size_type sum(size_type k) const
+  {
+    if(k == 0) { return 0; }
+    if(k > this->size()) { k = this->size(); }
+
+    return this->select_1(k) - k + 1;
+  }
+
+  inline size_type operator[](size_type i) const { return this->sum(i + 1) - this->sum(i); }
+
+  // The inverse of sum(). Returns the element for item i.
+  inline size_type inverse(size_type i) const
+  {
+    if(i >= this->sum()) { return this->size(); }
+
+    return this->rank(this->select_0(i + 1));
+  }
+
+  // Is item i the last item in its element.
+  inline bool isLast(size_type i) const
+  {
+    if(i >= this->sum()) { return false; }
+    return this->v[this->select_0(i + 1) + 1];
+  }
+
+private:
+  sd_vector<>                v;
+  sd_vector<>::rank_1_type   rank;
+  sd_vector<>::select_1_type select_1;
+  sd_vector<>::select_0_type select_0;
+  size_type                  m_size;  // Size of the original array.
+
+  void copy(const CumulativeArray& v);
+};  // class CumulativeArray
 
 //------------------------------------------------------------------------------
 

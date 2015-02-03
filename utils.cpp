@@ -144,11 +144,11 @@ Alphabet::operator=(Alphabet&& a)
   return *this;
 }
 
-uint64_t
+Alphabet::size_type
 Alphabet::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
 {
   structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
-  uint64_t written_bytes = 0;
+  size_type written_bytes = 0;
   written_bytes += this->m_char2comp.serialize(out, child, "char2comp");
   written_bytes += this->m_comp2char.serialize(out, child, "comp2char");
   written_bytes += this->m_C.serialize(out, child, "C");
@@ -191,6 +191,95 @@ Alphabet::assign(const std::string& alphabet_string)
     this->m_comp2char[i] = c;
   }
   return true;
+}
+
+//------------------------------------------------------------------------------
+
+CumulativeArray::CumulativeArray()
+{
+  this->m_size = 0;
+}
+
+CumulativeArray::CumulativeArray(const CumulativeArray& a)
+{
+  this->copy(a);
+}
+
+CumulativeArray::CumulativeArray(CumulativeArray&& a)
+{
+  *this = std::move(a);
+}
+
+CumulativeArray::~CumulativeArray()
+{
+}
+
+void
+CumulativeArray::copy(const CumulativeArray& a)
+{
+  this->v = a.v;
+  this->rank = a.rank; this->rank.set_vector(&(this->v));
+  this->select_1 = a.select_1; this->select_1.set_vector(&(this->v));
+  this->select_0 = a.select_0; this->select_0.set_vector(&(this->v));
+  this->m_size = a.m_size;
+}
+
+void
+CumulativeArray::swap(CumulativeArray& a)
+{
+  if(this != &a)
+  {
+    this->v.swap(a.v);
+    util::swap_support(this->rank, a.rank, &(this->v), &(a.v));
+    util::swap_support(this->select_1, a.select_1, &(this->v), &(a.v));
+    util::swap_support(this->select_0, a.select_0, &(this->v), &(a.v));
+    std::swap(this->m_size, a.m_size);
+  }
+}
+
+CumulativeArray&
+CumulativeArray::operator=(const CumulativeArray& a)
+{
+  if(this != &a) { this->copy(a); }
+  return *this;
+}
+
+CumulativeArray&
+CumulativeArray::operator=(CumulativeArray&& a)
+{
+  if(this != &a)
+  {
+    this->v = std::move(a.v);
+    this->rank = std::move(a.rank); this->rank.set_vector(&(this->v));
+    this->select_1 = std::move(a.select_1); this->select_1.set_vector(&(this->v));
+    this->select_0 = std::move(a.select_0); this->select_0.set_vector(&(this->v));
+    this->m_size = a.m_size;
+  }
+  return *this;
+}
+
+CumulativeArray::size_type
+CumulativeArray::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+{
+  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
+  size_type written_bytes = 0;
+  written_bytes += this->v.serialize(out, child, "v");
+  written_bytes += this->rank.serialize(out, child, "rank");
+  written_bytes += this->select_1.serialize(out, child, "select_1");
+  written_bytes += this->select_0.serialize(out, child, "select_0");
+  written_bytes += write_member(this->m_size, out, child, "size");
+  structure_tree::add_size(child, written_bytes);
+  return written_bytes;
+}
+
+void
+CumulativeArray::load(std::istream& in)
+{
+  this->v.load(in);
+  this->rank.load(in, &(this->v));
+  this->select_1.load(in, &(this->v));
+  this->select_0.load(in, &(this->v));
+  read_member(this->m_size, in);
 }
 
 //------------------------------------------------------------------------------

@@ -51,8 +51,7 @@ private:
 //------------------------------------------------------------------------------
 
 /*
-  A basic run-length encoded sequence for DNA alphabet (\0, A, C, G, N, T)
-  packed as values 0-5.
+  A basic run-length encoded sequence for alphabet 0-5.
 */
 class RLSequence
 {
@@ -62,6 +61,10 @@ public:
   const static uint64_t MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
   const static uint64_t BUFFER_SIZE = 1048576;  // A good buffer size for sequential access with extract().
   typedef uint64_t size_type;
+
+  inline static uint64_t charValue(uint8_t code) { return code % SIGMA; }
+  inline static uint64_t runLength(uint8_t code) { return code / SIGMA + 1; }
+  inline static uint8_t encode(uint64_t c, uint64_t run) { return c + SIGMA * (run - 1); }
 
   RLSequence();
   RLSequence(int_vector_buffer<8>& buffer, uint64_t _size);
@@ -90,10 +93,10 @@ public:
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(seq_pos < i)
     {
-      seq_pos += this->data[rle_pos] / SIGMA + 1; // The starting position of the next run.
-      if(this->data[rle_pos] % SIGMA == c)
+      seq_pos += runLength(this->data[rle_pos]); // The starting position of the next run.
+      if(charValue(this->data[rle_pos]) == c)
       {
-        res += this->data[rle_pos] / SIGMA + 1; // Number of c's before the next run.
+        res += runLength(this->data[rle_pos]); // Number of c's before the next run.
         if(seq_pos > i) { res -= seq_pos - i; }
       }
       rle_pos++;
@@ -111,8 +114,8 @@ public:
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(true)
     {
-      seq_pos += this->data[rle_pos] / SIGMA; // The last position in the run.
-      if(seq_pos >= i) { return this->data[rle_pos] % SIGMA; }
+      seq_pos += runLength(this->data[rle_pos]) - 1; // The last position in the run.
+      if(seq_pos >= i) { return charValue(this->data[rle_pos]); }
       seq_pos++; rle_pos++; // Move to the first position in the next run.
     }
   }
@@ -129,7 +132,7 @@ public:
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(true)
     {
-      seq_pos += this->data[rle_pos] / SIGMA; // The last position in the run.
+      seq_pos += runLength(this->data[rle_pos]) - 1; // The last position in the run.
       if(seq_pos >= range.first) { break; }
       seq_pos++; rle_pos++; // Move to the first position in the next run.
     }
@@ -137,10 +140,12 @@ public:
     // Fill the buffer.
     for(uint64_t i = range.first; i <= range.second; i++)
     {
-      if(i > seq_pos) { rle_pos++; seq_pos += this->data[rle_pos] / SIGMA + 1; }
-      buffer[i - range.first] = this->data[rle_pos] % SIGMA;
+      if(i > seq_pos) { rle_pos++; seq_pos += runLength(this->data[rle_pos]); }
+      buffer[i - range.first] = charValue(this->data[rle_pos]);
     }
   }
+
+  inline uint8_t rawData(uint64_t i) const { return this->data[i]; }
 
 private:
   std::vector<uint8_t> data;
