@@ -256,82 +256,19 @@ struct relative_encoder
   inline uint64_t decode(uint64_t phrase, uint64_t text_pos) const
   {
     uint64_t temp = (this->rle.size() > 0 ? this->values[this->rank(phrase + 1) - 1] : this->values[phrase]);
-    if(temp & 1) { return text_pos - (temp >> 1); }
-    return (temp >> 1) + text_pos;
+    if(temp & 1) { return text_pos - (temp + 1) / 2; }
+    return text_pos + temp / 2;
   }
 
   // Encodes (ref_pos - text_pos) as unsigned integer.
   inline static uint64_t encode(uint64_t ref_pos, uint64_t text_pos)
   {
-    if(ref_pos >= text_pos) { return (ref_pos - text_pos) << 1; }
-    return ((text_pos - ref_pos) << 1) | 1;
+    if(ref_pos >= text_pos) { return 2 * (ref_pos - text_pos); }
+    return 2 * (text_pos - ref_pos) - 1;
   }
 
 private:
   void copy(const relative_encoder& r);
-};
-
-//------------------------------------------------------------------------------
-
-/*
-  This struct encodes an ordered set of items stored in an ordered set of blocks.
-  Both items and blocks are 0-based, and some of the blocks may be empty.
-*/
-struct rlz_helper
-{
-  sd_vector<>                 v;
-  sd_vector<>::rank_1_type    v_rank;
-  sd_vector<>::select_1_type  v_select;
-
-  bit_vector                  nonzero;
-  bit_vector::rank_1_type     nz_rank;
-  bit_vector::select_1_type   nz_select;
-
-  rlz_helper();
-  rlz_helper(const rlz_helper& r);
-  rlz_helper(rlz_helper&& r);
-  rlz_helper& operator=(const rlz_helper& r);
-  rlz_helper& operator=(rlz_helper&& r);
-
-  void init(const std::vector<uint64_t>& values);
-
-  inline uint64_t blockFor(uint64_t item) const
-  {
-    uint64_t block = this->v_rank(item);
-    if(this->nonzero.size() > 0) { block = this->nz_select(block + 1); }
-    return block;
-  }
-
-  inline uint64_t itemsAfter(uint64_t block) const
-  {
-    block++;  // Convert to 1-based blocks.
-    if(this->nonzero.size() > 0)
-    {
-      block = this->nz_rank(block);
-      if(block == 0) { return 0; }
-    }
-    return this->v_select(block) + 1;
-  }
-
-  inline bool isLast(uint64_t item) const
-  {
-    return v[item];
-  }
-
-  // This assumes that all blocks have non-zero size.
-  inline uint64_t blockSize(uint64_t block) const
-  {
-    uint64_t res = this->v_select(block + 1) + 1;
-    if(block > 0) { res -= this->v_select(block) + 1; }
-    return res;
-  }
-
-  uint64_t reportSize() const;
-  void load(std::istream& input);
-  uint64_t serialize(std::ostream& output) const;
-
-private:
-  void copy(const rlz_helper& r);
 };
 
 //------------------------------------------------------------------------------

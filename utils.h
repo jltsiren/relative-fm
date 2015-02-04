@@ -338,18 +338,26 @@ public:
   /*
     The IntVector has to support operator[] that returns a non-const reference.
     The input is the original array, which gets overwritten by a cumulative array.
+    This can be reversed by calling CumulativeArray::cumulativeToOriginal().
   */
   template<class IntVector>
   CumulativeArray(IntVector& sequence, size_type _size)
   {
     this->m_size = _size;
 
-    for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i] + 1; }
+    for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1] + 1; }
     this->v = sd_vector<>(sequence.begin(), sequence.end());
 
     util::init_support(this->rank, &(this->v));
     util::init_support(this->select_1, &(this->v));
     util::init_support(this->select_0, &(this->v));
+  }
+
+  template<class IntVector>
+  static void
+  cumulativeToOriginal(IntVector& sequence, size_type size)
+  {
+    for(size_type i = size - 1; i > 0; i--) { sequence[i] -= sequence[i - 1] + 1; }
   }
 
   void swap(CumulativeArray& v);

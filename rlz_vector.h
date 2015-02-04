@@ -5,6 +5,7 @@
 #include <sdsl/bit_vectors.hpp>
 
 #include "rlz.h"
+#include "utils.h"
 
 
 namespace sdsl
@@ -33,8 +34,8 @@ public:
   uint64_t reportSize() const;
   uint64_t writeTo(std::ostream& output) const;
 
-  uint64_t size() const { return this->blocks.v.size(); }
-  uint64_t items() const { return this->ones.v.size(); }
+  uint64_t size() const { return this->blocks.sum(); }
+  uint64_t items() const { return this->ones.sum(); }
 
   /*
     These follow SDSL conventions.
@@ -52,9 +53,9 @@ private:
 
   relative_encoder                  phrases;
 
-  rlz_helper                        blocks;
-  rlz_helper                        ones;
-  rlz_helper                        zeros;
+  CumulativeArray                   blocks;
+  CumulativeArray                   ones;
+  CumulativeArray                   zeros;
 
   bit_vector                        mismatches;
 

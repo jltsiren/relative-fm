@@ -615,10 +615,10 @@ testLCP(int argc, char** argv)
     relativeLZ(seq_lcp, ref_lcp, starts, lengths, mismatches);
     std::cout << "The RLZ parsing consists of " << starts.size() << " phrases." << std::endl;
     relative_encoder phrases; phrases.init(starts, lengths);
-    rlz_helper blocks; blocks.init(lengths);
+    CumulativeArray blocks(lengths, lengths.size());
     util::bit_compress(mismatches);
 
-    uint64_t phrase_bytes = phrases.reportSize(), block_bytes = blocks.reportSize(), mismatch_bytes = size_in_bytes(mismatches);
+    uint64_t phrase_bytes = phrases.reportSize(), block_bytes = size_in_bytes(blocks), mismatch_bytes = size_in_bytes(mismatches);
     printSize("Phrases", phrase_bytes, seq_lcp.size());
     printSize("Blocks", block_bytes, seq_lcp.size());
     printSize("Mismatches", mismatch_bytes, seq_lcp.size());

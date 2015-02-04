@@ -26,7 +26,7 @@ public:
   RLZFM(const SimpleFM<>& ref, std::istream& input);
   ~RLZFM();
 
-  uint64_t size() const { return this->blocks.v.size(); }
+  uint64_t size() const { return this->blocks.sum(); }
   uint64_t sequences() const { return this->alpha.C[1]; }
 
   uint64_t reportSize(bool print = false) const;
@@ -40,8 +40,8 @@ public:
 
   Alphabet                alpha;
   relative_encoder        phrases;
-  rlz_helper              blocks;
-  rlz_helper*             block_rank;
+  CumulativeArray         blocks;
+  CumulativeArray*        block_rank;
   int_vector<8>           mismatches; // FIXME this could be packed
 
 private:
