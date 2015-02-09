@@ -12,10 +12,11 @@ using namespace sdsl;
 
 //------------------------------------------------------------------------------
 
-extern const std::string BWT_EXTENSION;         // .bwt
-extern const std::string NATIVE_BWT_EXTENSION;  // .cbwt
-extern const std::string ALPHA_EXTENSION;       // .alpha
-extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;
+extern const std::string BWT_EXTENSION;               // .bwt
+extern const std::string NATIVE_BWT_EXTENSION;        // .cbwt
+extern const std::string ALPHA_EXTENSION;             // .alpha
+extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;  // \0ACGNT
+extern const std::string ROPEBWT2_ALPHABET;           // \0ACGTN
 
 //------------------------------------------------------------------------------
 
@@ -83,8 +84,8 @@ inBPC(uint64_t bytes, uint64_t size)
   return (8.0 * bytes) / size;
 }
 
-void printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint indent = 16);
-void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint indent = 16);
+void printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint indent = 18);
+void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint indent = 18);
 
 //------------------------------------------------------------------------------
 

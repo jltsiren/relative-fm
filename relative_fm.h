@@ -19,7 +19,7 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_ran
 
 template<class ReferenceType>
 std::pair<bit_vector, bit_vector>
-alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print);
+alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print);
 
 //------------------------------------------------------------------------------
 
@@ -41,13 +41,17 @@ public:
 
 //------------------------------------------------------------------------------
 
-  RelativeFM(const ReferenceType& ref, const ReferenceType& seq, bool print = false):
+  /*
+    If the alphabet is not sorted, only characters in seq.alpha will be considered for partitioning
+    the BWTs.
+  */
+  RelativeFM(const ReferenceType& ref, const ReferenceType& seq, bool sorted_alphabet = true, bool print = false):
     reference(ref)
   {
     this->m_size = seq.bwt.size();
 
     uint64_t lcs_length = 0;
-    auto lcs_vecs = alignBWTs(ref, seq, BLOCK_SIZE, MAX_DEPTH, lcs_length, print);
+    auto lcs_vecs = alignBWTs(ref, seq, BLOCK_SIZE, MAX_DEPTH, lcs_length, sorted_alphabet, print);
     getComplement(ref.bwt, this->ref_minus_lcs, lcs_vecs.first, lcs_length);
     getComplement(seq.bwt, this->seq_minus_lcs, lcs_vecs.second, lcs_length);
 
@@ -410,7 +414,7 @@ inline std::ostream& operator<<(std::ostream& stream, const record_type& record)
 
 template<class ReferenceType>
 std::pair<bit_vector, bit_vector>
-alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool print)
+alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print)
 {
   if(print)
   {
@@ -421,12 +425,20 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_siz
   // Build the union of the alphabets.
   uint sigma = 0;
   uint8_t alphabet[256];
-  for(uint c = 0; c < 256; c++)
+  if(sorted_alphabet)
   {
-    if(hasChar(ref.alpha, c) || hasChar(seq.alpha, c))
+    for(uint c = 0; c < 256; c++)
     {
-      alphabet[sigma] = c; sigma++;
+      if(hasChar(ref.alpha, c) || hasChar(seq.alpha, c))
+      {
+        alphabet[sigma] = c; sigma++;
+      }
     }
+  }
+  else
+  {
+    sigma = seq.alpha.sigma;
+    for(uint c = 0; c < sigma; c++) { alphabet[c] = seq.alpha.comp2char[c]; }
   }
 
   // Partition the BWTs.

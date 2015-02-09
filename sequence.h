@@ -88,7 +88,7 @@ public:
     if(i > this->size()) { i = this->size(); }
 
     uint64_t block = this->block_rank(i);
-    uint64_t res = this->samples[block * SIGMA + c];
+    uint64_t res = this->samples[c].sum(block);
     uint64_t rle_pos = block * SAMPLE_RATE;
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(seq_pos < i)
@@ -149,9 +149,10 @@ public:
 
 private:
   std::vector<uint8_t> data;
-  int_vector<0> samples;
-  sd_vector<> block_boundaries; // Marks the last sequence position in each block.
-  sd_vector<>::rank_1_type block_rank;
+  CumulativeArray      samples[SIGMA];
+
+  sd_vector<>                block_boundaries; // Marks the last sequence position in each block.
+  sd_vector<>::rank_1_type   block_rank;
   sd_vector<>::select_1_type block_select;
 
   void copy(const RLSequence& v);

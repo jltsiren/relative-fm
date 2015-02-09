@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "sequence.h"
 
 
@@ -164,7 +166,7 @@ void
 RLSequence::copy(const RLSequence& s)
 {
   this->data = s.data;
-  this->samples = s.samples;
+  for(uint64_t c = 0; c < SIGMA; c++) { this->samples[c] = s.samples[c]; }
   this->block_boundaries = s.block_boundaries;
   util::init_support(this->block_rank, &(this->block_boundaries));
   util::init_support(this->block_select, &(this->block_boundaries));
@@ -176,7 +178,7 @@ RLSequence::swap(RLSequence& s)
   if(this != &s)
   {
     this->data.swap(s.data);
-    this->samples.swap(s.samples);
+    for(uint64_t c = 0; c < SIGMA; c++) { this->samples[c].swap(s.samples[c]); }
     this->block_boundaries.swap(s.block_boundaries);
     util::swap_support(this->block_rank, s.block_rank, &(this->block_boundaries), &(s.block_boundaries));
     util::swap_support(this->block_select, s.block_select, &(this->block_boundaries), &(s.block_boundaries));
@@ -196,7 +198,7 @@ RLSequence::operator=(RLSequence&& s)
   if(this != &s)
   {
     this->data = std::move(s.data);
-    this->samples = std::move(s.samples);
+    for(uint64_t c = 0; c < SIGMA; c++) { this->samples[c] = std::move(s.samples[c]); }
     this->block_boundaries = std::move(s.block_boundaries);
     util::init_support(this->block_rank, &(this->block_boundaries));
     util::init_support(this->block_select, &(this->block_boundaries));
@@ -210,7 +212,11 @@ RLSequence::serialize(std::ostream& out, structure_tree_node* s, std::string nam
   structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
   uint64_t written_bytes = 0;
   written_bytes += write_vector(this->data, out, child, "data");
-  written_bytes += this->samples.serialize(out, child, "samples");
+  for(uint64_t c = 0; c < SIGMA; c++)
+  {
+    std::stringstream ss; ss << "samples_" << c;
+    written_bytes += this->samples[c].serialize(out, child, ss.str());
+  }
   written_bytes += this->block_boundaries.serialize(out, child, "block_boundaries");
   written_bytes += this->block_rank.serialize(out, child, "block_rank");
   written_bytes += this->block_select.serialize(out, child, "block_select");
@@ -228,7 +234,7 @@ RLSequence::load(std::istream& in, bool rebuild_samples)
   }
   else
   {
-    this->samples.load(in);
+    for(uint64_t c = 0; c < SIGMA; c++) { this->samples[c].load(in); }
     this->block_boundaries.load(in);
     this->block_rank.load(in, &(this->block_boundaries));
     this->block_select.load(in, &(this->block_boundaries));
@@ -255,19 +261,19 @@ RLSequence::buildRank()
     util::init_support(this->block_select, &(this->block_boundaries));
   }
 
-  // Samples.
+  // Samples. SIGMA passes vs. higher space usage? Multi-threaded?
+  for(uint64_t c = 0; c < SIGMA; c++)
   {
-    int_vector<0> temp((blocks + 1) * SIGMA, 0, bitlength(this->size()));
+    int_vector<0> temp(blocks, 0, bitlength(this->size()));
     for(uint64_t block = 0; block < blocks; block++)
     {
-      for(uint64_t c = 0; c < SIGMA; c++) { temp[(block + 1) * SIGMA + c] = temp[block * SIGMA + c]; }
       uint64_t limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
       for(uint64_t i = block * SAMPLE_RATE; i < limit; i++)
       {
-        temp[(block + 1) * SIGMA + charValue(this->data[i])] += runLength(this->data[i]);
+        if(charValue(this->data[i]) == c) { temp[block] += runLength(this->data[i]); }
       }
     }
-    util::bit_compress(temp); this->samples.swap(temp);
+    util::assign(this->samples[c], CumulativeArray(temp, temp.size()));
   }
 }
 

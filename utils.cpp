@@ -11,6 +11,7 @@ const std::string BWT_EXTENSION = ".bwt";
 const std::string NATIVE_BWT_EXTENSION = ".cbwt";
 const std::string ALPHA_EXTENSION = ".alpha";
 const std::string SIMPLE_FM_DEFAULT_ALPHABET("\0ACGNT", 6);
+const std::string ROPEBWT2_ALPHABET("\0ACGTN", 6);
 
 //------------------------------------------------------------------------------
 
