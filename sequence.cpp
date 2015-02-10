@@ -280,6 +280,29 @@ RLSequence::buildRank()
 //------------------------------------------------------------------------------
 
 template<>
+SimpleFM<RLSequence>::SimpleFM(const std::string& base_name, LoadMode mode)
+{
+  if(mode == mode_native || mode == mode_ropebwt2)
+  {
+    std::string filename = base_name + NATIVE_BWT_EXTENSION;
+    std::ifstream in(filename.c_str(), std::ios_base::binary);
+    if(!in)
+    {
+      std::cerr << "SimpleFM::SimpleFM(): Cannot open BWT file " << filename << " (native format)" << std::endl;
+      return;
+    }
+    this->bwt.load(in, mode == mode_ropebwt2); in.close();
+  }
+  else
+  {
+    int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
+    RLSequence temp(buffer, buffer.size());
+    this->bwt.swap(temp);
+  }
+  this->loadAlphabet(base_name);
+}
+
+template<>
 void
 characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& counts)
 {

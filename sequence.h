@@ -160,6 +160,9 @@ private:
 };  // class RLSequence
 
 template<>
+SimpleFM<RLSequence>::SimpleFM(const std::string& base_name, LoadMode mode);
+
+template<>
 template<class ByteVector>
 void
 SimpleFM<RLSequence>::extractBWT(range_type range, ByteVector& buffer) const

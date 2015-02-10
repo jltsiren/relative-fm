@@ -22,6 +22,8 @@ extern const std::string ROPEBWT2_ALPHABET;           // \0ACGTN
 
 typedef std::pair<uint64_t, uint64_t> range_type;
 
+enum LoadMode { mode_plain, mode_native, mode_ropebwt2 };
+
 template<class A, class B>
 std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
 {
@@ -97,6 +99,7 @@ uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, b
 
 //------------------------------------------------------------------------------
 
+// This function has been specialized for RLSequence.
 template<class ByteVector>
 void
 characterCounts(const ByteVector& sequence, uint64_t size, int_vector<64>& counts)

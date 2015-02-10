@@ -31,9 +31,10 @@ class SimpleFM
 public:
   typedef RankStructure seq_type;
 
-  explicit SimpleFM(const std::string& base_name, bool native_format = false)
+  // This constructor has been specialized for SimpleFM<RLSequence>.
+  explicit SimpleFM(const std::string& base_name, LoadMode mode = mode_plain)
   {
-    if(native_format)
+    if(mode == mode_native)
     {
       std::string filename = base_name + NATIVE_BWT_EXTENSION;
       std::ifstream in(filename.c_str(), std::ios_base::binary);
@@ -43,6 +44,11 @@ public:
         return;
       }
       this->bwt.load(in); in.close();
+    }
+    else if(mode == mode_ropebwt2)
+    {
+      std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt2!" << std::endl;
+      return;
     }
     else
     {
@@ -109,6 +115,7 @@ public:
     return res;
   }
 
+  // This function has been specialized for SimpleFM<RLSequence>.
   template<class ByteVector>
   void extractBWT(range_type range, ByteVector& buffer) const
   {

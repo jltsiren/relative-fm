@@ -3,7 +3,7 @@
 
 
 template<class BWTType>
-void mainLoop(int argc, char** argv, bool ropebwt2);
+void mainLoop(int argc, char** argv, LoadMode mode);
 
 int
 main(int argc, char** argv)
@@ -16,21 +16,21 @@ main(int argc, char** argv)
     return 1;
   }
 
-  bool ropebwt2 = false;
+  LoadMode mode = mode_plain;
   int ref_arg = 1;
   if(argc >= 4 && argv[1][0] == '-' && argv[1][1] == 'r')
   {
-    ropebwt2 = true; ref_arg++;
+    mode = mode_ropebwt2; ref_arg++;
   }
 
   std::cout << "Relative FM-index builder" << std::endl;
   std::cout << std::endl;
-  std::cout << "Input format: " << (ropebwt2 ? "ropebwt2" : "plain") << std::endl;
+  std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
   std::cout << "Reference: " << argv[ref_arg] << std::endl;
   std::cout << std::endl;
 
-  if(ropebwt2) { mainLoop<bwt_type>(argc - ref_arg, argv + ref_arg, ropebwt2); }
-  else         { mainLoop<RLSequence>(argc - ref_arg, argv + ref_arg, ropebwt2); }
+  if(mode == mode_ropebwt2) { mainLoop<bwt_type>(argc - ref_arg, argv + ref_arg, mode); }
+  else { mainLoop<RLSequence>(argc - ref_arg, argv + ref_arg, mode); }
 
   double memory = inMegabytes(memoryUsage());
   std::cout << "Memory usage: " << memory << " MB" << std::endl;
@@ -42,20 +42,20 @@ main(int argc, char** argv)
 
 template<class BWTType>
 void
-mainLoop(int argc, char** argv, bool ropebwt2)
+mainLoop(int argc, char** argv, LoadMode mode)
 {
-  SimpleFM<BWTType> ref(argv[0], ropebwt2);
-  if(ropebwt2) { ref.alpha.assign(ROPEBWT2_ALPHABET); }
+  SimpleFM<BWTType> ref(argv[0], mode);
+  if(mode == mode_ropebwt2) { ref.alpha.assign(ROPEBWT2_ALPHABET); }
   ref.reportSize(true);
   std::cout << std::endl;
 
   for(int arg = 1; arg < argc; arg++)
   {
     std::cout << "Target: " << argv[arg] << std::endl;
-    SimpleFM<BWTType> seq(argv[arg]);
-    if(ropebwt2) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
+    SimpleFM<BWTType> seq(argv[arg], mode);
+    if(mode == mode_ropebwt2) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
     double start = readTimer();
-    RelativeFM<SimpleFM<BWTType> > rel(ref, seq, ropebwt2, true);
+    RelativeFM<SimpleFM<BWTType> > rel(ref, seq, mode == mode_ropebwt2, true);
     double seconds = readTimer() - start;
     std::cout << "Index built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;

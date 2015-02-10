@@ -23,10 +23,14 @@ const uint64_t SEQ_REPRESENTATIONS = 6; // Largest representation identifier + 1
 const uint64_t TAG_ROPEBWT2_ALPHABET = 0x1;
 const uint64_t TAG_BUILD_INDEXES     = 0x2;
 const uint64_t TAG_NATIVE_FORMAT     = 0x4;
+const uint64_t TAG_ROPEBWT2_FORMAT   = 0x8;
 
 uint64_t seqRepresentation(uint8_t type);
 std::string indexName(uint64_t representation);
 std::string indexName(uint64_t ref_representation, uint64_t seq_representation);
+
+LoadMode getMode(uint64_t tags);
+std::string modeName(LoadMode mode);
 
 //------------------------------------------------------------------------------
 
@@ -51,7 +55,9 @@ main(int argc, char** argv)
     std::cerr << "  a    Use ropebwt2 alphabet (default: off)" << std::endl;
     std::cerr << "  b    Build relative indexes (default: off)" << std::endl;
     std::cerr << "  n    Load SimpleFMs in native format (default: off)" << std::endl;
+    std::cerr << "  2    Load SimpleFMs in ropebwt2 format (default: off)" << std::endl;
     // FIXME Add an option to write the built index?
+    // FIXME Add a separate tag for ropebwt2 format?
     std::cerr << std::endl;
     std::cerr << "Sequence representations:" << std::endl;
     std::cerr << "  p    Plain bitvectors in a wavelet tree" << std::endl;
@@ -80,6 +86,7 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   uint64_t tags = 0;
+  LoadMode mode = mode_plain;
   for(int i = 1; i < ref_arg; i++)
   {
     uint64_t ref_enc = 0, seq_enc = 0;
@@ -93,20 +100,20 @@ main(int argc, char** argv)
       {
       case SEQ_WT_PLAIN:
         {
-          SimpleFM<> seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
+          SimpleFM<> seq(argv[seq_arg], mode);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
       case SEQ_WT_RRR:
         {
-          SimpleFM<wt_huff<rrr_vector<63> > > seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
+          SimpleFM<wt_huff<rrr_vector<63> > > seq(argv[seq_arg], mode);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
       case SEQ_WT_RLZ:
         {
-          SimpleFM<> ref(argv[ref_arg], tags & TAG_NATIVE_FORMAT);
-          SimpleFM<wt_huff<rlz_vector> > seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
+          SimpleFM<> ref(argv[ref_arg], mode);
+          SimpleFM<wt_huff<rlz_vector> > seq(argv[seq_arg], mode);
           bit_vector::rank_1_type b_r(&(ref.bwt.bv));
           bit_vector::select_1_type b_s1(&(ref.bwt.bv));
           bit_vector::select_0_type b_s0(&(ref.bwt.bv));
@@ -119,13 +126,13 @@ main(int argc, char** argv)
         break;
       case SEQ_SEQUENCE:
         {
-          SimpleFM<Sequence> seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
+          SimpleFM<Sequence> seq(argv[seq_arg], mode);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
       case SEQ_RLSEQUENCE:
         {
-          SimpleFM<RLSequence> seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
+          SimpleFM<RLSequence> seq(argv[seq_arg], mode);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
@@ -201,10 +208,10 @@ main(int argc, char** argv)
     // RLZFM
     case 'l':
       {
-        SimpleFM<> ref(argv[ref_arg], tags & TAG_NATIVE_FORMAT);
+        SimpleFM<> ref(argv[ref_arg], mode);
         if(tags & TAG_BUILD_INDEXES)
         {
-          SimpleFM<> seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
+          SimpleFM<> seq(argv[seq_arg], mode);
           if(tags & TAG_ROPEBWT2_ALPHABET)
           {
             ref.alpha.assign(ROPEBWT2_ALPHABET); seq.alpha.assign(ROPEBWT2_ALPHABET);
@@ -234,9 +241,15 @@ main(int argc, char** argv)
       std::cout << std::endl;
       break;
     case 'n':
-      tags ^= TAG_NATIVE_FORMAT;
-      if(tags & TAG_NATIVE_FORMAT) { std::cout << "Loading SimpleFMs from " << BWT_EXTENSION << " (plain format)." << std::endl; }
-      else { std::cout << "Loading SimpleFMs from " << NATIVE_BWT_EXTENSION << " (native format)." << std::endl; }
+      tags ^= TAG_NATIVE_FORMAT; tags &= ~TAG_ROPEBWT2_FORMAT;
+      mode = getMode(tags);
+      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
+      std::cout << std::endl;
+      break;
+    case '2':
+      tags ^= TAG_ROPEBWT2_FORMAT; tags &= ~TAG_NATIVE_FORMAT;
+      mode = getMode(tags);
+      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
       std::cout << std::endl;
       break;
     default:
@@ -283,10 +296,12 @@ void
 testIndex(std::string ref_name, std::string seq_name,
   std::string name, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags)
 {
-  SimpleFM<RefEncoding> ref(ref_name, tags & TAG_NATIVE_FORMAT);
+  LoadMode mode = getMode(tags);
+
+  SimpleFM<RefEncoding> ref(ref_name, mode);
   if(tags & TAG_BUILD_INDEXES)
   {
-    SimpleFM<RefEncoding> seq(seq_name, tags & TAG_NATIVE_FORMAT);
+    SimpleFM<RefEncoding> seq(seq_name, mode);
     if(tags & TAG_ROPEBWT2_ALPHABET)
     {
       ref.alpha.assign(ROPEBWT2_ALPHABET); seq.alpha.assign(ROPEBWT2_ALPHABET);
@@ -347,6 +362,23 @@ std::string
 indexName(uint64_t ref_representation, uint64_t seq_representation)
 {
   return "RFM<" + encodingName(ref_representation) + "," + encodingName(seq_representation) + ">";
+}
+
+LoadMode
+getMode(uint64_t tags)
+{
+  if(tags & TAG_ROPEBWT2_FORMAT) { return mode_ropebwt2; }
+  else if(tags & TAG_NATIVE_FORMAT) { return mode_native; }
+  else { return mode_plain; }
+}
+
+std::string
+modeName(LoadMode mode)
+{
+  if(mode == mode_plain) { return "plain"; }
+  else if(mode == mode_native) { return "native"; }
+  else if(mode == mode_ropebwt2) { return "ropebwt2"; }
+  else { return "unknown"; }
 }
 
 //------------------------------------------------------------------------------
