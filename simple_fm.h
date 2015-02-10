@@ -47,7 +47,7 @@ public:
     }
     else if(mode == mode_ropebwt2)
     {
-      std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt2!" << std::endl;
+      std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt2" << std::endl;
       return;
     }
     else

@@ -32,6 +32,9 @@ std::string indexName(uint64_t ref_representation, uint64_t seq_representation);
 LoadMode getMode(uint64_t tags);
 std::string modeName(LoadMode mode);
 
+// Outputs warnings for suspicious tag combinations to cout.
+void sanityCheck(uint64_t tags);
+
 //------------------------------------------------------------------------------
 
 int
@@ -95,6 +98,7 @@ main(int argc, char** argv)
 
     // SimpleFM
     case 's':
+      sanityCheck(tags);
       seq_enc = seqRepresentation(argv[i][1]);
       switch(seq_enc)
       {
@@ -144,6 +148,7 @@ main(int argc, char** argv)
 
     // RelativeFM
     case 'r':
+      sanityCheck(tags);
       ref_enc = seqRepresentation(argv[i][1]); seq_enc = seqRepresentation(argv[i][2]);
       switch(ref_enc * SEQ_REPRESENTATIONS + seq_enc)
       {
@@ -207,6 +212,7 @@ main(int argc, char** argv)
 
     // RLZFM
     case 'l':
+      sanityCheck(tags);
       {
         SimpleFM<> ref(argv[ref_arg], mode);
         if(tags & TAG_BUILD_INDEXES)
@@ -377,6 +383,15 @@ modeName(LoadMode mode)
   else if(mode == mode_native) { return "native"; }
   else if(mode == mode_ropebwt2) { return "ropebwt2"; }
   else { return "unknown"; }
+}
+
+void
+sanityCheck(uint64_t tags)
+{
+  if((tags & TAG_ROPEBWT2_FORMAT) && !(tags & TAG_ROPEBWT2_ALPHABET))
+  {
+    std::cout << "Warning: Using ropebwt2 format without ropebwt2 alphabet" << std::endl;
+  }
 }
 
 //------------------------------------------------------------------------------

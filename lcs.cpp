@@ -55,7 +55,7 @@ readFile(const std::string& filename)
   std::ifstream input(filename.c_str(), std::ios_base::binary);
   if(!input)
   {
-    std::cerr << "readFile(): Cannot open input file " << filename << "!" << std::endl;
+    std::cerr << "readFile(): Cannot open input file " << filename << std::endl;
     return byte_vector();
   }
 
