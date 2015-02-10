@@ -297,15 +297,13 @@ testIndex(std::string ref_name, std::string seq_name,
   std::string name, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags)
 {
   LoadMode mode = getMode(tags);
-
   SimpleFM<RefEncoding> ref(ref_name, mode);
+  if(tags & TAG_ROPEBWT2_ALPHABET) { ref.alpha.assign(ROPEBWT2_ALPHABET); }
+
   if(tags & TAG_BUILD_INDEXES)
   {
     SimpleFM<RefEncoding> seq(seq_name, mode);
-    if(tags & TAG_ROPEBWT2_ALPHABET)
-    {
-      ref.alpha.assign(ROPEBWT2_ALPHABET); seq.alpha.assign(ROPEBWT2_ALPHABET);
-    }
+    if(tags & TAG_ROPEBWT2_ALPHABET) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
     RelativeFM<SimpleFM<RefEncoding>, SeqEncoding> rfm(ref, seq, !(tags & TAG_ROPEBWT2_ALPHABET));
     testIndex(name, rfm, patterns, chars, tags);
   }
