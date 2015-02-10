@@ -29,8 +29,8 @@ main(int argc, char** argv)
   std::cout << "Reference: " << argv[ref_arg] << std::endl;
   std::cout << std::endl;
 
-  if(mode == mode_ropebwt2) { mainLoop<bwt_type>(argc - ref_arg, argv + ref_arg, mode); }
-  else { mainLoop<RLSequence>(argc - ref_arg, argv + ref_arg, mode); }
+  if(mode == mode_ropebwt2) { mainLoop<RLSequence>(argc - ref_arg, argv + ref_arg, mode); }
+  else { mainLoop<bwt_type>(argc - ref_arg, argv + ref_arg, mode); }
 
   double memory = inMegabytes(memoryUsage());
   std::cout << "Memory usage: " << memory << " MB" << std::endl;
