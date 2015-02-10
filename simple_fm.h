@@ -148,9 +148,9 @@ private:
       Alphabet temp(this->bwt, this->size());
       if(temp.sigma != SIMPLE_FM_DEFAULT_ALPHABET.length())
       {
-        std::cerr << "SimpleFM()::SimpleFM(): Alphabet file " << filename
+        std::cerr << "SimpleFM()::loadAlphabet(): Alphabet file " << filename
                   << " does not exist and the default alphabet cannot be used" << std::endl;
-        std::cerr << "SimpleFM()::SimpleFM(): BWT alphabet size is " << temp.sigma
+        std::cerr << "SimpleFM()::loadAlphabet(): BWT alphabet size is " << temp.sigma
                   << ", while the default is " << SIMPLE_FM_DEFAULT_ALPHABET.length() << std::endl;
         return;
       }

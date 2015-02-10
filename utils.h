@@ -253,10 +253,15 @@ read_vector(std::vector<element>& vec, std::istream& in)
 {
   uint64_t size = 0;
   read_member(size, in);
-  vec.clear();
-  std::vector<element> temp(size);
-  in.read((char*)(temp.data()), vec.size() * sizeof(element));
-  vec.swap(temp);
+  {
+    std::vector<element> temp;
+    vec.swap(temp);
+  }
+  {
+    std::vector<element> temp(size);
+    in.read((char*)(temp.data()), temp.size() * sizeof(element));
+    vec.swap(temp);
+  }
 }
 
 /*
