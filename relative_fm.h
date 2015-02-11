@@ -1,8 +1,10 @@
 #ifndef _RELATIVE_FM_RELATIVE_FM_H
 #define _RELATIVE_FM_RELATIVE_FM_H
 
-
 #include "simple_fm.h"
+
+namespace relative
+{
 
 //------------------------------------------------------------------------------
 
@@ -25,12 +27,14 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_siz
 
 const std::string RELATIVE_FM_EXTENSION = ".rfm";
 
-template<class ReferenceType = SimpleFM<>, class SequenceType = bwt_type>
+template<class ReferenceBWTType = bwt_type, class SequenceType = bwt_type>
 class RelativeFM
 {
 public:
   const static uint64_t BLOCK_SIZE = 1024;  // Split the BWTs into blocks of this size or less.
   const static uint     MAX_DEPTH  = 32;    // Maximum length of a pattern used to split the BWTs.
+
+  typedef SimpleFM<ReferenceBWTType> reference_type;
 
   /*
     Maximum diagonal in LCS computation. If further diagonals would be needed, only the most frequent
@@ -45,7 +49,7 @@ public:
     If the alphabet is not sorted, only characters in seq.alpha will be considered for partitioning
     the BWTs.
   */
-  RelativeFM(const ReferenceType& ref, const ReferenceType& seq, bool sorted_alphabet = true, bool print = false):
+  RelativeFM(const reference_type& ref, const reference_type& seq, bool sorted_alphabet = true, bool print = false):
     reference(ref)
   {
     this->m_size = seq.bwt.size();
@@ -67,7 +71,7 @@ public:
     this->alpha = seq.alpha;
   }
 
-  RelativeFM(const ReferenceType& ref, const std::string& base_name) :
+  RelativeFM(const reference_type& ref, const std::string& base_name) :
     reference(ref)
   {
     std::string filename = base_name + RELATIVE_FM_EXTENSION;
@@ -205,7 +209,7 @@ public:
   typedef rrr_vector<63> vector_type;
 #endif
 
-  const ReferenceType&        reference;
+  const reference_type&       reference;
   SequenceType                ref_minus_lcs, seq_minus_lcs;
   vector_type                 ref_lcs, seq_lcs;
   Alphabet                    alpha;
@@ -507,5 +511,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_siz
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace relative
 
 #endif // _RELATIVE_FM_RELATIVE_FM_H

@@ -1,14 +1,15 @@
 #ifndef _RELATIVE_FM_UTILS_H
 #define _RELATIVE_FM_UTILS_H
 
-
 #include <fstream>
 #include <iostream>
 
 #include <sdsl/wavelet_trees.hpp>
 
-
 using namespace sdsl;
+
+namespace relative
+{
 
 //------------------------------------------------------------------------------
 
@@ -418,5 +419,7 @@ private:
 };  // class CumulativeArray
 
 //------------------------------------------------------------------------------
+
+} // namespace relative
 
 #endif // _RELATIVE_FM_UTILS_H

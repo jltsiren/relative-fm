@@ -2,6 +2,8 @@
 
 #include "sequence.h"
 
+namespace relative
+{
 
 //------------------------------------------------------------------------------
 
@@ -316,3 +318,5 @@ characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& count
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace relative

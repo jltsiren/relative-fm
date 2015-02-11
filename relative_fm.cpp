@@ -1,5 +1,8 @@
 #include "relative_fm.h"
 
+namespace relative
+{
+
 //------------------------------------------------------------------------------
 
 void
@@ -49,3 +52,5 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace relative

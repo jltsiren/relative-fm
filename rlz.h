@@ -1,14 +1,14 @@
 #ifndef _RELATIVE_FM_RLZ_H
 #define _RELATIVE_FM_RLZ_H
 
-
 #include <vector>
 
 #include <sdsl/suffix_arrays.hpp>
 #include <sdsl/vectors.hpp>
 
+using namespace sdsl;
 
-namespace sdsl
+namespace relative
 {
 
 //------------------------------------------------------------------------------
@@ -26,7 +26,6 @@ struct bv_fmi;
 // Use this to reuse an existing index for the reverse reference.
 void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
-
 
 /*
   These versions use temporary files on disk. Use reverseIndex(reference, csa)
@@ -273,6 +272,6 @@ private:
 
 //------------------------------------------------------------------------------
 
-} // namespace sdsl
+} // namespace relative
 
 #endif // _RELATIVE_FM_RLZ_H

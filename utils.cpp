@@ -5,6 +5,9 @@
 
 #include "utils.h"
 
+namespace relative
+{
+
 //------------------------------------------------------------------------------
 
 const std::string BWT_EXTENSION = ".bwt";
@@ -284,3 +287,5 @@ CumulativeArray::load(std::istream& in)
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace relative

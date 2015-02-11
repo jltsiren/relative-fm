@@ -1,5 +1,8 @@
 #include "rlz_fm.h"
 
+namespace relative
+{
+
 //------------------------------------------------------------------------------
 
 const std::string RLZFM::EXTENSION = ".rlzfm";
@@ -181,3 +184,5 @@ RLZFM::rank(uint64_t i, uint8_t c) const
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace relative

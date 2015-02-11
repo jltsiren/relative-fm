@@ -1,8 +1,7 @@
 #include "rlz.h"
 #include "rlz_vector.h"
 
-
-namespace sdsl
+namespace relative
 {
 
 //------------------------------------------------------------------------------
@@ -395,4 +394,4 @@ RLZVector::operator[](uint64_t i) const
 
 //------------------------------------------------------------------------------
 
-} // namespace sdsl
+} // namespace relative

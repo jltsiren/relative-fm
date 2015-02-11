@@ -5,6 +5,9 @@
 #include "rlz_vector.h"
 #include "utils.h"
 
+using namespace relative;
+
+//------------------------------------------------------------------------------
 
 // These tests takes mutation rates as parameters.
 //#define RLZ_TESTS
@@ -40,14 +43,14 @@ const uint64_t TOTAL_TIME_TO_NANOSECS = 100; // 10^9 / TIMING_QUERIES
 const uint64_t EXTRA_SIZE = 1024; // Some extra space to avoid problems in text generation.
 const double   EXTENSION_PROB = 0.3;
 
-//------------------------------------------------------------------------------
-
 void testRLZ(int argc, char** argv);
 void testString(int argc, char** argv);
 void testBV(int argc, char** argv);
 void testWT(int argc, char** argv);
 void testCST(int argc, char** argv);
 void testLCP(int argc, char** argv);
+
+//------------------------------------------------------------------------------
 
 int
 main(int argc, char** argv)

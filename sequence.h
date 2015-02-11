@@ -1,8 +1,10 @@
 #ifndef _RELATIVE_FM_SEQUENCE_H
 #define _RELATIVE_FM_SEQUENCE_H
 
-
 #include "simple_fm.h"
+
+namespace relative
+{
 
 //------------------------------------------------------------------------------
 
@@ -176,5 +178,6 @@ void characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& 
 
 //------------------------------------------------------------------------------
 
+} // namespace relative
 
 #endif // _RELATIVE_FM_SEQUENCE_H

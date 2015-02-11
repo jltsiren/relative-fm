@@ -4,6 +4,8 @@
 
 #include "utils.h"
 
+using namespace relative;
+
 
 int
 main(int argc, char** argv)
@@ -16,12 +18,12 @@ main(int argc, char** argv)
   }
 
   std::cout << "File: " << argv[1] << std::endl;
-  uint64_t file_size = sdsl::util::file_size(argv[1]); 
+  uint64_t file_size = sdsl::util::file_size(argv[1]);
   std::cout << "File size: " << file_size << std::endl;
   int_vector<8> text(file_size + 1, 0); // append 0 byte
   uint64_t n = text.size();
   std::ifstream in(argv[1], std::ios_base::binary);
-  in.read((char*)text.data(), file_size); 
+  in.read((char*)text.data(), file_size);
   std::cout << "Text size: " << text.size() << std::endl;
 
   // construct SA & BWT

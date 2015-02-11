@@ -1,7 +1,6 @@
 #ifndef _RELATIVE_FM_SIMPLE_FM_H
 #define _RELATIVE_FM_SIMPLE_FM_H
 
-
 #include <fstream>
 #include <iostream>
 
@@ -9,6 +8,9 @@
 #include <sdsl/wavelet_trees.hpp>
 
 #include "utils.h"
+
+namespace relative
+{
 
 //------------------------------------------------------------------------------
 
@@ -166,5 +168,7 @@ private:
 };
 
 //------------------------------------------------------------------------------
+
+} // namespace relative
 
 #endif // _RELATIVE_FM_SIMPLE_FM_H

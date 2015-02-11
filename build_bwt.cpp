@@ -4,6 +4,8 @@
 
 #include "utils.h"
 
+using namespace relative;
+
 
 int
 main(int argc, char** argv)

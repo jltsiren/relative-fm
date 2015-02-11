@@ -1,9 +1,11 @@
 #ifndef _RELATIVE_FM_RLZ_FM_H
 #define _RELATIVE_FM_RLZ_FM_H
 
-
 #include "rlz.h"
 #include "simple_fm.h"
+
+namespace relative
+{
 
 //------------------------------------------------------------------------------
 
@@ -81,5 +83,7 @@ RLZFM::find(Iter begin, Iter end) const
 }
 
 //------------------------------------------------------------------------------
+
+} // namespace relative
 
 #endif // _RELATIVE_FM_RLZ_FM_H

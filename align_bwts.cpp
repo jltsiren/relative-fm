@@ -1,9 +1,11 @@
 #include "relative_fm.h"
 #include "sequence.h"
 
+using namespace relative;
 
 template<class BWTType>
 void mainLoop(int argc, char** argv, LoadMode mode);
+
 
 int
 main(int argc, char** argv)
@@ -55,7 +57,7 @@ mainLoop(int argc, char** argv, LoadMode mode)
     SimpleFM<BWTType> seq(argv[arg], mode);
     if(mode == mode_ropebwt2) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
     double start = readTimer();
-    RelativeFM<SimpleFM<BWTType> > rel(ref, seq, mode == mode_ropebwt2, true);
+    RelativeFM<BWTType> rel(ref, seq, mode == mode_ropebwt2, true);
     double seconds = readTimer() - start;
     std::cout << "Index built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;

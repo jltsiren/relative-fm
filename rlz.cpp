@@ -5,8 +5,7 @@
 
 #include "rlz.h"
 
-
-namespace sdsl
+namespace relative
 {
 
 //------------------------------------------------------------------------------
@@ -408,4 +407,4 @@ relative_encoder::serialize(std::ostream& output) const
 
 //------------------------------------------------------------------------------
 
-} // namespace sdsl
+} // namespace relative

@@ -1,5 +1,7 @@
 #include "rlz_fm.h"
 
+using namespace relative;
+
 
 int
 main(int argc, char** argv)

@@ -3,12 +3,14 @@
 #include "rlz_vector.h"
 #include "sequence.h"
 
+using namespace relative;
+
 //------------------------------------------------------------------------------
 
 template<class Index>
 void testIndex(std::string name, Index& index, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags);
 
-template<class RefEncoding, class SeqEncoding>
+template<class ReferenceBWTType, class SequenceType>
 void testIndex(std::string ref_name, std::string seq_name,
   std::string name, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags);
 
@@ -297,25 +299,25 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
   std::cout << std::endl;
 }
 
-template<class RefEncoding, class SeqEncoding>
+template<class ReferenceBWTType, class SequenceType>
 void
 testIndex(std::string ref_name, std::string seq_name,
   std::string name, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags)
 {
   LoadMode mode = getMode(tags);
-  SimpleFM<RefEncoding> ref(ref_name, mode);
+  SimpleFM<ReferenceBWTType> ref(ref_name, mode);
   if(tags & TAG_ROPEBWT2_ALPHABET) { ref.alpha.assign(ROPEBWT2_ALPHABET); }
 
   if(tags & TAG_BUILD_INDEXES)
   {
-    SimpleFM<RefEncoding> seq(seq_name, mode);
+    SimpleFM<ReferenceBWTType> seq(seq_name, mode);
     if(tags & TAG_ROPEBWT2_ALPHABET) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
-    RelativeFM<SimpleFM<RefEncoding>, SeqEncoding> rfm(ref, seq, !(tags & TAG_ROPEBWT2_ALPHABET));
+    RelativeFM<ReferenceBWTType, SequenceType> rfm(ref, seq, !(tags & TAG_ROPEBWT2_ALPHABET));
     testIndex(name, rfm, patterns, chars, tags);
   }
   else
   {
-    RelativeFM<SimpleFM<RefEncoding>, SeqEncoding> seq(ref, seq_name);
+    RelativeFM<ReferenceBWTType, SequenceType> seq(ref, seq_name);
     testIndex(name, seq, patterns, chars, tags);
   }
 }
