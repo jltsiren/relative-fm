@@ -59,13 +59,11 @@ public:
     getComplement(ref.bwt, this->ref_minus_lcs, lcs_vecs.first, lcs_length);
     getComplement(seq.bwt, this->seq_minus_lcs, lcs_vecs.second, lcs_length);
 
-  #ifdef USE_SPARSE_BITVECTORS
-    lcs_vecs.first.flip();
-    lcs_vecs.second.flip();
-  #endif
     this->ref_lcs = lcs_vecs.first;
     this->seq_lcs = lcs_vecs.second;
+  #ifndef USE_HYBRID_BITVECTORS
     util::init_support(this->ref_select, &(this->ref_lcs));
+  #endif
     util::init_support(this->seq_rank, &(this->seq_lcs));
 
     this->alpha = seq.alpha;
@@ -106,7 +104,10 @@ public:
     uint64_t seq_bytes = size_in_bytes(this->seq_minus_lcs);
     uint64_t bwt_bytes = ref_bytes + seq_bytes;
 
-    uint64_t reflcs_bytes = size_in_bytes(this->ref_lcs) + size_in_bytes(this->ref_select);
+    uint64_t reflcs_bytes = size_in_bytes(this->ref_lcs);
+  #ifndef USE_HYBRID_BITVECTORS
+    reflcs_bytes +=size_in_bytes(this->ref_select);
+  #endif
     uint64_t seqlcs_bytes = size_in_bytes(this->seq_lcs) + size_in_bytes(this->seq_rank);
     uint64_t bitvector_bytes = reflcs_bytes + seqlcs_bytes;
 
@@ -203,8 +204,8 @@ public:
 
 //------------------------------------------------------------------------------
 
-#ifdef USE_SPARSE_BITVECTORS
-  typedef sd_vector<> vector_type;
+#ifdef USE_HYBRID_BITVECTORS
+  typedef hyb_vector<> vector_type;
 #else
   typedef rrr_vector<63> vector_type;
 #endif
@@ -216,8 +217,24 @@ public:
   uint64_t                    m_size;
 
   vector_type::rank_1_type    seq_rank;
-#ifdef USE_SPARSE_BITVECTORS
-  vector_type::select_0_type  ref_select;
+
+#ifdef USE_HYBRID_BITVECTORS
+  uint64_t ref_select(uint64_t i) const
+  {
+    if(i == 0) { return 0; }
+
+    // Find the last position, where rank < i.
+    uint64_t low = 0, high = this->ref_lcs.size();
+    vector_type::rank_1_type ref_rank(&(this->ref_lcs));
+    while(low < high)
+    {
+      uint64_t mid = low + (high - low + 1) / 2;
+      if(ref_rank(mid) >= i) { high = mid - 1; }
+      else { low = mid; }
+    }
+
+    return low;
+  }
 #else
   vector_type::select_1_type  ref_select;
 #endif
@@ -231,7 +248,9 @@ private:
     this->seq_minus_lcs.load(input);
     this->ref_lcs.load(input);
     this->seq_lcs.load(input);
+  #ifndef USE_HYBRID_BITVECTORS
     util::init_support(this->ref_select, &(this->ref_lcs));
+  #endif
     util::init_support(this->seq_rank, &(this->seq_lcs));
     this->alpha.load(input);
     this->m_size = this->reference.bwt.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
@@ -248,20 +267,15 @@ private:
     uint64_t res = 0;
     uint8_t ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
 
-#ifdef USE_SPARSE_BITVECTORS  // LCS is marked with 0-bits.
-    uint64_t lcs_bits = i + 1 - this->seq_rank.rank(i + 1); // Number of LCS bits up to i in seq.
-    bool check_lcs = (this->seq_lcs[i] == 0); // Is position i in LCS.
-#else
-    uint64_t lcs_bits = this->seq_rank.rank(i + 1); // Number of LCS bits up to i in seq.
+    uint64_t lcs_bits = this->seq_rank(i + 1); // Number of LCS bits up to i in seq.
     bool check_lcs = (this->seq_lcs[i] == 1); // Is position i in LCS.
-#endif
     if(lcs_bits < i + 1) // There are i + 1 - lcs_bits non-LCS bits in seq.
     {
       res += this->seq_minus_lcs.rank(i + check_lcs - lcs_bits, seq_c);
     }
     if(lcs_bits > 0)
     {
-      uint64_t ref_pos = this->ref_select.select(lcs_bits);  // Select is 1-based.
+      uint64_t ref_pos = this->ref_select(lcs_bits);  // Select is 1-based.
       res += this->reference.bwt.rank(ref_pos + 1 - check_lcs, ref_c);
       if(lcs_bits < ref_pos + 1) // At least one non-LCS bit in ref.
       {
