@@ -111,6 +111,7 @@ public:
     while(begin != end)
     {
       --end;
+      if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
       res = LF(this->bwt, this->alpha, res, *end);
       if(length(res) == 0) { return range_type(1, 0); }
     }

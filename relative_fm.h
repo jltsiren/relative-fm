@@ -194,6 +194,7 @@ public:
     while(begin != end)
     {
       --end;
+      if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
       uint64_t begin = cumulative(this->alpha, *end);
       res.first = begin + this->rank(res.first, *end);
       res.second = begin + this->rank(res.second + 1, *end) - 1;
