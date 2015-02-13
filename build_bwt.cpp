@@ -12,12 +12,21 @@ main(int argc, char** argv)
 {
   if(argc < 2)
   {
-    std::cerr << "Usage: build_bwt input1 [input2 ...]" << std::endl;
+    std::cerr << "Usage: build_bwt [options] input1 [input2 ...]" << std::endl;
+    std::cerr << "  -a  Write the alphabet file." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
-  for(int i = 1; i < argc; i++)
+  bool write_alphabet = false;
+  int first_arg = 1;
+  if(argv[1][0] == '-' && argv[1][1] == 'a')
+  {
+    write_alphabet = true;
+    first_arg = 2;
+  }
+
+  for(int i = first_arg; i < argc; i++)
   {
     std::string base_name = argv[i];
     std::cout << "File: " << base_name << std::endl;
@@ -52,10 +61,24 @@ main(int argc, char** argv)
       std::cout << "BWT built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
     }
 
-    // Compact the alphabet.
+    // Compact the alphabet and write it if necessary.
     {
       Alphabet alpha(text, size + 1);
       for(uint64_t i = 0; i <= size; i++) { text[i] = alpha.char2comp[text[i]]; }
+      if(write_alphabet)
+      {
+        std::string filename = base_name + ALPHA_EXTENSION;
+        std::ofstream out(filename.c_str(), std::ios_base::binary);
+        if(!out)
+        {
+          std::cerr << "build_bwt: Cannot open alphabet file " << filename << std::endl;
+        }
+        else
+        {
+          alpha.serialize(out); out.close();
+          std::cout << "Alphabet written to " << filename << std::endl;
+        }
+      }
     }
 
     // Write BWT.
@@ -65,11 +88,12 @@ main(int argc, char** argv)
       if(!out)
       {
         std::cerr << "build_bwt: Cannot open BWT file " << filename << std::endl;
-        std::cout << std::endl;
-        continue;
       }
-      text.serialize(out); out.close();
-      std::cout << "BWT written to " << filename << std::endl;
+      else
+      {
+        text.serialize(out); out.close();
+        std::cout << "BWT written to " << filename << std::endl;
+      }
     }
 
     std::cout << std::endl;
