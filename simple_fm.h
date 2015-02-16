@@ -65,8 +65,8 @@ public:
   {
   }
 
-  uint64_t size() const { return this->bwt.size(); }
-  uint64_t sequences() const { return this->alpha.C[1]; }
+  inline uint64_t size() const { return this->bwt.size(); }
+  inline uint64_t sequences() const { return this->alpha.C[1]; }
 
   uint64_t reportSize(bool print = false) const
   {
@@ -105,15 +105,21 @@ public:
     }
   }
 
+  // Use length(res) == 0 to check whether the range is empty.
+  inline range_type LF(range_type range, uint8_t c) const
+  {
+    if(!hasChar(this->alpha, c)) { return range_type(1, 0); }
+    return relative::LF(this->bwt, this->alpha, range, c);
+  }
+
   template<class Iter> range_type find(Iter begin, Iter end) const
   {
     range_type res(0, this->size() - 1);
     while(begin != end)
     {
       --end;
-      if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
-      res = LF(this->bwt, this->alpha, res, *end);
-      if(length(res) == 0) { return range_type(1, 0); }
+      res = this->LF(res, *end);
+      if(length(res) == 0) { return range_type(1, 0); } // isEmpty() does not work with (0, -1).
     }
     return res;
   }

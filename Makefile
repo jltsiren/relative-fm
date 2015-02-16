@@ -8,9 +8,6 @@ RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 # This makes reportSize() significantly slower.
 #RUN_FLAGS=-DREPORT_RUNS
 
-# Run some additional verification routines during construction.
-#VERIFY_FLAGS=-DVERIFY_CONSTRUCTION
-
 # Print some additional information.
 VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 #VERBOSE_FLAGS=-DVERBOSE_OUTPUT -DVERBOSE_STATUS_INFO
@@ -18,7 +15,7 @@ VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 # Hybrid bitvectors are slower, but they can sometimes be smaller.
 VECTOR_FLAGS=-DUSE_HYBRID_BITVECTORS
 
-OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERIFY_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS)
+OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS)
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)

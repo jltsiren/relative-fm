@@ -12,16 +12,22 @@ template<class ReferenceBWTType, class SequenceType>
 void
 getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vector& positions, uint64_t n);
 
-std::vector<std::pair<int, int> >
-mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer);
+uint64_t
+mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  range_type ref_range, range_type seq_range);
 
 template<class ReferenceType>
-std::vector<std::pair<int, int> >
-greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_range, range_type seq_range, bool onlyNs);
+uint64_t
+greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  range_type ref_range, range_type seq_range, bool onlyNs);
 
 template<class ReferenceType>
-std::pair<bit_vector, bit_vector>
-alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print);
+void
+alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print);
 
 //------------------------------------------------------------------------------
 
@@ -55,12 +61,14 @@ public:
     this->m_size = seq.bwt.size();
 
     uint64_t lcs_length = 0;
-    auto lcs_vecs = alignBWTs(ref, seq, BLOCK_SIZE, MAX_DEPTH, lcs_length, sorted_alphabet, print);
-    getComplement(ref.bwt, this->ref_minus_lcs, lcs_vecs.first, lcs_length);
-    getComplement(seq.bwt, this->seq_minus_lcs, lcs_vecs.second, lcs_length);
+    bit_vector _ref_lcs, _seq_lcs;
+    alignBWTs(ref, seq, _ref_lcs, _seq_lcs, BLOCK_SIZE, MAX_DEPTH, lcs_length, sorted_alphabet, print);
 
-    this->ref_lcs = lcs_vecs.first;
-    this->seq_lcs = lcs_vecs.second;
+    getComplement(ref.bwt, this->ref_minus_lcs, _ref_lcs, lcs_length);
+    getComplement(seq.bwt, this->seq_minus_lcs, _seq_lcs, lcs_length);
+    this->ref_lcs = _ref_lcs;
+    this->seq_lcs = _seq_lcs;
+
   #ifndef USE_HYBRID_BITVECTORS
     util::init_support(this->ref_select, &(this->ref_lcs));
   #endif
@@ -95,8 +103,8 @@ public:
 
 //------------------------------------------------------------------------------
 
-  uint64_t size() const { return this->m_size; }
-  uint64_t sequences() const { return this->alpha.C[1]; }
+  inline uint64_t size() const { return this->m_size; }
+  inline uint64_t sequences() const { return this->alpha.C[1]; }
 
   uint64_t reportSize(bool print = false) const
   {
@@ -320,11 +328,13 @@ getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vecto
   FIXME Space optimizations have not been implemented yet.
 */
 template<class ReferenceType>
-std::vector<std::pair<int, int> >
-greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_range, range_type seq_range, bool onlyNs)
+uint64_t
+greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  range_type ref_range, range_type seq_range,
+  bool onlyNs)
 {
-  std::vector<std::pair<int, int> > res;
-  if(isEmpty(ref_range) || isEmpty(seq_range)) { return res; }
+  if(isEmpty(ref_range) || isEmpty(seq_range)) { return 0; }
 
   std::vector<uint8_t> ref_buffer; ref.extractBWT(ref_range, ref_buffer); int ref_len = length(ref_range);
   std::vector<uint8_t> seq_buffer; seq.extractBWT(seq_range, seq_buffer); int seq_len = length(seq_range);
@@ -334,7 +344,7 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_ran
 #ifdef VERBOSE_STATUS_INFO
       std::cout << "Reverting to heuristic on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
 #endif
-      return mostFrequentChar(ref_buffer, seq_buffer);
+      return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
   }
 
   // v[k] stores how many characters of ref have been processed on diagonal k.
@@ -368,7 +378,7 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_ran
 #ifdef VERBOSE_STATUS_INFO
       std::cout << "MAX_D exceeded on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
 #endif
-      return mostFrequentChar(ref_buffer, seq_buffer);
+      return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
     }
   }
   {
@@ -376,6 +386,7 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_ran
   }
 
   // Extract the LCS.
+  uint64_t lcs = 0;
   for(int d = store.size() - 1, k = ref_len - seq_len; d >= 0; d--)
   {
     int x_lim = 0, next_k = 0;
@@ -387,14 +398,14 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq, range_type ref_ran
     else { x_lim = store[d - 1][mapToUint(k - 1)] + 1; next_k = k - 1; }
     for(int x = store[d][mapToUint(k)]; x > x_lim; x--)
     {
-      res.push_back(std::make_pair(x - 1, x - 1 - k));
+      ref_lcs[ref_range.first + x - 1] = 1;
+      seq_lcs[seq_range.first + x - 1 - k] = 1;
+      lcs++;
     }
     k = next_k;
-    std::vector<int> temp; store[d].swap(temp); // Delete the contents.
   }
 
-  std::reverse(res.begin(), res.end());
-  return res;
+  return lcs;
 }
 
 //------------------------------------------------------------------------------
@@ -406,40 +417,31 @@ struct record_type
 {
   range_type  left, right;
   std::string pattern;
+  bool        onlyNs;
 
-  record_type(range_type l, range_type r, std::string p) : left(l), right(r), pattern(p) {}
-
-  inline bool onlyNs() const
+  record_type(range_type lt, range_type rt, const std::string& p, bool n) :
+    left(lt), right(rt), pattern(p), onlyNs(n)
   {
-    for(auto c : this->pattern) { if(c != 'N') { return false; } }
-    return true;
-  }
-};
-
-void verifyRanges(std::vector<record_type>& ranges, uint64_t ref_len, uint64_t seq_len);
-
-struct record_comparator
-{
-  inline bool operator()(const record_type& a, const record_type& b) const
-  {
-    return ((a.left < b.left) || (a.left == b.left && a.right < b.right));
   }
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const record_type& record)
 {
-  return stream << "(" << record.left << ", " << record.right << ", " << record.pattern << ")";
+  return stream << "(" << record.left << ", " << record.right << ")";
 }
 
 template<class ReferenceType>
-std::pair<bit_vector, bit_vector>
-alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print)
+void
+alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print)
 {
   if(print)
   {
     std::cout << "Reference size: " << ref.bwt.size() << std::endl;
     std::cout << "Target size: " << seq.bwt.size() << std::endl;
   }
+  util::clear(ref_lcs); util::clear(seq_lcs);
 
   // Build the union of the alphabets.
   uint sigma = 0;
@@ -461,68 +463,48 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq, uint64_t block_siz
   }
 
   // Partition the BWTs.
-  // FIXME: Could be faster, but does it matter?
   std::stack<record_type> record_stack;
-  record_stack.push(record_type(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), ""));
-  std::vector<record_type> ranges;
+  record_stack.push(record_type(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true));
+  std::vector<range_type> ref_ranges, seq_ranges;
+  std::vector<bool> onlyNs;
   while(!(record_stack.empty()))
   {
     record_type curr = record_stack.top(); record_stack.pop();
-    range_type expect(curr.left.first, curr.right.first);
+    std::string pattern = curr.pattern + " ";
 
-    for(uint i = 0; i < sigma; i++)
+    for(uint i = sigma; i > 0; i--)
     {
-      std::stringstream ss; ss << curr.pattern << (unsigned char)(alphabet[i]);
-      std::string pattern = ss.str();
+      pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
+      range_type left = ref.find(pattern.begin(), pattern.end()); if(isEmpty(left)) { continue; }
+      range_type right = seq.find(pattern.begin(), pattern.end()); if(isEmpty(right)) { continue; }
 
-      range_type left = ref.find(pattern.begin(), pattern.end());
-      if(isEmpty(left)) { left = range_type(expect.first, expect.first - 1); }
-      else { expect.first = left.second + 1; }
-
-      range_type right = seq.find(pattern.begin(), pattern.end());
-      if(isEmpty(right)) { right = range_type(expect.second, expect.second - 1); }
-      else { expect.second = right.second + 1; }
-
+      bool N_pattern = (curr.onlyNs && alphabet[i - 1] == 'N');
       if(length(left) > block_size && length(right) > block_size && pattern.length() < max_depth)
       {
-        record_stack.push(record_type(left, right, pattern));
+        record_stack.push(record_type(left, right, pattern, N_pattern));
       }
-      else if(length(left) > 0 || length(right) > 0)
+      else
       {
-        ranges.push_back(record_type(left, right, pattern));
+        ref_ranges.push_back(left); seq_ranges.push_back(right);
+        onlyNs.push_back(N_pattern);
       }
     }
   }
-
-  // Sort the ranges and check that they cover the entire BWTs.
-  // verifyRanges() fails when the alphabets are different, but it does not matter.
-  record_comparator comparator;
-  std::sort(ranges.begin(), ranges.end(), comparator);
-#ifdef VERIFY_CONSTRUCTION
-  verifyRanges(ranges, ref.bwt.size(), seq.bwt.size());
-#endif
-  if(print) { std::cout << "Number of ranges: " << ranges.size() << std::endl; }
+  if(print) { std::cout << "Number of ranges: " << ref_ranges.size() << std::endl; }
 
   // Find the approximate LCS using the partitioning.
   lcs = 0;
-  bit_vector ref_lcs(ref.bwt.size(), 0), seq_lcs(seq.bwt.size(), 0);
-  for(auto curr : ranges)
+  util::assign(ref_lcs, bit_vector(ref.bwt.size(), 0));
+  util::assign(seq_lcs, bit_vector(seq.bwt.size(), 0));
+  for(uint64_t i = 0; i < ref_ranges.size(); i++)
   {
-    auto block = greedyLCS(ref, seq, curr.left, curr.right, curr.onlyNs());
-    lcs += block.size();
-    for(auto xy : block)
-    {
-      ref_lcs[curr.left.first + xy.first] = 1;
-      seq_lcs[curr.right.first + xy.second] = 1;
-    }
+    lcs += greedyLCS(ref, seq, ref_lcs, seq_lcs, ref_ranges[i], seq_ranges[i], onlyNs[i]);
   }
   if(print)
   {
     std::cout << "Length of approximate LCS: " << lcs << std::endl;
     std::cout << std::endl;
   }
-
-  return std::make_pair(ref_lcs, seq_lcs);
 }
 
 //------------------------------------------------------------------------------
