@@ -174,14 +174,14 @@ testString(int argc, char** argv)
       {
         if(text[text_pos] != reference[ref_pos])
         {
-          std::cout << "Phrase " << phrase << ", text[" << text_pos << "] = " << (uint)text[text_pos] << ", reference[" << ref_pos << "] = " << (uint)reference[ref_pos] << std::endl;
+          std::cout << "Phrase " << phrase << ", text[" << text_pos << "] = " << (uint64_t)text[text_pos] << ", reference[" << ref_pos << "] = " << (uint64_t)reference[ref_pos] << std::endl;
           errors++;
           if(errors > 20) { return; }
         }
       }
       if(text[text_pos] != mismatches[phrase])
       {
-        std::cout << "Phrase " << phrase << " (length " << lengths[phrase] << "), text[" << text_pos << "] = " << (uint)text[text_pos] << "(prev " << (uint)text[text_pos - 1] << "), mismatches[" << phrase << "] = " << (uint)mismatches[phrase] << std::endl;
+        std::cout << "Phrase " << phrase << " (length " << lengths[phrase] << "), text[" << text_pos << "] = " << (uint64_t)text[text_pos] << "(prev " << (uint64_t)text[text_pos - 1] << "), mismatches[" << phrase << "] = " << (uint64_t)mismatches[phrase] << std::endl;
         errors++;
         if(errors > 20) { return; }
       } text_pos++;

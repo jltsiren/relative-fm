@@ -19,7 +19,7 @@ const std::string ROPEBWT2_ALPHABET("\0ACGTN", 6);
 //------------------------------------------------------------------------------
 
 void
-printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint indent)
+printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_t indent)
 {
   std::string padding;
   if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
@@ -28,7 +28,7 @@ printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint in
 }
 
 void
-printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint indent)
+printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint64_t indent)
 {
   std::string padding;
   if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }

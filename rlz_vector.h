@@ -100,7 +100,7 @@ class rlz_vector
 {
 public:
   typedef bit_vector::size_type                     size_type;
-  typedef size_type                                 value_type;
+  typedef bool                                      value_type;
   typedef bit_vector::difference_type               difference_type;
   typedef random_access_const_iterator<rlz_vector>  iterator;
   typedef bv_tag                                    index_category;

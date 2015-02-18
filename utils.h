@@ -51,7 +51,7 @@ bitlength(uint64_t val)
   return bits::hi(val) + 1;
 }
 
-inline uint mapToUint(int val)
+inline uint32_t mapToUint(int32_t val)
 {
   if(val >= 0) { return 2 * val; }
   else         { return 2 * (-val) - 1; }
@@ -87,8 +87,8 @@ inBPC(uint64_t bytes, uint64_t size)
   return (8.0 * bytes) / size;
 }
 
-void printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint indent = 18);
-void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint indent = 18);
+void printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_t indent = 18);
+void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint64_t indent = 18);
 
 //------------------------------------------------------------------------------
 

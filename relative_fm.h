@@ -27,7 +27,7 @@ template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& ref_lcs, bit_vector& seq_lcs,
-  uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print);
+  uint64_t block_size, uint64_t max_depth, uint64_t& lcs, bool sorted_alphabet, bool print);
 
 //------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ class RelativeFM
 {
 public:
   const static uint64_t BLOCK_SIZE = 1024;  // Split the BWTs into blocks of this size or less.
-  const static uint     MAX_DEPTH  = 32;    // Maximum length of a pattern used to split the BWTs.
+  const static uint64_t MAX_DEPTH  = 32;    // Maximum length of a pattern used to split the BWTs.
 
   typedef SimpleFM<ReferenceBWTType> reference_type;
 
@@ -434,7 +434,7 @@ template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& ref_lcs, bit_vector& seq_lcs,
-  uint64_t block_size, uint max_depth, uint64_t& lcs, bool sorted_alphabet, bool print)
+  uint64_t block_size, uint64_t max_depth, uint64_t& lcs, bool sorted_alphabet, bool print)
 {
   if(print)
   {
@@ -444,11 +444,11 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   util::clear(ref_lcs); util::clear(seq_lcs);
 
   // Build the union of the alphabets.
-  uint sigma = 0;
+  uint64_t sigma = 0;
   uint8_t alphabet[256];
   if(sorted_alphabet)
   {
-    for(uint c = 0; c < 256; c++)
+    for(uint64_t c = 0; c < 256; c++)
     {
       if(hasChar(ref.alpha, c) || hasChar(seq.alpha, c))
       {
@@ -459,7 +459,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   else
   {
     sigma = seq.alpha.sigma;
-    for(uint c = 0; c < sigma; c++) { alphabet[c] = seq.alpha.comp2char[c]; }
+    for(uint64_t c = 0; c < sigma; c++) { alphabet[c] = seq.alpha.comp2char[c]; }
   }
 
   // Partition the BWTs.
@@ -472,7 +472,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     record_type curr = record_stack.top(); record_stack.pop();
     std::string pattern = curr.pattern + " ";
 
-    for(uint i = sigma; i > 0; i--)
+    for(uint64_t i = sigma; i > 0; i--)
     {
       pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
       range_type left = ref.find(pattern.begin(), pattern.end()); if(isEmpty(left)) { continue; }
