@@ -62,7 +62,6 @@ main(int argc, char** argv)
     std::cerr << "  n    Load SimpleFMs in native format (default: off)" << std::endl;
     std::cerr << "  2    Load SimpleFMs in ropebwt2 format (default: off)" << std::endl;
     // FIXME Add an option to write the built index?
-    // FIXME Add a separate tag for ropebwt2 format?
     std::cerr << std::endl;
     std::cerr << "Sequence representations:" << std::endl;
     std::cerr << "  p    Plain bitvectors in a wavelet tree" << std::endl;

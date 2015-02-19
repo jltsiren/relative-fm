@@ -332,7 +332,7 @@ countRuns(const VectorType& vec, uint64_t& runs, uint64_t& gap0, uint64_t& gap1,
 
 /*
   This class uses an sd_vector to encode the cumulative sum of an array of integers.
-  The array contains sum() items in size() elements.
+  The array contains sum() items in size() elements. The array uses 0-based indexes.
 */
 
 class CumulativeArray

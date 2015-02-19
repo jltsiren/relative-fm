@@ -83,6 +83,7 @@ public:
 
   inline uint64_t size() const { return this->block_boundaries.size(); }
   inline uint64_t runs() const { return this->data.size(); }
+  inline uint64_t count(uint8_t c) const { return this->samples[c].sum(); }
 
   inline uint64_t rank(uint64_t i, uint8_t c) const
   {
@@ -105,6 +106,28 @@ public:
     }
 
     return res;
+  }
+
+  inline uint64_t select(uint64_t i, uint8_t c) const
+  {
+    if(c >= SIGMA) { return 0; }
+    if(i == 0) { return 0; }
+    if(i > this->count(c)) { return this->size(); }
+
+    uint64_t block = this->samples[c].inverse(i - 1);
+    uint64_t count = this->samples[c].sum(block);
+    uint64_t rle_pos = block * SAMPLE_RATE;
+    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    while(true)
+    {
+      seq_pos += runLength(this->data[rle_pos]) - 1; // The last position in the run.
+      if(charValue(this->data[rle_pos]) == c)
+      {
+        count += runLength(this->data[rle_pos]);  // Number of c's up to the end of the run.
+        if(count >= i) { return seq_pos + i - count; }
+      }
+      seq_pos++; rle_pos++; // Move to the first position in the next run.
+    }
   }
 
   inline uint64_t operator[](uint64_t i) const
