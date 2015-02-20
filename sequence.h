@@ -20,9 +20,9 @@ public:
   Sequence(Sequence&& s);
   ~Sequence();
 
-  void swap(Sequence& v);
-  Sequence& operator=(const Sequence& v);
-  Sequence& operator=(Sequence&& v);
+  void swap(Sequence& s);
+  Sequence& operator=(const Sequence& s);
+  Sequence& operator=(Sequence&& s);
 
   uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
@@ -46,7 +46,7 @@ private:
   int_vector<0> data, samples;
   uint64_t      sigma;
 
-  void copy(const Sequence& v);
+  void copy(const Sequence& s);
   void buildRank();
 };  // class Sequence
 

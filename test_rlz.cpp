@@ -12,12 +12,12 @@ using namespace relative;
 // These tests takes mutation rates as parameters.
 //#define RLZ_TESTS
 //#define STRING_TESTS
-#define BV_TESTS
+//#define BV_TESTS
 //#define WT_TESTS
 
 // These tests use parameter format "reference seq1 [seq2 ...]".
 //#define CST_TESTS
-//#define LCP_TESTS
+#define LCP_TESTS
 
 
 // For bitvector RLZ tests.
@@ -557,8 +557,8 @@ testCST(int argc, char** argv)
 uint64_t
 differentialValue(uint64_t prev, uint64_t val)
 {
-  if(val >= prev) { return ((val - prev) << 1) + 1; }
-  else            { return ((prev - val) << 1) + 2; }
+  if(val >= prev) { return 2 * (val - prev); }
+  else            { return 2 * (prev - val) - 1; }
 }
 
 typedef cst_sada<csa_sada<>, lcp_bitcompressed<> > lcp_cst;

@@ -31,6 +31,68 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
 //------------------------------------------------------------------------------
 
+class LCS
+{
+public:
+  typedef uint64_t size_type;
+
+#ifdef USE_HYBRID_BITVECTORS
+  typedef hyb_vector<> vector_type;
+#else
+  typedef rrr_vector<63> vector_type;
+#endif
+
+  LCS();
+  LCS(const bit_vector& a, const bit_vector& b, size_type _lcs_size);
+  LCS(const LCS& l);
+  LCS(LCS&& l);
+  ~LCS();
+
+  void swap(LCS& l);
+  LCS& operator=(const LCS& l);
+  LCS& operator=(LCS&& l);
+
+  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  void load(std::istream& in);
+
+  inline uint64_t size() const { return this->lcs_size; }
+  inline uint64_t ref_size() const { return this->ref.size(); }
+  inline uint64_t seq_size() const { return this->seq.size(); }
+
+  /*
+    To find how many LCS bits are in ref before the 0-based position i, use ref_rank(i).
+    To find the 1-based LCS bit i in seq, use seq_select(i).
+  */
+
+  vector_type                ref;
+  vector_type::rank_1_type   ref_rank;
+#ifdef USE_HYBRID_BITVECTORS
+  inline uint64_t ref_select(uint64_t i) const { return this->select(this->ref, this->ref_rank, i); }
+#else
+  vector_type::select_1_type  ref_select;
+#endif
+
+  vector_type                seq;
+  vector_type::rank_1_type   seq_rank;
+#ifdef USE_HYBRID_BITVECTORS
+  inline uint64_t seq_select(uint64_t i) const { return this->select(this->seq, this->seq_rank, i); }
+#else
+  vector_type::select_1_type  seq_select;
+#endif
+
+  size_type lcs_size;
+
+private:
+  void copy(const LCS& l);
+  void set_vectors();
+
+#ifdef USE_HYBRID_BITVECTORS
+  uint64_t select(const vector_type& vec, const vector_type::rank_1_type& rank, uint64_t i) const;
+#endif
+};  // class LCS
+
+//------------------------------------------------------------------------------
+
 const std::string RELATIVE_FM_EXTENSION = ".rfm";
 
 template<class ReferenceBWTType = bwt_type, class SequenceType = bwt_type>
@@ -61,18 +123,12 @@ public:
     this->m_size = seq.bwt.size();
 
     uint64_t lcs_length = 0;
-    bit_vector _ref_lcs, _seq_lcs;
-    alignBWTs(ref, seq, _ref_lcs, _seq_lcs, BLOCK_SIZE, MAX_DEPTH, lcs_length, sorted_alphabet, print);
+    bit_vector ref_lcs, seq_lcs;
+    alignBWTs(ref, seq, ref_lcs, seq_lcs, BLOCK_SIZE, MAX_DEPTH, lcs_length, sorted_alphabet, print);
 
-    getComplement(ref.bwt, this->ref_minus_lcs, _ref_lcs, lcs_length);
-    getComplement(seq.bwt, this->seq_minus_lcs, _seq_lcs, lcs_length);
-    this->ref_lcs = _ref_lcs;
-    this->seq_lcs = _seq_lcs;
-
-  #ifndef USE_HYBRID_BITVECTORS
-    util::init_support(this->ref_select, &(this->ref_lcs));
-  #endif
-    util::init_support(this->seq_rank, &(this->seq_lcs));
+    getComplement(ref.bwt, this->ref_minus_lcs, ref_lcs, lcs_length);
+    getComplement(seq.bwt, this->seq_minus_lcs, seq_lcs, lcs_length);
+    util::assign(this->bwt_lcs, LCS(ref_lcs, seq_lcs, lcs_length));
 
     this->alpha = seq.alpha;
   }
@@ -111,13 +167,7 @@ public:
     uint64_t ref_bytes = size_in_bytes(this->ref_minus_lcs);
     uint64_t seq_bytes = size_in_bytes(this->seq_minus_lcs);
     uint64_t bwt_bytes = ref_bytes + seq_bytes;
-
-    uint64_t reflcs_bytes = size_in_bytes(this->ref_lcs);
-  #ifndef USE_HYBRID_BITVECTORS
-    reflcs_bytes +=size_in_bytes(this->ref_select);
-  #endif
-    uint64_t seqlcs_bytes = size_in_bytes(this->seq_lcs) + size_in_bytes(this->seq_rank);
-    uint64_t bitvector_bytes = reflcs_bytes + seqlcs_bytes;
+    uint64_t lcs_bytes = size_in_bytes(this->bwt_lcs);
 
   #ifdef REPORT_RUNS
     uint64_t ref_runs = 0, seq_runs = 0;
@@ -125,41 +175,38 @@ public:
     uint64_t seq_gap0 = 0, seq_gap1 = 0, seq_run = 0, seq_delta = 0;
     if(print)
     {
-      countRuns(this->ref_lcs, ref_runs, ref_gap0, ref_gap1, ref_run, ref_delta);
-      countRuns(this->seq_lcs, seq_runs, seq_gap0, seq_gap1, seq_run, seq_delta);
+      countRuns(this->bwt_lcs.ref, ref_runs, ref_gap0, ref_gap1, ref_run, ref_delta);
+      countRuns(this->bwt_lcs.seq, seq_runs, seq_gap0, seq_gap1, seq_run, seq_delta);
     }
   #endif
 
-    uint64_t bytes = bwt_bytes + bitvector_bytes + size_in_bytes(this->alpha);
+    uint64_t bytes = bwt_bytes + lcs_bytes + size_in_bytes(this->alpha);
 
     if(print)
     {
   #ifdef VERBOSE_OUTPUT
       printSize("ref_minus_lcs", ref_bytes, this->size());
       printSize("seq_minus_lcs", seq_bytes, this->size());
-      printSize("ref_lcs", reflcs_bytes, this->size());
+      printSize("bwt_lcs", lcs_bytes, this->size());
   #ifdef REPORT_RUNS
-      std::cout << std::string(16, ' ') << ref_runs << " runs (gap0 "
+      std::cout << std::string(16, ' ') << "Ref: " << ref_runs << " runs (gap0 "
         << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
         << " MB, run " << (inMegabytes(ref_run) / 8) << " MB, delta "
         << inMegabytes(ref_delta) << " MB)" << std::endl;
-  #endif
-      printSize("seq_lcs", seqlcs_bytes, this->size());
-  #ifdef REPORT_RUNS
-      std::cout << std::string(16, ' ') << seq_runs << " runs (gap0 "
+      std::cout << std::string(16, ' ') << "Seq: " << seq_runs << " runs (gap0 "
         << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
         << " MB, run " << (inMegabytes(seq_run) / 8) << " MB, delta "
         << inMegabytes(seq_delta) << " MB)" << std::endl;
   #endif
   #else
       printSize("BWT", bwt_bytes, this->size());
-      printSize("Bitvectors", bitvector_bytes, this->size());
+      printSize("LCS", bitvector_bytes, this->size());
   #ifdef REPORT_RUNS
-      std::cout << std::string(16, ' ') << ref_runs << " runs (gap0 "
+      std::cout << std::string(16, ' ') << "Ref: " << ref_runs << " runs (gap0 "
         << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
         << " MB, run " << (inMegabytes(ref_run) / 8) << " MB, delta "
         << inMegabytes(ref_delta) << " MB)" << std::endl;
-      std::cout << std::string(16, ' ') << seq_runs << " runs (gap0 "
+      std::cout << std::string(16, ' ') << "Seq: " << seq_runs << " runs (gap0 "
         << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
         << " MB, run " << (inMegabytes(seq_run) / 8) << " MB, delta "
         << inMegabytes(seq_delta) << " MB)" << std::endl;
@@ -189,8 +236,7 @@ public:
   {
     this->ref_minus_lcs.serialize(output);
     this->seq_minus_lcs.serialize(output);
-    this->ref_lcs.serialize(output);
-    this->seq_lcs.serialize(output);
+    this->bwt_lcs.serialize(output);
     this->alpha.serialize(output);
   }
 
@@ -213,40 +259,11 @@ public:
 
 //------------------------------------------------------------------------------
 
-#ifdef USE_HYBRID_BITVECTORS
-  typedef hyb_vector<> vector_type;
-#else
-  typedef rrr_vector<63> vector_type;
-#endif
-
   const reference_type&       reference;
   SequenceType                ref_minus_lcs, seq_minus_lcs;
-  vector_type                 ref_lcs, seq_lcs;
+  LCS                         bwt_lcs;
   Alphabet                    alpha;
   uint64_t                    m_size;
-
-  vector_type::rank_1_type    seq_rank;
-
-#ifdef USE_HYBRID_BITVECTORS
-  uint64_t ref_select(uint64_t i) const
-  {
-    if(i == 0) { return 0; }
-
-    // Find the last position, where rank < i.
-    uint64_t low = 0, high = this->ref_lcs.size();
-    vector_type::rank_1_type ref_rank(&(this->ref_lcs));
-    while(low < high)
-    {
-      uint64_t mid = low + (high - low + 1) / 2;
-      if(ref_rank(mid) >= i) { high = mid - 1; }
-      else { low = mid; }
-    }
-
-    return low;
-  }
-#else
-  vector_type::select_1_type  ref_select;
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -255,12 +272,7 @@ private:
   {
     this->ref_minus_lcs.load(input);
     this->seq_minus_lcs.load(input);
-    this->ref_lcs.load(input);
-    this->seq_lcs.load(input);
-  #ifndef USE_HYBRID_BITVECTORS
-    util::init_support(this->ref_select, &(this->ref_lcs));
-  #endif
-    util::init_support(this->seq_rank, &(this->seq_lcs));
+    this->bwt_lcs.load(input);
     this->alpha.load(input);
     this->m_size = this->reference.bwt.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
   }
@@ -276,15 +288,15 @@ private:
     uint64_t res = 0;
     uint8_t ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
 
-    uint64_t lcs_bits = this->seq_rank(i + 1); // Number of LCS bits up to i in seq.
-    bool check_lcs = (this->seq_lcs[i] == 1); // Is position i in LCS.
+    uint64_t lcs_bits = this->bwt_lcs.seq_rank(i + 1); // Number of LCS bits up to i in seq.
+    bool check_lcs = (this->bwt_lcs.seq[i] == 1); // Is position i in LCS.
     if(lcs_bits < i + 1) // There are i + 1 - lcs_bits non-LCS bits in seq.
     {
       res += this->seq_minus_lcs.rank(i + check_lcs - lcs_bits, seq_c);
     }
     if(lcs_bits > 0)
     {
-      uint64_t ref_pos = this->ref_select(lcs_bits);  // Select is 1-based.
+      uint64_t ref_pos = this->bwt_lcs.ref_select(lcs_bits);  // Select is 1-based.
       res += this->reference.bwt.rank(ref_pos + 1 - check_lcs, ref_c);
       if(lcs_bits < ref_pos + 1) // At least one non-LCS bit in ref.
       {
