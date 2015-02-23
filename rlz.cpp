@@ -4,6 +4,7 @@
 #include <sdsl/construct_sa.hpp>
 
 #include "rlz.h"
+#include "utils.h"
 
 namespace relative
 {
@@ -298,7 +299,7 @@ bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
 
   // Merge the BWTs.
   this->bwt[this->endmarker] = this->bwt[offset + block_size - 1];  // No longer an endmarker.
-  std::sort(ra.begin(), ra.end());
+  sequentialSort(ra.begin(), ra.end());
   uint64_t inc_pos = 0, old_pos = bwt_start, next_pos = offset;
   while(inc_pos < block_size)
   {

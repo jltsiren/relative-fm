@@ -26,6 +26,9 @@ main(int argc, char** argv)
   }
 
   std::cout << "Relative FM-index builder" << std::endl;
+#ifdef _OPENMP
+  std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
+#endif
   std::cout << std::endl;
   std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
   std::cout << "Reference: " << argv[ref_arg] << std::endl;
@@ -57,7 +60,7 @@ mainLoop(int argc, char** argv, LoadMode mode)
     SimpleFM<BWTType> seq(argv[arg], mode);
     if(mode == mode_ropebwt2) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
     double start = readTimer();
-    RelativeFM<BWTType> rel(ref, seq, mode == mode_ropebwt2, true);
+    RelativeFM<BWTType> rel(ref, seq, mode != mode_ropebwt2, true);
     double seconds = readTimer() - start;
     std::cout << "Index built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;

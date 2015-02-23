@@ -8,14 +8,18 @@ RUSAGE_FLAGS=-DRUSAGE_IN_BYTES
 # This makes reportSize() significantly slower.
 #RUN_FLAGS=-DREPORT_RUNS
 
-# Print some additional information.
-VERBOSE_FLAGS=-DVERBOSE_OUTPUT
-#VERBOSE_FLAGS=-DVERBOSE_OUTPUT -DVERBOSE_STATUS_INFO
+# Print some additional information. Status info goes to stderr.
+#VERBOSE_FLAGS=-DVERBOSE_OUTPUT
+VERBOSE_FLAGS=-DVERBOSE_OUTPUT -DVERBOSE_STATUS_INFO
 
 # Hybrid bitvectors are slower, but they can sometimes be smaller.
 VECTOR_FLAGS=-DUSE_HYBRID_BITVECTORS
 
-OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS)
+# Multithreading with OpenMP. Not really tested without OpenMP support.
+# Currently used for RFM construction.
+PARALLEL_FLAGS=-fopenmp
+
+OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(PARALLEL_FLAGS)
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)

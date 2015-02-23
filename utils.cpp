@@ -42,7 +42,11 @@ printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t 
 double
 readTimer()
 {
+#ifdef _OPENMP
+  return omp_get_wtime();
+#else
   return clock() / (double)CLOCKS_PER_SEC;
+#endif
 }
 
 uint64_t

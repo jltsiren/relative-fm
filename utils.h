@@ -1,10 +1,22 @@
 #ifndef _RELATIVE_FM_UTILS_H
 #define _RELATIVE_FM_UTILS_H
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 
 #include <sdsl/wavelet_trees.hpp>
+
+#ifdef _OPENMP
+/*
+  Critical sections:
+
+  alignbwts   Function alignBWTs.
+  stderr      Writing to std::cerr within parallel sections.
+  stdout      Writing to std::cout within parallel sections.
+*/
+#include <omp.h>
+#endif
 
 using namespace sdsl;
 
@@ -97,6 +109,50 @@ uint64_t memoryUsage(); // Peak memory usage in bytes.
 
 // Returns the total length of the rows, excluding line ends.
 uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows);
+
+template<class Iterator, class Comparator>
+void
+parallelSort(Iterator first, Iterator last, const Comparator& comp)
+{
+#ifdef _GLIBCXX_PARALLEL
+  std::sort(first, last, comp, __gnu_parallel::balanced_quicksort_tag());
+#else
+  std::sort(first, last, comp);
+#endif
+}
+
+template<class Iterator>
+void
+parallelSort(Iterator first, Iterator last)
+{
+#ifdef _GLIBCXX_PARALLEL
+  std::sort(first, last, __gnu_parallel::balanced_quicksort_tag());
+#else
+  std::sort(first, last);
+#endif
+}
+
+template<class Iterator, class Comparator>
+void
+sequentialSort(Iterator first, Iterator last, const Comparator& comp)
+{
+#ifdef _GLIBCXX_PARALLEL
+  std::sort(first, last, comp, __gnu_parallel::sequential_tag());
+#else
+  std::sort(first, last, comp);
+#endif
+}
+
+template<class Iterator>
+void
+sequentialSort(Iterator first, Iterator last)
+{
+#ifdef _GLIBCXX_PARALLEL
+  std::sort(first, last, __gnu_parallel::sequential_tag());
+#else
+  std::sort(first, last);
+#endif
+}
 
 //------------------------------------------------------------------------------
 
