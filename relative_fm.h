@@ -596,6 +596,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
 
   // Partition the BWTs.
+  double timestamp = readTimer();
   std::vector<short_record_type> results;
   {
 #ifdef _OPENMP
@@ -618,11 +619,13 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     processSubtree(root, alphabet, sigma, ref, seq, block_size, max_depth, results);
 #endif
   }
-  if(print) { std::cout << "Number of ranges: " << results.size() << std::endl; }
+  if(print)
+  {
+    std::cout << "Found " << results.size() << " ranges in " << (readTimer() - timestamp) << " seconds" << std::endl;
+  }
 
   // Find the approximate LCS using the partitioning.
-  // FIXME: Verbose status info on progress?
-  lcs = 0;
+  timestamp = readTimer(); lcs = 0;
   util::assign(ref_lcs, bit_vector(ref.bwt.size(), 0));
   util::assign(seq_lcs, bit_vector(seq.bwt.size(), 0));
 #ifdef _OPENMP
@@ -658,10 +661,10 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
       processed++;
       if(processed >= (percentage / 100.0) * results.size())
       {
-        double timestamp = readTimer();
+        double curr = readTimer();
         std::cerr << "Processed " << processed << " / " << results.size() << " ranges in "
-                  << (timestamp - prev) << " seconds" << std::endl;
-        percentage++; prev = timestamp;
+                  << (curr - prev) << " seconds" << std::endl;
+        percentage++; prev = curr;
       }
     }
   #endif
@@ -675,7 +678,8 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 #endif
   if(print)
   {
-    std::cout << "Length of approximate LCS: " << lcs << std::endl;
+    std::cout << "Found a common subsequence of length " << lcs << " in "
+              << (readTimer() - timestamp) << " seconds" << std::endl;
     std::cout << std::endl;
   }
 }
