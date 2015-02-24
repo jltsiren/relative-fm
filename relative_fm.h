@@ -357,13 +357,7 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
 
   if(onlyNs || abs(ref_len - seq_len) > RelativeFM<>::MAX_D)
   {
-#ifdef VERBOSE_STATUS_INFO
-#ifdef _OPENMP
-      #pragma omp critical (stderr)
-#endif
-      std::cerr << "Reverting to heuristic on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
-#endif
-      return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
+    return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
   }
 
   // v[k] stores how many characters of ref have been processed on diagonal k.

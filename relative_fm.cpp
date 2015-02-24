@@ -11,26 +11,29 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
   range_type ref_range, range_type seq_range)
 {
   std::vector<range_type> freqs(256, range_type(0, 0));
-  for(auto c : ref_buffer) { freqs[c].first++; }
-  for(auto c : seq_buffer) { freqs[c].second++; }
-  for(auto& f : freqs) { f.first = std::min(f.first, f.second); }
-  auto max_pos = std::max_element(freqs.begin(), freqs.end());
-  uint64_t c = max_pos - freqs.begin(), max_f = max_pos->first;
+  for(uint64_t i = 0; i < ref_buffer.size(); i++) { freqs[ref_buffer[i]].first++; }
+  for(uint64_t i = 0; i < seq_buffer.size(); i++) { freqs[seq_buffer[i]].second++; }
+  uint64_t max_c = 0, max_f = 0;
+  for(uint64_t i = 0; i < freqs.size(); i++)
+  {
+    freqs[i].first = std::min(freqs[i].first, freqs[i].second);
+    if(freqs[i].first > max_f) { max_c = i; max_f = freqs[i].first; }
+  }
 
   for(uint64_t i = 0, found = 0; i < length(ref_range) && found < max_f; i++)
   {
 #ifdef _OPENMP
-    if(ref_buffer[i] == c) { ref_lcs[i] = 1; found++; }
+    if(ref_buffer[i] == max_c) { ref_lcs[i] = 1; found++; }
 #else
-    if(ref_buffer[i] == c) { ref_lcs[ref_range.first + i] = 1; found++; }
+    if(ref_buffer[i] == max_c) { ref_lcs[ref_range.first + i] = 1; found++; }
 #endif
   }
   for(uint64_t i = 0, found = 0; i < length(seq_range) && found < max_f; i++)
   {
 #ifdef _OPENMP
-    if(seq_buffer[i] == c) { seq_lcs[i] = 1; found++; }
+    if(seq_buffer[i] == max_c) { seq_lcs[i] = 1; found++; }
 #else
-    if(seq_buffer[i] == c) { seq_lcs[seq_range.first + i] = 1; found++; }
+    if(seq_buffer[i] == max_c) { seq_lcs[seq_range.first + i] = 1; found++; }
 #endif
   }
 
@@ -39,7 +42,8 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
   #pragma omp critical (stderr)
 #endif
   {
-    std::cerr << "  Matched " << max_f << " copies of character " << c << " (" << ((char)c) << ")";
+    std::cerr << "Reverting to heuristic on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
+    std::cerr << "  Matched " << max_f << " copies of character " << max_c << " (" << ((char)max_c) << ")";
     std::cerr << " from sequences of length " << range_type(ref_buffer.size(), seq_buffer.size()) << std::endl;
   }
 #endif
