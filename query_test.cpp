@@ -237,26 +237,26 @@ main(int argc, char** argv)
     // Tags and the default case.
     case 'a':
       tags ^= TAG_ROPEBWT2_ALPHABET;
-      if(tags & TAG_ROPEBWT2_ALPHABET) { std::cout << "Using ropebwt2 alphabet." << std::endl; }
-      else { std::cout << "No longer using ropebwt2 alphabet." << std::endl; }
+      if(tags & TAG_ROPEBWT2_ALPHABET) { std::cout << "Using ropebwt2 alphabet" << std::endl; }
+      else { std::cout << "No longer using ropebwt2 alphabet" << std::endl; }
       std::cout << std::endl;
       break;
     case 'b':
       tags ^= TAG_BUILD_INDEXES;
-      if(tags & TAG_BUILD_INDEXES) { std::cout << "Index construction activated." << std::endl; }
-      else { std::cout << "Index construction deactivated." << std::endl; }
+      if(tags & TAG_BUILD_INDEXES) { std::cout << "Index construction activated" << std::endl; }
+      else { std::cout << "Index construction deactivated" << std::endl; }
       std::cout << std::endl;
       break;
     case 'n':
       tags ^= TAG_NATIVE_FORMAT; tags &= ~TAG_ROPEBWT2_FORMAT;
       mode = getMode(tags);
-      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
+      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format" << std::endl;
       std::cout << std::endl;
       break;
     case '2':
       tags ^= TAG_ROPEBWT2_FORMAT; tags &= ~TAG_NATIVE_FORMAT;
       mode = getMode(tags);
-      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
+      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format" << std::endl;
       std::cout << std::endl;
       break;
     default:

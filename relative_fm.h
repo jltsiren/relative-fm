@@ -12,18 +12,6 @@ template<class ReferenceBWTType, class SequenceType>
 void
 getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vector& positions, uint64_t n);
 
-// The interpretation of ref_lcs and seq_lcs depends on whether OpenMP is used.
-uint64_t
-mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
-  range_type ref_range, range_type seq_range);
-
-template<class ReferenceType>
-uint64_t
-greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
-  range_type ref_range, range_type seq_range, bool onlyNs);
-
 template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
@@ -324,15 +312,69 @@ template<class ReferenceBWTType, class SequenceType>
 void
 getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vector& positions, uint64_t n)
 {
+#ifdef VERBOSE_STATUS_INFO
+  double timestamp = readTimer();
+#endif
   int_vector<8> buffer(bwt.size() - n, 0);
   for(uint64_t i = 0, j = 0; i < bwt.size(); i++)
   {
     if(positions[i] == 0) { buffer[j] = bwt[i]; j++; }
   }
   directConstruct(output, buffer);
+#ifdef VERBOSE_STATUS_INFO
+  #ifdef _OPENMP
+  #pragma omp critical (stderr)
+  #endif
+  {
+    std::cerr << "Extracted complement of length " << buffer.size() << " in "
+              << (readTimer() - timestamp) << " seconds" << std::endl;
+  }
+#endif
 }
 
 //------------------------------------------------------------------------------
+
+struct short_record_type
+{
+public:
+  short_record_type(range_type lt, range_type rt, bool n, bool e) :
+    left(lt), right(rt)
+  {
+    this->right.first = (this->right.first << 1) | n;
+    this->right.second = (this->right.second << 1) | e;
+  }
+
+  inline range_type first() const { return this->left; }
+  inline range_type second() const
+  {
+    return range_type(this->right.first >> 1, this->right.second >> 1);
+  }
+  inline bool onlyNs() const { return this->right.first & 1; }
+  inline bool endmarker() const { return this->right.second & 1; }
+
+private:
+  range_type left, right;
+};
+
+struct short_record_comparator
+{
+  inline bool operator() (const short_record_type& a, const short_record_type& b)
+  {
+    return (a.first() < b.first());
+  }
+};
+
+// The interpretation of ref_lcs and seq_lcs depends on whether OpenMP is used.
+range_type mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  range_type ref_range, range_type seq_range);
+
+// No LCS, just greedily match the runs.
+// The interpretation of ref_lcs and seq_lcs depends on whether OpenMP is used.
+range_type matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  range_type ref_range, range_type seq_range,
+  const uint8_t* alphabet, uint64_t sigma);
 
 /*
   Eugene W. Myers: An O(ND) Difference Algorithm and Its Variations. Algorithmica, 1986.
@@ -340,22 +382,27 @@ getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vecto
   The implementation assumes that offsets fit into int. If OpenMP is used, bitvectors
   should have the same length as the corresponding ranges. Without OpenMP, they are the
   global bitvectors, and the function updates the range specified by ref_range/seq_range.
-
-  FIXME Space optimizations have not been implemented yet.
+  The return value is (LCS length, heuristic losses).
 */
 template<class ReferenceType>
-uint64_t
+range_type
 greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& ref_lcs, bit_vector& seq_lcs,
-  range_type ref_range, range_type seq_range,
-  bool onlyNs)
+  short_record_type& record,
+  const uint8_t* alphabet, uint64_t sigma)
 {
-  if(isEmpty(ref_range) || isEmpty(seq_range)) { return 0; }
+  range_type ref_range = record.first(), seq_range = record.second();
+  bool onlyNs = record.onlyNs(), endmarker = record.endmarker();
+  if(isEmpty(ref_range) || isEmpty(seq_range)) { return range_type(0, 0); }
 
   std::vector<uint8_t> ref_buffer; ref.extractBWT(ref_range, ref_buffer); int ref_len = length(ref_range);
   std::vector<uint8_t> seq_buffer; seq.extractBWT(seq_range, seq_buffer); int seq_len = length(seq_range);
 
-  if(onlyNs || abs(ref_len - seq_len) > RelativeFM<>::MAX_D)
+  if(endmarker)
+  {
+    return matchRuns(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range, alphabet, sigma);
+  }
+  else if(onlyNs || abs(ref_len - seq_len) > RelativeFM<>::MAX_D)
   {
     return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
   }
@@ -426,7 +473,7 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
     k = next_k;
   }
 
-  return lcs;
+  return range_type(lcs, 0);
 }
 
 //------------------------------------------------------------------------------
@@ -440,37 +487,11 @@ struct record_type
 {
   range_type  left, right;
   std::string pattern;
-  bool        onlyNs;
+  bool        onlyNs, endmarker;
 
-  record_type(range_type lt, range_type rt, const std::string& p, bool n) :
-    left(lt), right(rt), pattern(p), onlyNs(n)
+  record_type(range_type lt, range_type rt, const std::string& p, bool n, bool e) :
+    left(lt), right(rt), pattern(p), onlyNs(n), endmarker(e)
   {
-  }
-};
-
-struct short_record_type
-{
-  range_type left, right; // right.second also stores onlyNs information.
-
-  short_record_type(range_type lt, range_type rt, bool n) :
-    left(lt), right(rt)
-  {
-    this->right.second = (this->right.second << 1) | n;
-  }
-
-  inline range_type first() const { return this->left; }
-  inline range_type second() const
-  {
-    return range_type(this->right.first, this->right.second >> 1);
-  }
-  inline bool onlyNs() const { return this->right.second & 1; }
-};
-
-struct short_record_comparator
-{
-  inline bool operator() (const short_record_type& a, const short_record_type& b)
-  {
-    return (a.left < b.left);
   }
 };
 
@@ -480,18 +501,24 @@ inline std::ostream& operator<<(std::ostream& stream, const record_type& record)
 }
 
 template<class ReferenceType>
-void
+uint64_t
 processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
   const ReferenceType& ref, const ReferenceType& seq,
   uint64_t block_size, uint64_t max_depth,
   std::vector<short_record_type>& results)
 {
+  uint64_t intersection = 0;
   std::stack<record_type> record_stack; record_stack.push(root);
   while(!(record_stack.empty()))
   {
     record_type curr = record_stack.top(); record_stack.pop();
-    std::string pattern = curr.pattern + " ";
+    if(curr.endmarker)  // New condition: don't continue patterns ending with an endmarker.
+    {
+      results.push_back(short_record_type(curr.left, curr.right, curr.onlyNs, curr.endmarker));
+      continue;
+    }
 
+    std::string pattern = curr.pattern + " ";
     for(uint64_t i = sigma; i > 0; i--)
     {
       pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
@@ -501,7 +528,7 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
       bool N_pattern = (curr.onlyNs && alphabet[i - 1] == 'N');
       if(length(left) > block_size && length(right) > block_size && pattern.length() < max_depth)
       {
-        record_stack.push(record_type(left, right, pattern, N_pattern));
+        record_stack.push(record_type(left, right, pattern, N_pattern, (i == 1)));
       }
       else
       {
@@ -519,10 +546,12 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
           }
         }
 #endif
-        results.push_back(short_record_type(left, right, N_pattern));
+        intersection += std::min(length(left), length(right));
+        results.push_back(short_record_type(left, right, N_pattern, (i == 1)));
       }
     }
   }
+  return intersection;
 }
 
 template<class ReferenceType>
@@ -532,7 +561,7 @@ generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint
   uint64_t len)
 {
   std::stack<record_type> record_stack;
-  record_stack.push(record_type(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true));
+  record_stack.push(record_type(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true, false));
   while(!(record_stack.empty()))
   {
     record_type curr = record_stack.top(); record_stack.pop();
@@ -545,13 +574,13 @@ generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint
       range_type right = seq.find(pattern.begin(), pattern.end()); if(isEmpty(right)) { continue; }
 
       bool N_pattern = (curr.onlyNs && alphabet[i - 1] == 'N');
-      if(pattern.length() < len)
+      if(pattern.length() < len && i > 1) // Only continue patterns that don't end with an endmarker.
       {
-        record_stack.push(record_type(left, right, pattern, N_pattern));
+        record_stack.push(record_type(left, right, pattern, N_pattern, false));
       }
       else
       {
-        record_array.push_back(record_type(left, right, pattern, N_pattern));
+        record_array.push_back(record_type(left, right, pattern, N_pattern, (i == 1)));
       }
     }
   }
@@ -591,6 +620,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
   // Partition the BWTs.
   double timestamp = readTimer();
+  uint64_t intersection = 0;
   std::vector<short_record_type> results;
   {
 #ifdef _OPENMP
@@ -600,39 +630,44 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     for(uint64_t i = 0; i < record_array.size(); i++)
     {
       std::vector<short_record_type> result_buffer;
-      processSubtree(record_array[i], alphabet, sigma, ref, seq, block_size, max_depth, result_buffer);
+      uint64_t temp =
+        processSubtree(record_array[i], alphabet, sigma, ref, seq, block_size, max_depth, result_buffer);
       #pragma omp critical (alignbwts)
       {
+        intersection += temp;
         results.insert(results.end(), result_buffer.begin(), result_buffer.end());
       }
     }
     short_record_comparator comp;
     parallelSort(results.begin(), results.end(), comp);
 #else
-    record_type root(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true);
-    processSubtree(root, alphabet, sigma, ref, seq, block_size, max_depth, results);
+    record_type root(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true, false);
+    intersection = processSubtree(root, alphabet, sigma, ref, seq, block_size, max_depth, results);
 #endif
   }
   if(print)
   {
-    std::cout << "Found " << results.size() << " ranges in " << (readTimer() - timestamp) << " seconds" << std::endl;
+    std::cout << "Found " << results.size() << " ranges with intersection length " << intersection
+              << " in " << (readTimer() - timestamp) << " seconds" << std::endl;
+    std::cout << "Partitioning losses: reference " << (ref.bwt.size() - intersection)
+              << ", target " << (seq.bwt.size() - intersection) << std::endl;
   }
 
   // Find the approximate LCS using the partitioning.
   timestamp = readTimer(); lcs = 0;
+  uint64_t losses = 0;
   util::assign(ref_lcs, bit_vector(ref.bwt.size(), 0));
   util::assign(seq_lcs, bit_vector(seq.bwt.size(), 0));
 #ifdef _OPENMP
   #ifdef VERBOSE_STATUS_INFO
   uint64_t processed = 0, percentage = 1;
-  double prev = readTimer();
   #endif
   #pragma omp parallel for schedule(dynamic)
   for(uint64_t i = 0; i < results.size(); i++)
   {
     range_type ref_range = results[i].first(), seq_range = results[i].second();
     bit_vector ref_buffer(length(ref_range), 0), seq_buffer(length(seq_range), 0);
-    uint64_t cur_lcs = greedyLCS(ref, seq, ref_buffer, seq_buffer, ref_range, seq_range, results[i].onlyNs());
+    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i], alphabet, sigma);
     #pragma omp critical (alignbwts)
     {
       for(uint64_t j = ref_range.first; j <= ref_range.second; j += 64)
@@ -647,7 +682,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
         uint64_t temp = seq_buffer.get_int(j - seq_range.first, bits);
         seq_lcs.set_int(j, temp, bits);
       }
-      lcs += cur_lcs;
+      lcs += temp.first; losses += temp.second;
     }
   #ifdef VERBOSE_STATUS_INFO
     #pragma omp critical (stderr)
@@ -657,8 +692,8 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
       {
         double curr = readTimer();
         std::cerr << "Processed " << processed << " / " << results.size() << " ranges in "
-                  << (curr - prev) << " seconds" << std::endl;
-        percentage++; prev = curr;
+                  << (curr - timestamp) << " seconds" << std::endl;
+        percentage++;
       }
     }
   #endif
@@ -666,14 +701,15 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 #else
   for(uint64_t i = 0; i < results.size(); i++)
   {
-    lcs += greedyLCS(ref, seq, ref_buffer, seq_buffer,
-      results[i].first(), results[i].second(), results[i].onlyNs());
+    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i], alphabet, sigma);
+    lcs += temp.first; losses += temp.second;
   }
 #endif
   if(print)
   {
     std::cout << "Found a common subsequence of length " << lcs << " in "
               << (readTimer() - timestamp) << " seconds" << std::endl;
+    std::cout << "LCS losses: exact " << (intersection - lcs - losses) << ", heuristics " << losses << std::endl;
     std::cout << std::endl;
   }
 }

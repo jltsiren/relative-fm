@@ -5,7 +5,7 @@ namespace relative
 
 //------------------------------------------------------------------------------
 
-uint64_t
+range_type
 mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
   bit_vector& ref_lcs, bit_vector& seq_lcs,
   range_type ref_range, range_type seq_range)
@@ -14,10 +14,10 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
   for(uint64_t i = 0; i < ref_buffer.size(); i++) { freqs[ref_buffer[i]].first++; }
   for(uint64_t i = 0; i < seq_buffer.size(); i++) { freqs[seq_buffer[i]].second++; }
   uint64_t max_c = 0, max_f = 0;
-  for(uint64_t i = 0; i < freqs.size(); i++)
+  for(uint64_t c = 0; c < freqs.size(); c++)
   {
-    freqs[i].first = std::min(freqs[i].first, freqs[i].second);
-    if(freqs[i].first > max_f) { max_c = i; max_f = freqs[i].first; }
+    uint64_t temp = std::min(freqs[c].first, freqs[c].second);
+    if(temp > max_f) { max_c = c; max_f = temp; }
   }
 
   for(uint64_t i = 0, found = 0; i < length(ref_range) && found < max_f; i++)
@@ -38,16 +38,85 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
   }
 
 #ifdef VERBOSE_STATUS_INFO
-#ifdef _OPENMP
+  #ifdef _OPENMP
   #pragma omp critical (stderr)
-#endif
+  #endif
   {
-    std::cerr << "Reverting to heuristic on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
+    std::cerr << "Finding the most frequent character in " << std::make_pair(ref_range, seq_range) << std::endl;
+    if(max_f == 0)
+    {
+      for(uint64_t c = 0; c < freqs.size(); c++)
+      {
+        if(freqs[c].first != 0 || freqs[c].second != 0)
+        {
+          std::cerr << "  Character " << c << " (" << ((char)c) << "): " << freqs[c] << std::endl;
+        }
+      }
+    }
     std::cerr << "  Matched " << max_f << " copies of character " << max_c << " (" << ((char)max_c) << ")";
     std::cerr << " from sequences of length " << range_type(ref_buffer.size(), seq_buffer.size()) << std::endl;
   }
 #endif
-  return max_f;
+  return range_type(max_f, std::min(length(ref_range), length(seq_range)) - max_f);
+}
+
+range_type
+matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
+  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  range_type ref_range, range_type seq_range,
+  const uint8_t* alphabet, uint64_t sigma)
+{
+  uint64_t ref_pos = 0, seq_pos = 0, found = 0;
+  range_type ref_run(0, 0), seq_run(0, 0);
+  while(ref_pos < length(ref_range) && seq_pos < length(seq_range))
+  {
+    if(ref_run.second <= ref_pos) // Find the next ref_run if needed.
+    {
+      ref_run.first = ref_buffer[ref_pos]; ref_run.second = ref_pos + 1;
+      while(ref_run.second < length(ref_range) && ref_buffer[ref_run.second] == ref_run.first) { ref_run.second++; }
+    }
+    if(seq_run.second <= seq_pos) // Find the next seq_run if needed.
+    {
+      seq_run.first = seq_buffer[seq_pos]; seq_run.second = seq_pos + 1;
+      while(seq_run.second < length(seq_range) && seq_buffer[seq_run.second] == seq_run.first) { seq_run.second++; }
+    }
+    if(ref_run.first == seq_run.first)  // Match the current runs if the characters match.
+    {
+      uint64_t run_length = std::min(ref_run.second - ref_pos, seq_run.second - seq_pos);
+      for(uint64_t i = 0; i < run_length; i++)
+      {
+#ifdef _OPENMP
+        ref_lcs[ref_pos + i] = 1; seq_lcs[seq_pos + i] = 1;
+#else
+        ref_lcs[ref_range.first + ref_pos + i] = 1; seq_lcs[seq_range.first + seq_pos + i] = 1;
+#endif
+      }
+      ref_pos = ref_run.second; seq_pos = seq_run.second; found += run_length;
+    }
+    else  // Otherwise advance the run with the smaller character comp value.
+    {
+      uint64_t ref_c = 0, seq_c = 0;
+      for(uint64_t c = 0; c < sigma; c++)
+      {
+        if(alphabet[c] == ref_run.first) { ref_c = c; }
+        if(alphabet[c] == seq_run.first) { seq_c = c; }
+      }
+      if(ref_c < seq_c) { ref_pos = ref_run.second; }
+      else              { seq_pos = seq_run.second; }
+    }
+  }
+
+#ifdef VERBOSE_STATUS_INFO
+  #ifdef _OPENMP
+  #pragma omp critical (stderr)
+  #endif
+  {
+    std::cerr << "Matching the runs in " << std::make_pair(ref_range, seq_range) << std::endl;
+    std::cerr << "  Matched " << found << " characters from sequences of length "
+              << range_type(ref_buffer.size(), seq_buffer.size()) << std::endl;
+  }
+#endif
+  return range_type(found, std::min(length(ref_range), length(seq_range)) - found);
 }
 
 //------------------------------------------------------------------------------
