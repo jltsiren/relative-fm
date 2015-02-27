@@ -112,7 +112,7 @@ uint64_t readRows(const std::string& filename, std::vector<std::string>& rows, b
 
 template<class Iterator, class Comparator>
 void
-parallelSort(Iterator first, Iterator last, const Comparator& comp)
+parallelQuickSort(Iterator first, Iterator last, const Comparator& comp)
 {
 #ifdef _GLIBCXX_PARALLEL
   std::sort(first, last, comp, __gnu_parallel::balanced_quicksort_tag());
@@ -123,10 +123,32 @@ parallelSort(Iterator first, Iterator last, const Comparator& comp)
 
 template<class Iterator>
 void
-parallelSort(Iterator first, Iterator last)
+parallelQuickSort(Iterator first, Iterator last)
 {
 #ifdef _GLIBCXX_PARALLEL
   std::sort(first, last, __gnu_parallel::balanced_quicksort_tag());
+#else
+  std::sort(first, last);
+#endif
+}
+
+template<class Iterator, class Comparator>
+void
+parallelMergeSort(Iterator first, Iterator last, const Comparator& comp)
+{
+#ifdef _GLIBCXX_PARALLEL
+  std::sort(first, last, comp, __gnu_parallel::multiway_mergesort_tag());
+#else
+  std::sort(first, last, comp);
+#endif
+}
+
+template<class Iterator>
+void
+parallelMergeSort(Iterator first, Iterator last)
+{
+#ifdef _GLIBCXX_PARALLEL
+  std::sort(first, last, __gnu_parallel::multiway_mergesort_tag());
 #else
   std::sort(first, last);
 #endif

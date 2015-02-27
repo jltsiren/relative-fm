@@ -309,9 +309,10 @@ testIndex(std::string ref_name, std::string seq_name,
 
   if(tags & TAG_BUILD_INDEXES)
   {
+    align_parameters parameters; parameters.sorted_alphabet = !(tags & TAG_ROPEBWT2_ALPHABET);
     SimpleFM<ReferenceBWTType> seq(seq_name, mode);
     if(tags & TAG_ROPEBWT2_ALPHABET) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
-    RelativeFM<ReferenceBWTType, SequenceType> rfm(ref, seq, !(tags & TAG_ROPEBWT2_ALPHABET));
+    RelativeFM<ReferenceBWTType, SequenceType> rfm(ref, seq, parameters);
     testIndex(name, rfm, patterns, chars, tags);
   }
   else

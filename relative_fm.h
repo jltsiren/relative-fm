@@ -8,6 +8,24 @@ namespace relative
 
 //------------------------------------------------------------------------------
 
+struct align_parameters
+{
+  const static uint64_t BLOCK_SIZE  = 1024; // Split the BWTs into blocks of this size or less.
+  const static uint64_t MAX_DEPTH   = 32;   // Maximum length of a pattern used to split the BWTs.
+  const static uint64_t SEED_LENGTH = 4;    // Generate all patterns of this length before parallelizing.
+
+  align_parameters() :
+    block_size(BLOCK_SIZE), max_depth(MAX_DEPTH), seed_length(SEED_LENGTH),
+    sorted_alphabet(true)
+  {
+  }
+
+  uint64_t block_size, max_depth, seed_length;
+  bool     sorted_alphabet; // comp values are sorted by character values.
+};
+
+//------------------------------------------------------------------------------
+
 template<class ReferenceBWTType, class SequenceType>
 void
 getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vector& positions, uint64_t n);
@@ -15,8 +33,8 @@ getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vecto
 template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
-  uint64_t block_size, uint64_t max_depth, uint64_t& lcs, bool sorted_alphabet, bool print);
+  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t& lcs,
+  const align_parameters& parameters, bool print);
 
 //------------------------------------------------------------------------------
 
@@ -88,9 +106,6 @@ template<class ReferenceBWTType = bwt_type, class SequenceType = bwt_type>
 class RelativeFM
 {
 public:
-  const static uint64_t BLOCK_SIZE  = 1024; // Split the BWTs into blocks of this size or less.
-  const static uint64_t MAX_DEPTH   = 32;   // Maximum length of a pattern used to split the BWTs.
-
   typedef SimpleFM<ReferenceBWTType> reference_type;
 
   /*
@@ -107,14 +122,15 @@ public:
     If the alphabet is not sorted, only characters in seq.alpha will be considered for partitioning
     the BWTs.
   */
-  RelativeFM(const reference_type& ref, const reference_type& seq, bool sorted_alphabet = true, bool print = false):
+  RelativeFM(const reference_type& ref, const reference_type& seq,
+    const align_parameters parameters = align_parameters(), bool print = false) :
     reference(ref)
   {
-    this->m_size = seq.bwt.size();
+    this->m_size = seq.size();
 
     uint64_t lcs_length = 0;
     bit_vector ref_lcs, seq_lcs;
-    alignBWTs(ref, seq, ref_lcs, seq_lcs, BLOCK_SIZE, MAX_DEPTH, lcs_length, sorted_alphabet, print);
+    alignBWTs(ref, seq, ref_lcs, seq_lcs, lcs_length, parameters, print);
 
     getComplement(ref.bwt, this->ref_minus_lcs, ref_lcs, lcs_length);
     getComplement(seq.bwt, this->seq_minus_lcs, seq_lcs, lcs_length);
@@ -264,7 +280,7 @@ private:
     this->seq_minus_lcs.load(input);
     this->bwt_lcs.load(input);
     this->alpha.load(input);
-    this->m_size = this->reference.bwt.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
+    this->m_size = this->reference.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
   }
 
   /*
@@ -334,6 +350,26 @@ getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vecto
 
 //------------------------------------------------------------------------------
 
+/*
+  Ranges in ref and seq matching the pattern.
+*/
+struct record_type
+{
+  range_type  left, right;
+  std::string pattern;
+  bool        onlyNs, endmarker;
+
+  record_type(range_type lt, range_type rt, const std::string& p, bool n, bool e) :
+    left(lt), right(rt), pattern(p), onlyNs(n), endmarker(e)
+  {
+  }
+};
+
+inline std::ostream& operator<<(std::ostream& stream, const record_type& record)
+{
+  return stream << "(" << record.left << ", " << record.right << ")";
+}
+
 struct short_record_type
 {
 public:
@@ -342,6 +378,13 @@ public:
   {
     this->right.first = (this->right.first << 1) | n;
     this->right.second = (this->right.second << 1) | e;
+  }
+
+  short_record_type(const record_type& source) :
+    left(source.left), right(source.right)
+  {
+    this->right.first = (this->right.first << 1) | source.onlyNs;
+    this->right.second = (this->right.second << 1) | source.endmarker;
   }
 
   inline range_type first() const { return this->left; }
@@ -478,43 +521,36 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
 
 //------------------------------------------------------------------------------
 
-const static uint64_t ALIGN_BWTS_SEED_LENGTH = 3; // Generate all patterns of this length.
-
-/*
-  Ranges in ref and seq matching the pattern.
-*/
-struct record_type
-{
-  range_type  left, right;
-  std::string pattern;
-  bool        onlyNs, endmarker;
-
-  record_type(range_type lt, range_type rt, const std::string& p, bool n, bool e) :
-    left(lt), right(rt), pattern(p), onlyNs(n), endmarker(e)
-  {
-  }
-};
-
-inline std::ostream& operator<<(std::ostream& stream, const record_type& record)
-{
-  return stream << "(" << record.left << ", " << record.right << ")";
-}
-
 template<class ReferenceType>
-uint64_t
+void
 processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
   const ReferenceType& ref, const ReferenceType& seq,
-  uint64_t block_size, uint64_t max_depth,
-  std::vector<short_record_type>& results)
+  std::vector<short_record_type>& results,
+  const align_parameters& parameters)
 {
-  uint64_t intersection = 0;
   std::stack<record_type> record_stack; record_stack.push(root);
   while(!(record_stack.empty()))
   {
     record_type curr = record_stack.top(); record_stack.pop();
-    if(curr.endmarker)  // New condition: don't continue patterns ending with an endmarker.
+    if(length(curr.left) <= parameters.block_size || length(curr.right) <= parameters.block_size || curr.endmarker)
     {
-      results.push_back(short_record_type(curr.left, curr.right, curr.onlyNs, curr.endmarker));
+      results.push_back(short_record_type(curr));
+      continue;
+    }
+    if(curr.pattern.length() >= parameters.max_depth)
+    {
+#ifdef VERBOSE_STATUS_INFO
+#ifdef _OPENMP
+      #pragma omp critical (stderr)
+#endif
+      {
+        std::cerr << "Pattern length became " << curr.pattern.length() << " on ranges "
+                  << std::make_pair(curr.left, curr.right) << std::endl;
+        std::cerr << "  Range lengths: " << std::make_pair(length(curr.left), length(curr.right)) << std::endl;
+        std::cerr << "  The pattern was: " << curr.pattern << std::endl;
+      }
+#endif
+      results.push_back(short_record_type(curr));
       continue;
     }
 
@@ -524,64 +560,33 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
       pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
       range_type left = ref.find(pattern.begin(), pattern.end()); if(isEmpty(left)) { continue; }
       range_type right = seq.find(pattern.begin(), pattern.end()); if(isEmpty(right)) { continue; }
-
-      bool N_pattern = (curr.onlyNs && alphabet[i - 1] == 'N');
-      if(length(left) > block_size && length(right) > block_size && pattern.length() < max_depth)
-      {
-        record_stack.push(record_type(left, right, pattern, N_pattern, (i == 1)));
-      }
-      else
-      {
-#ifdef VERBOSE_STATUS_INFO
-        if(pattern.length() >= max_depth)
-        {
-#ifdef _OPENMP
-          #pragma omp critical (stderr)
-#endif
-          {
-            std::cerr << "Pattern length became " << pattern.length() << " on ranges "
-                      << std::make_pair(left, right) << std::endl;
-            std::cerr << "  Range lengths: " << std::make_pair(length(left), length(right)) << std::endl;
-            std::cerr << "  The pattern was: " << pattern << std::endl;
-          }
-        }
-#endif
-        intersection += std::min(length(left), length(right));
-        results.push_back(short_record_type(left, right, N_pattern, (i == 1)));
-      }
+      bool onlyNs = (curr.onlyNs && alphabet[i - 1] == 'N'), endmarker = (i == 1);
+      record_stack.push(record_type(left, right, pattern, onlyNs, endmarker));
     }
   }
-  return intersection;
 }
 
 template<class ReferenceType>
 void
 generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint64_t sigma,
   const ReferenceType& ref, const ReferenceType& seq,
-  uint64_t len)
+  uint64_t seed_length)
 {
   std::stack<record_type> record_stack;
-  record_stack.push(record_type(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true, false));
+  record_stack.push(record_type(range_type(0, ref.size() - 1), range_type(0, seq.size() - 1), "", true, false));
+  record_array.clear();
   while(!(record_stack.empty()))
   {
     record_type curr = record_stack.top(); record_stack.pop();
+    if(curr.pattern.length() >= seed_length) { record_array.push_back(curr); continue; }
     std::string pattern = curr.pattern + " ";
-
     for(uint64_t i = sigma; i > 0; i--)
     {
       pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
       range_type left = ref.find(pattern.begin(), pattern.end()); if(isEmpty(left)) { continue; }
       range_type right = seq.find(pattern.begin(), pattern.end()); if(isEmpty(right)) { continue; }
-
-      bool N_pattern = (curr.onlyNs && alphabet[i - 1] == 'N');
-      if(pattern.length() < len && i > 1) // Only continue patterns that don't end with an endmarker.
-      {
-        record_stack.push(record_type(left, right, pattern, N_pattern, false));
-      }
-      else
-      {
-        record_array.push_back(record_type(left, right, pattern, N_pattern, (i == 1)));
-      }
+      bool onlyNs = (curr.onlyNs && alphabet[i - 1] == 'N'), endmarker = (i == 1);
+      record_stack.push(record_type(left, right, pattern, onlyNs, endmarker));
     }
   }
 }
@@ -589,20 +594,20 @@ generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint
 template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
-  uint64_t block_size, uint64_t max_depth, uint64_t& lcs, bool sorted_alphabet, bool print)
+  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t& lcs,
+  const align_parameters& parameters, bool print)
 {
   if(print)
   {
-    std::cout << "Reference size: " << ref.bwt.size() << std::endl;
-    std::cout << "Target size: " << seq.bwt.size() << std::endl;
+    std::cout << "Reference size: " << ref.size() << std::endl;
+    std::cout << "Target size: " << seq.size() << std::endl;
   }
   util::clear(ref_lcs); util::clear(seq_lcs);
 
   // Build the union of the alphabets.
   uint64_t sigma = 0;
   uint8_t alphabet[256];
-  if(sorted_alphabet)
+  if(parameters.sorted_alphabet)
   {
     for(uint64_t c = 0; c < 256; c++)
     {
@@ -625,39 +630,56 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   {
 #ifdef _OPENMP
     std::vector<record_type> record_array;
-    generatePatterns(record_array, alphabet, sigma, ref, seq, ALIGN_BWTS_SEED_LENGTH);
+    generatePatterns(record_array, alphabet, sigma, ref, seq, parameters.seed_length);
     #pragma omp parallel for schedule(dynamic, 1)
     for(uint64_t i = 0; i < record_array.size(); i++)
     {
       std::vector<short_record_type> result_buffer;
-      uint64_t temp =
-        processSubtree(record_array[i], alphabet, sigma, ref, seq, block_size, max_depth, result_buffer);
+      processSubtree(record_array[i], alphabet, sigma, ref, seq, result_buffer, parameters);
       #pragma omp critical (alignbwts)
       {
-        intersection += temp;
         results.insert(results.end(), result_buffer.begin(), result_buffer.end());
       }
     }
     short_record_comparator comp;
-    parallelSort(results.begin(), results.end(), comp);
+    parallelMergeSort(results.begin(), results.end(), comp);
 #else
-    record_type root(range_type(0, ref.bwt.size() - 1), range_type(0, seq.bwt.size() - 1), "", true, false);
-    intersection = processSubtree(root, alphabet, sigma, ref, seq, block_size, max_depth, results);
+    record_type root(range_type(0, ref.size() - 1), range_type(0, seq.size() - 1), "", true, false);
+    processSubtree(root, alphabet, sigma, ref, seq, results, parameters);
 #endif
   }
   if(print)
   {
+    uint64_t ref_missed = 0, seq_missed = 0, ref_expect = 0, seq_expect = 0, ref_overlap = 0, seq_overlap = 0;
+    for(uint64_t i = 0; i < results.size(); i++)
+    {
+      range_type first = results[i].first(), second = results[i].second();
+      intersection += std::min(length(first), length(second));
+      if(first.first < ref_expect) { ref_overlap++; }
+      ref_missed += first.first - ref_expect; ref_expect = first.second + 1;
+      if(second.first < seq_expect) { seq_overlap++; }
+      seq_missed += second.first - seq_expect; seq_expect = second.second + 1;
+    }
+    ref_missed += ref.size() - ref_expect; seq_missed += seq.size() - seq_expect;
+
     std::cout << "Found " << results.size() << " ranges with intersection length " << intersection
               << " in " << (readTimer() - timestamp) << " seconds" << std::endl;
-    std::cout << "Partitioning losses: reference " << (ref.bwt.size() - intersection)
-              << ", target " << (seq.bwt.size() - intersection) << std::endl;
+    std::cout << "Partitioning misses: reference " << ref_missed
+              << ", target " << seq_missed << std::endl;
+    std::cout << "Partitioning losses: reference " << (ref.size() - intersection - ref_missed)
+              << ", target " << (seq.size() - intersection - seq_missed) << std::endl;
+    if(ref_overlap > 0 || seq_overlap > 0)
+    {
+      std::cout << "Overlapping ranges: reference " << ref_overlap << ", target " << seq_overlap << std::endl;
+      std::cout << "(There is a bug somewhere)" << std::endl;
+    }
   }
 
   // Find the approximate LCS using the partitioning.
   timestamp = readTimer(); lcs = 0;
   uint64_t losses = 0;
-  util::assign(ref_lcs, bit_vector(ref.bwt.size(), 0));
-  util::assign(seq_lcs, bit_vector(seq.bwt.size(), 0));
+  util::assign(ref_lcs, bit_vector(ref.size(), 0));
+  util::assign(seq_lcs, bit_vector(seq.size(), 0));
 #ifdef _OPENMP
   #ifdef VERBOSE_STATUS_INFO
   uint64_t processed = 0, percentage = 1;
