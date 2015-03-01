@@ -16,8 +16,13 @@ main(int argc, char** argv)
   if(argc < 3)
   {
     std::cerr << "Usage: align_bwts [parameters] ref seq1 [seq2 ...]" << std::endl;
-    std::cerr << "  -b N  Set BWT block size to N." << std::endl;
-    std::cerr << "  -d N  Set maximum depth to N." << std::endl;
+    std::cerr << "  -b N  Set BWT block size to N (default "
+              << align_parameters::BLOCK_SIZE << ")." << std::endl;
+    std::cerr << "  -d N  Set maximum diagonal in LCS computation to N (default "
+              << align_parameters::MAX_D << ")" << std::endl;
+    std::cerr << "  -l N  Partition by patterns of length up to N (default "
+              << align_parameters::MAX_LENGTH << ")." << std::endl;
+    std::cerr << "  -p    Preallocate buffers for LCS computation." << std::endl;
     std::cerr << "  -r    BWTs were built by ropebwt2." << std::endl;
     std::cerr << std::endl;
     return 1;
@@ -26,14 +31,18 @@ main(int argc, char** argv)
   LoadMode mode = mode_plain;
   align_parameters parameters;
   int c = 0;
-  while((c = getopt(argc, argv, "b:d:r")) != -1)
+  while((c = getopt(argc, argv, "b:d:l:pr")) != -1)
   {
     switch(c)
     {
     case 'b':
       parameters.block_size = atol(optarg); break;
     case 'd':
-      parameters.max_depth = atol(optarg); break;
+      parameters.max_d = atol(optarg); break;
+    case 'l':
+      parameters.max_length = atol(optarg); break;
+    case 'p':
+      parameters.preallocate = true; break;
     case 'r':
       mode = mode_ropebwt2; parameters.sorted_alphabet = false; break;
     case '?':
@@ -48,9 +57,11 @@ main(int argc, char** argv)
   std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
 #endif
   std::cout << std::endl;
-  std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
   std::cout << "Block size: " << parameters.block_size << std::endl;
-  std::cout << "Maximum depth: " << parameters.max_depth << std::endl;
+  std::cout << "Maximum diagonal: " << parameters.max_d << std::endl;
+  std::cout << "Maximum length: " << parameters.max_length << std::endl;
+  std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
+  std::cout << "Buffers: " << (parameters.preallocate ? "preallocated" : "on demand") << std::endl;
   std::cout << std::endl;
   std::cout << "Reference: " << argv[optind] << std::endl;
   std::cout << std::endl;

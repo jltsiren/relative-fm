@@ -20,21 +20,18 @@ mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buf
     if(temp > max_f) { max_c = c; max_f = temp; }
   }
 
+#ifdef _OPENMP
+  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
+#else
+  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
+#endif
   for(uint64_t i = 0, found = 0; i < length(ref_range) && found < max_f; i++)
   {
-#ifdef _OPENMP
-    if(ref_buffer[i] == max_c) { ref_lcs[i] = 1; found++; }
-#else
-    if(ref_buffer[i] == max_c) { ref_lcs[ref_range.first + i] = 1; found++; }
-#endif
+    if(ref_buffer[i] == max_c) { ref_lcs[ref_padding + i] = 1; found++; }
   }
   for(uint64_t i = 0, found = 0; i < length(seq_range) && found < max_f; i++)
   {
-#ifdef _OPENMP
-    if(seq_buffer[i] == max_c) { seq_lcs[i] = 1; found++; }
-#else
-    if(seq_buffer[i] == max_c) { seq_lcs[seq_range.first + i] = 1; found++; }
-#endif
+    if(seq_buffer[i] == max_c) { seq_lcs[seq_padding + i] = 1; found++; }
   }
 
 #ifdef VERBOSE_STATUS_INFO
@@ -68,6 +65,11 @@ matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
 {
   uint64_t ref_pos = 0, seq_pos = 0, found = 0;
   range_type ref_run(0, 0), seq_run(0, 0);
+#ifdef _OPENMP
+  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
+#else
+  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
+#endif
   while(ref_pos < length(ref_range) && seq_pos < length(seq_range))
   {
     if(ref_run.second <= ref_pos) // Find the next ref_run if needed.
@@ -85,11 +87,7 @@ matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
       uint64_t run_length = std::min(ref_run.second - ref_pos, seq_run.second - seq_pos);
       for(uint64_t i = 0; i < run_length; i++)
       {
-#ifdef _OPENMP
-        ref_lcs[ref_pos + i] = 1; seq_lcs[seq_pos + i] = 1;
-#else
-        ref_lcs[ref_range.first + ref_pos + i] = 1; seq_lcs[seq_range.first + seq_pos + i] = 1;
-#endif
+        ref_lcs[ref_padding + ref_pos + i] = 1; seq_lcs[seq_padding + seq_pos + i] = 1;
       }
       ref_pos = ref_run.second; seq_pos = seq_run.second; found += run_length;
     }
@@ -117,6 +115,32 @@ matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
   }
 #endif
   return range_type(found, std::min(length(ref_range), length(seq_range)) - found);
+}
+
+//------------------------------------------------------------------------------
+
+void
+copyBits(const bit_vector& source, bit_vector& target, range_type range)
+{
+  // Copy the first bits.
+  uint64_t offset = source.size() - length(range);
+  uint64_t bits = std::min((uint64_t)64, source.size()) - offset;
+  uint64_t val = source.get_int(offset, bits);
+  target.set_int(range.first, val, bits);
+
+  // Copy the bulk of the bits.
+  for(uint64_t source_pos = 1, target_pos = (range.first + bits) / 64;
+      source_pos < source.size() / 64; source_pos++, target_pos++)
+  {
+    target.data()[target_pos] = source.data()[source_pos];
+  }
+
+  // Copy the last bits.
+  if(source.size() > 64 && (bits = source.size() % 64) > 0)
+  {
+    val = source.get_int(source.size() - bits, bits);
+    target.set_int(range.second + 1 - bits, val, bits);
+  }
 }
 
 //------------------------------------------------------------------------------

@@ -63,12 +63,6 @@ bitlength(uint64_t val)
   return bits::hi(val) + 1;
 }
 
-inline uint32_t mapToUint(int32_t val)
-{
-  if(val >= 0) { return 2 * val; }
-  else         { return 2 * (-val) - 1; }
-}
-
 //------------------------------------------------------------------------------
 
 template<class A>

@@ -11,17 +11,23 @@ namespace relative
 struct align_parameters
 {
   const static uint64_t BLOCK_SIZE  = 1024; // Split the BWTs into blocks of this size or less.
-  const static uint64_t MAX_DEPTH   = 32;   // Maximum length of a pattern used to split the BWTs.
+  const static uint64_t MAX_LENGTH  = 32;   // Maximum length of a pattern used to split the BWTs.
   const static uint64_t SEED_LENGTH = 4;    // Generate all patterns of this length before parallelizing.
+  const static int      MAX_D       = 8192; // Number of diagonals to consider in Myers' algorithm.
+
+  // Default size for on demand LCS buffer; enough for d = 100.
+  const static uint64_t BUFFER_SIZE = 103 * 101;
 
   align_parameters() :
-    block_size(BLOCK_SIZE), max_depth(MAX_DEPTH), seed_length(SEED_LENGTH),
-    sorted_alphabet(true)
+    block_size(BLOCK_SIZE), max_length(MAX_LENGTH), seed_length(SEED_LENGTH), max_d(MAX_D),
+    sorted_alphabet(true), preallocate(false)
   {
   }
 
-  uint64_t block_size, max_depth, seed_length;
+  uint64_t block_size, max_length, seed_length;
+  int      max_d;
   bool     sorted_alphabet; // comp values are sorted by character values.
+  bool     preallocate;     // Use preallocated arrays in Myers' algorithm.
 };
 
 //------------------------------------------------------------------------------
@@ -107,14 +113,6 @@ class RelativeFM
 {
 public:
   typedef SimpleFM<ReferenceBWTType> reference_type;
-
-  /*
-    Maximum diagonal in LCS computation. If further diagonals would be needed, only the most frequent
-    character in the ranges will be matched. Maximal memory usage will be around
-    4 * MAX_D * MAX_D bytes (+ SimpleFM for the reference and the target sequence and the
-    current intervals as std::vector<uint8_t>).
-  */
-  const static int MAX_D = 10000;
 
 //------------------------------------------------------------------------------
 
@@ -365,6 +363,15 @@ struct record_type
   }
 };
 
+// Sort by longest average length in descending order.
+struct record_comparator
+{
+  inline bool operator() (const record_type& a, const record_type& b)
+  {
+    return (length(a.left) + length(a.right) > length(b.left) + length(b.right));
+  }
+};
+
 inline std::ostream& operator<<(std::ostream& stream, const record_type& record)
 {
   return stream << "(" << record.left << ", " << record.right << ")";
@@ -419,6 +426,9 @@ range_type matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq
   range_type ref_range, range_type seq_range,
   const uint8_t* alphabet, uint64_t sigma);
 
+// Diagonal i has 2i+3 elements: -(i+1) to (i+1).
+inline int offsetFor(int pos, int d) { return (d + 3) * d + pos + 1; }
+
 /*
   Eugene W. Myers: An O(ND) Difference Algorithm and Its Variations. Algorithmica, 1986.
 
@@ -426,13 +436,23 @@ range_type matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq
   should have the same length as the corresponding ranges. Without OpenMP, they are the
   global bitvectors, and the function updates the range specified by ref_range/seq_range.
   The return value is (LCS length, heuristic losses).
+
+  max_d specifies the maximum diagonal in LCS computation. If further diagonals would be
+  needed, only the most frequent character in the ranges will be matched. Maximal memory
+  usage will be around 4 * MAX_D * MAX_D bytes (+ SimpleFM for the reference and the
+  target sequence and the current intervals as std::vector<uint8_t>).
+
+  To use a preallocated buffer, set parameters.preallocated and pass a pointer to a buffer
+  of size at least (max_d + 3) * (max_d + 1).
 */
 template<class ReferenceType>
 range_type
 greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& ref_lcs, bit_vector& seq_lcs,
   short_record_type& record,
-  const uint8_t* alphabet, uint64_t sigma)
+  const uint8_t* alphabet, uint64_t sigma,
+  const align_parameters& parameters,
+  std::vector<int>* buf)
 {
   range_type ref_range = record.first(), seq_range = record.second();
   bool onlyNs = record.onlyNs(), endmarker = record.endmarker();
@@ -445,38 +465,42 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
   {
     return matchRuns(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range, alphabet, sigma);
   }
-  else if(onlyNs || abs(ref_len - seq_len) > RelativeFM<>::MAX_D)
+  else if(onlyNs || abs(ref_len - seq_len) > parameters.max_d)
   {
     return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
   }
 
-  // v[k] stores how many characters of ref have been processed on diagonal k.
-  std::vector<std::vector<int> > store;
-  std::vector<int> v(3, 0); // v[mapToUint(1)] = 0;
+  // buffer[offsetFor(k, d)] stores how many characters of ref have been processed on diagonal k.
   bool found = false;
-  for(int d = 0; !found && d <= RelativeFM<>::MAX_D; d++)
+  if(!(parameters.preallocate)) { buf = new std::vector<int>; buf->reserve(align_parameters::BUFFER_SIZE); }
+  std::vector<int>& buffer = *buf; buffer.resize(3, 0);
+  int d = 0;  // Current diagonal; becomes the number of diagonals.
+  for(d = 0; !found && d <= parameters.max_d; d++)
   {
     for(int k = -d; k <= d; k += 2)
     {
       int x = 0;
-      if(k == -d || (k != d && v[mapToUint(k - 1)] < v[mapToUint(k + 1)]))
+      if(k == -d || (k != d && buffer[offsetFor(k - 1, d)] < buffer[offsetFor(k + 1, d)]))
       {
-        x = v[mapToUint(k + 1)];
+        x = buffer[offsetFor(k + 1, d)];
       }
       else
       {
-        x = v[mapToUint(k - 1)] + 1;
+        x = buffer[offsetFor(k - 1, d)] + 1;
       }
       int y = x - k;
       while(x < ref_len && y < seq_len && ref_buffer[x] == seq_buffer[y]) { x++; y++; }
-      v[mapToUint(k)] = x;
+      buffer[offsetFor(k, d)] = x;
       if(x >= ref_len && y >= seq_len) { found = true; }
     }
-    store.push_back(v);
-    v.resize(v.size() + 2, 0);
+    buffer.resize(buffer.size() + 2 * d + 5, 0);  // Add space for diagonal d+1.
+    for(int i = 0, curr_pos = offsetFor(-d, d), next_pos = offsetFor(-d, d + 1); i < 2 * d + 3; i++)
+    {
+      buffer[next_pos + i] = buffer[curr_pos + i];  // Initialize the next diagonal.
+    }
 
     // Too much memory required, match just the most frequent characters.
-    if(d >= RelativeFM<>::MAX_D && !found)
+    if(d >= parameters.max_d && !found)
     {
 #ifdef VERBOSE_STATUS_INFO
 #ifdef _OPENMP
@@ -484,38 +508,38 @@ greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
 #endif
       std::cerr << "MAX_D exceeded on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
 #endif
+      if(!(parameters.preallocate)) { delete buf; buf = 0; }
       return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
     }
-  }
-  {
-    std::vector<int> temp; v.swap(temp);  // Delete the contents.
   }
 
   // Extract the LCS.
   uint64_t lcs = 0;
-  for(int d = store.size() - 1, k = ref_len - seq_len; d >= 0; d--)
+  d--;  // The last diagonal.
+#ifdef _OPENMP
+  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
+#else
+  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
+#endif
+  for(int k = ref_len - seq_len; d >= 0; d--)
   {
     int x_lim = 0, next_k = 0;
     if(d == 0) { x_lim = 0; }
-    else if(k == -d || (k != d && store[d - 1][mapToUint(k - 1)] < store[d - 1][mapToUint(k + 1)]))
+    else if(k == -d || (k != d && buffer[offsetFor(k - 1, d - 1)] < buffer[offsetFor(k + 1, d - 1)]))
     {
-      x_lim = store[d - 1][mapToUint(k + 1)]; next_k = k + 1;
+      x_lim = buffer[offsetFor(k + 1, d - 1)]; next_k = k + 1;
     }
-    else { x_lim = store[d - 1][mapToUint(k - 1)] + 1; next_k = k - 1; }
-    for(int x = store[d][mapToUint(k)]; x > x_lim; x--)
+    else { x_lim = buffer[offsetFor(k - 1, d - 1)] + 1; next_k = k - 1; }
+    for(int x = buffer[offsetFor(k, d)]; x > x_lim; x--)
     {
-#ifdef _OPENMP
-      ref_lcs[x - 1] = 1;
-      seq_lcs[x - 1 - k] = 1;
-#else
-      ref_lcs[ref_range.first + x - 1] = 1;
-      seq_lcs[seq_range.first + x - 1 - k] = 1;
-#endif
+      ref_lcs[ref_padding + x - 1] = 1;
+      seq_lcs[seq_padding + x - 1 - k] = 1;
       lcs++;
     }
     k = next_k;
   }
 
+  if(!(parameters.preallocate)) { delete buf; buf = 0; }
   return range_type(lcs, 0);
 }
 
@@ -537,7 +561,7 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
       results.push_back(short_record_type(curr));
       continue;
     }
-    if(curr.pattern.length() >= parameters.max_depth)
+    if(curr.pattern.length() >= parameters.max_length)
     {
 #ifdef VERBOSE_STATUS_INFO
 #ifdef _OPENMP
@@ -589,7 +613,17 @@ generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint
       record_stack.push(record_type(left, right, pattern, onlyNs, endmarker));
     }
   }
+
+  // Load balancing works better when long ranges are processed first.
+  record_comparator comp;
+  sequentialSort(record_array.begin(), record_array.end(), comp);
 }
+
+/*
+  Copy the last length(range) bits from source to target[range]. We assume that source
+  has been paddes so that word boundaries are in the same positions in both bitvectors.
+*/
+void copyBits(const bit_vector& source, bit_vector& target, range_type range);
 
 template<class ReferenceType>
 void
@@ -677,36 +711,36 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
   // Find the approximate LCS using the partitioning.
   timestamp = readTimer(); lcs = 0;
-  uint64_t losses = 0;
+  uint64_t losses = 0, processed = 0, percentage = 1;
   util::assign(ref_lcs, bit_vector(ref.size(), 0));
   util::assign(seq_lcs, bit_vector(seq.size(), 0));
 #ifdef _OPENMP
-  #ifdef VERBOSE_STATUS_INFO
-  uint64_t processed = 0, percentage = 1;
-  #endif
-  #pragma omp parallel for schedule(dynamic)
+  uint64_t threads = omp_get_max_threads();
+  uint64_t chunk = std::max((uint64_t)1, results.size() / (threads * threads));
+  std::vector<std::vector<int>*> buffers(threads, 0);
+  if(parameters.preallocate)
+  {
+    for(uint64_t i = 0; i < threads; i++)
+    {
+      buffers[i] = new std::vector<int>;
+      buffers[i]->reserve((parameters.max_d + 3) * (parameters.max_d + 1));
+    }
+  }
+  #pragma omp parallel for schedule(dynamic, chunk)
   for(uint64_t i = 0; i < results.size(); i++)
   {
+    // Ensure that ref_buffer and seq_buffer are aligned in the same way as ref_lcs and seq_lcs.
     range_type ref_range = results[i].first(), seq_range = results[i].second();
-    bit_vector ref_buffer(length(ref_range), 0), seq_buffer(length(seq_range), 0);
-    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i], alphabet, sigma);
+    bit_vector ref_buffer(length(ref_range) + ref_range.first % 64, 0);
+    bit_vector seq_buffer(length(seq_range) + seq_range.first % 64, 0);
+    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i],
+      alphabet, sigma, parameters, buffers[omp_get_thread_num()]);
     #pragma omp critical (alignbwts)
     {
-      for(uint64_t j = ref_range.first; j <= ref_range.second; j += 64)
-      {
-        uint64_t bits = std::min((uint64_t)64, ref_range.second + 1 - j);
-        uint64_t temp = ref_buffer.get_int(j - ref_range.first, bits);
-        ref_lcs.set_int(j, temp, bits);
-      }
-      for(uint64_t j = seq_range.first; j <= seq_range.second; j += 64)
-      {
-        uint64_t bits = std::min((uint64_t)64, seq_range.second + 1 - j);
-        uint64_t temp = seq_buffer.get_int(j - seq_range.first, bits);
-        seq_lcs.set_int(j, temp, bits);
-      }
+      copyBits(ref_buffer, ref_lcs, ref_range);
+      copyBits(seq_buffer, seq_lcs, seq_range);
       lcs += temp.first; losses += temp.second;
     }
-  #ifdef VERBOSE_STATUS_INFO
     #pragma omp critical (stderr)
     {
       processed++;
@@ -718,14 +752,32 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
         percentage++;
       }
     }
-  #endif
+  }
+  if(parameters.preallocate)
+  {
+    for(uint64_t i = 0; i < threads; i++) { delete buffers[i]; buffers[i] = 0; }
   }
 #else
+  std::vector<int>* buffer = 0;
+  if(parameters.preallocate)
+  {
+    buffer = new std::vector<int>;
+    buffer.reserve((parameters.max_d + 3) * (parameters.max_d + 1));
+  }
   for(uint64_t i = 0; i < results.size(); i++)
   {
-    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i], alphabet, sigma);
+    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i], alphabet, sigma, parameters, buffer);
     lcs += temp.first; losses += temp.second;
+    processed++;
+    if(processed >= (percentage / 100.0) * results.size())
+    {
+      double curr = readTimer();
+      std::cerr << "Processed " << processed << " / " << results.size() << " ranges in "
+                << (curr - timestamp) << " seconds" << std::endl;
+      percentage++;
+    }
   }
+  if(parameters.preallocate) { delete buffer; buffer = 0; }
 #endif
   if(print)
   {
