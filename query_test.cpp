@@ -22,10 +22,11 @@ const uint64_t SEQ_SEQUENCE   = 4;
 const uint64_t SEQ_RLSEQUENCE = 5;
 const uint64_t SEQ_REPRESENTATIONS = 6; // Largest representation identifier + 1.
 
-const uint64_t TAG_ROPEBWT2_ALPHABET = 0x1;
-const uint64_t TAG_BUILD_INDEXES     = 0x2;
-const uint64_t TAG_NATIVE_FORMAT     = 0x4;
-const uint64_t TAG_ROPEBWT2_FORMAT   = 0x8;
+const uint64_t TAG_ROPEBWT2_ALPHABET = 0x01;
+const uint64_t TAG_BUILD_INDEXES     = 0x02;
+const uint64_t TAG_NATIVE_FORMAT     = 0x04;
+const uint64_t TAG_ROPEBWT2_FORMAT   = 0x08;
+const uint64_t TAG_LOCATE            = 0x10;
 
 uint64_t seqRepresentation(uint8_t type);
 std::string indexName(uint64_t representation);
@@ -59,6 +60,7 @@ main(int argc, char** argv)
     std::cerr << "Tags:" << std::endl;
     std::cerr << "  a    Use ropebwt2 alphabet (default: off)" << std::endl;
     std::cerr << "  b    Build relative indexes (default: off)" << std::endl;
+    std::cerr << "  L    Execute locate() queries (default: off)" << std::endl;
     std::cerr << "  n    Load SimpleFMs in native format (default: off)" << std::endl;
     std::cerr << "  2    Load SimpleFMs in ropebwt2 format (default: off)" << std::endl;
     // FIXME Add an option to write the built index?
@@ -247,26 +249,32 @@ main(int argc, char** argv)
     // Tags and the default case.
     case 'a':
       tags ^= TAG_ROPEBWT2_ALPHABET;
-      if(tags & TAG_ROPEBWT2_ALPHABET) { std::cout << "Using ropebwt2 alphabet" << std::endl; }
+      if(tags & TAG_ROPEBWT2_ALPHABET) { std::cout << "Using ropebwt2 alphabet." << std::endl; }
       else { std::cout << "No longer using ropebwt2 alphabet" << std::endl; }
       std::cout << std::endl;
       break;
     case 'b':
       tags ^= TAG_BUILD_INDEXES;
-      if(tags & TAG_BUILD_INDEXES) { std::cout << "Index construction activated" << std::endl; }
-      else { std::cout << "Index construction deactivated" << std::endl; }
+      if(tags & TAG_BUILD_INDEXES) { std::cout << "Index construction activated." << std::endl; }
+      else { std::cout << "Index construction deactivated." << std::endl; }
+      std::cout << std::endl;
+      break;
+    case 'L':
+      tags ^= TAG_LOCATE;
+      if(tags & TAG_LOCATE) { std::cout << "Executing locate() queries." << std::endl; }
+      else { std::cout << "Executing find() queries." << std::endl; }
       std::cout << std::endl;
       break;
     case 'n':
       tags ^= TAG_NATIVE_FORMAT; tags &= ~TAG_ROPEBWT2_FORMAT;
       mode = getMode(tags);
-      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format" << std::endl;
+      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
       std::cout << std::endl;
       break;
     case '2':
       tags ^= TAG_ROPEBWT2_FORMAT; tags &= ~TAG_NATIVE_FORMAT;
       mode = getMode(tags);
-      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format" << std::endl;
+      std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
       std::cout << std::endl;
       break;
     default:
@@ -294,17 +302,32 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
     index.alpha.assign(ROPEBWT2_ALPHABET);
   }
 
+  bool locate = (tags & TAG_LOCATE);
+  if(locate && !(index.supportsLocate(true))) { locate = false; }
+
   double start = readTimer();
   uint64_t found = 0, matches = 0;
+  uint64_t hash = FNV_OFFSET_BASIS;
   for(auto pattern : patterns)
   {
     range_type res = index.find(pattern.begin(), pattern.end());
-    if(length(res) > 0) { found++; matches += length(res); }
+    if(length(res) > 0)
+    {
+      found++; matches += length(res);
+      if(locate)
+      {
+        for(uint64_t i = res.first; i <= res.second; i++)
+        {
+          hash = fnv1a_hash(index.locate(i), hash);
+        }
+      }
+    }
   }
   double seconds = readTimer() - start;
 
   printSize(name, index.reportSize(), index.size());
-  printTime(name, found, matches, chars, seconds);
+  printTime(name, found, matches, chars, seconds, locate);
+  if(locate) { std::cout << "Hash of located positions: " << hash << std::endl; }
   std::cout << std::endl;
 }
 

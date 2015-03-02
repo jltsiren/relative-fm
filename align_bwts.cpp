@@ -19,7 +19,7 @@ main(int argc, char** argv)
     std::cerr << "  -b N  Set BWT block size to N (default "
               << align_parameters::BLOCK_SIZE << ")." << std::endl;
     std::cerr << "  -d N  Set maximum diagonal in LCS computation to N (default "
-              << align_parameters::MAX_D << ")" << std::endl;
+              << align_parameters::MAX_D << ")." << std::endl;
     std::cerr << "  -l N  Partition by patterns of length up to N (default "
               << align_parameters::MAX_LENGTH << ")." << std::endl;
     std::cerr << "  -p    Preallocate buffers for LCS computation." << std::endl;

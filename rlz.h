@@ -6,6 +6,8 @@
 #include <sdsl/suffix_arrays.hpp>
 #include <sdsl/vectors.hpp>
 
+#include "utils.h"
+
 using namespace sdsl;
 
 namespace relative
@@ -126,7 +128,7 @@ struct bv_fmi
 public:
   typedef std::pair<uint64_t, uint64_t> range_type;
 
-  const static uint64_t DEFAULT_BLOCK_SIZE  = 64 * 1048576;
+  const static uint64_t DEFAULT_BLOCK_SIZE  = 64 * MEGABYTE;
   const static uint64_t DEFAULT_SAMPLE_RATE = 127;  // Should be prime with SA order sampling.
 
   explicit bv_fmi(const bit_vector& source,

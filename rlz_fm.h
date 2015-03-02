@@ -38,6 +38,18 @@ public:
   // Do not use with character value 0.
   template<class Iter> range_type find(Iter begin, Iter end) const;
 
+  inline bool supportsLocate(bool print = false) const
+  {
+    if(print)
+    {
+      std::cerr << "RelativeFM::supportsLocate(): The index does not support locate()." << std::endl;
+    }
+    return false;
+  }
+
+  // Call supportsLocate() first.
+  inline uint64_t locate(uint64_t i) const { return i; }
+
   const SimpleFM<>&       reference;
 
   Alphabet                alpha;

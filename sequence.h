@@ -42,6 +42,13 @@ public:
 
   inline uint64_t operator[](uint64_t i) const { return this->data[i]; }
 
+  inline range_type inverse_select(uint64_t i) const
+  {
+    range_type res(0, (*this)[i]);
+    res.first = this->rank(i, res.second);
+    return res;
+  }
+
 private:
   int_vector<0> data, samples;
   uint64_t      sigma;
@@ -61,7 +68,6 @@ public:
   const static uint64_t SAMPLE_RATE = 64;
   const static uint64_t SIGMA = 6;
   const static uint64_t MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
-  const static uint64_t BUFFER_SIZE = 1048576;  // A good buffer size for sequential access with extract().
   typedef uint64_t size_type;
 
   inline static uint64_t charValue(uint8_t code) { return code % SIGMA; }
@@ -143,6 +149,41 @@ public:
       if(seq_pos >= i) { return charValue(this->data[rle_pos]); }
       seq_pos++; rle_pos++; // Move to the first position in the next run.
     }
+  }
+
+  inline range_type inverse_select(uint64_t i) const
+  {
+    range_type res(0, 0);
+    if(i >= this->size()) { return res; }
+
+    uint64_t block = this->block_rank(i);
+    uint64_t rle_pos = block * SAMPLE_RATE;
+    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+
+    // Determine the character.
+    uint64_t block_start = seq_pos;
+    while(true)
+    {
+      seq_pos += runLength(this->data[rle_pos]) - 1;  // The last position in the run.
+      if(seq_pos >= i) { res.second = charValue(this->data[rle_pos]); }
+      seq_pos++; rle_pos++; // Move to the first position in the next run.
+    }
+
+    // Determine the rank.
+    res.first = this->samples[res.second].sum(block);
+    rle_pos = block * SAMPLE_RATE; seq_pos = block_start;
+    while(seq_pos < i)  // Determine the rank.
+    {
+      seq_pos += runLength(this->data[rle_pos]); // The starting position of the next run.
+      if(charValue(this->data[rle_pos]) == res.second)
+      {
+        res.first += runLength(this->data[rle_pos]); // Number of c's before the next run.
+        if(seq_pos > i) { res.first -= seq_pos - i; }
+      }
+      rle_pos++;
+    }
+
+    return res;
   }
 
   template<class ByteVector>

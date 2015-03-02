@@ -13,6 +13,7 @@ namespace relative
 const std::string BWT_EXTENSION = ".bwt";
 const std::string NATIVE_BWT_EXTENSION = ".cbwt";
 const std::string ALPHA_EXTENSION = ".alpha";
+const std::string SAMPLE_EXTENSION = ".samples";
 const std::string SIMPLE_FM_DEFAULT_ALPHABET("\0ACGNT", 6);
 const std::string ROPEBWT2_ALPHABET("\0ACGTN", 6);
 
@@ -28,13 +29,15 @@ printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_
 }
 
 void
-printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint64_t indent)
+printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, bool occs, uint64_t indent)
 {
   std::string padding;
   if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
 
   std::cout << header << ':' << padding << "Found " << found << " patterns with " << matches << " occ in "
-    << seconds << " seconds (" << (inMegabytes(bytes) / seconds) << " MB / s)" << std::endl;
+    << seconds << " seconds (";
+  if(occs) { std::cout << (matches / seconds) << " occ/s)" << std::endl; }
+  else     { std::cout << (inMegabytes(bytes) / seconds) << " MB/s)" << std::endl; }
 }
 
 //------------------------------------------------------------------------------

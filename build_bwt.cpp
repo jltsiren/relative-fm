@@ -1,4 +1,6 @@
+#include <cstdlib>
 #include <fstream>
+#include <unistd.h>
 
 #include <sdsl/construct.hpp>
 
@@ -13,20 +15,41 @@ main(int argc, char** argv)
   if(argc < 2)
   {
     std::cerr << "Usage: build_bwt [options] input1 [input2 ...]" << std::endl;
-    std::cerr << "  -a  Write the alphabet file." << std::endl;
+    std::cerr << "  -a    Write the alphabet file." << std::endl;
+    std::cerr << "  -s N  Sample one out of N SA values (default 0)." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
-  bool write_alphabet = false;
-  int first_arg = 1;
-  if(argv[1][0] == '-' && argv[1][1] == 'a')
+  bool write_alphabet = false, options = false;
+  uint64_t sample_rate = 0;
+  int c = 0;
+  while((c = getopt(argc, argv, "as:")) != -1)
   {
-    write_alphabet = true;
-    first_arg = 2;
+    switch(c)
+    {
+    case 'a':
+      write_alphabet = true; options = true; break;
+    case 's':
+      sample_rate = atol(optarg); options = true; break;
+    case '?':
+      return 2;
+    default:
+      return 3;
+    }
   }
 
-  for(int i = first_arg; i < argc; i++)
+  std::cout << "BWT construction" << std::endl;
+  if(options)
+  {
+    std::cout << "Options:";
+    if(write_alphabet) { std::cout << " alphabet"; }
+    if(sample_rate > 0) { std::cout << " sample_rate=" << sample_rate; }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
+
+  for(int i = optind; i < argc; i++)
   {
     std::string base_name = argv[i];
     std::cout << "File: " << base_name << std::endl;
@@ -47,11 +70,17 @@ main(int argc, char** argv)
       in.read((char*)(text.data()), size); text[size] = 0; in.close();
     }
 
-    // Build BWT.
+    // Build BWT and sample SA.
+    int_vector<0> samples;
     {
       double start = readTimer();
       int_vector<64> sa(size + 1);
       divsufsort64((const unsigned char*)(text.data()), (int64_t*)(sa.data()), size + 1);
+      if(sample_rate > 0)
+      {
+        util::assign(samples, int_vector<0>(size / sample_rate + 1, 0, bitlength(size)));
+        for(uint64_t i = 0; i <= size; i += sample_rate) { samples[i / sample_rate] = sa[i]; }
+      }
       uint8_t* bwt = (uint8_t*)(sa.data()); // Overwrite SA with BWT.
       uint64_t to_add[2] = { (uint64_t)-1, size };
       for(uint64_t i = 0; i <= size; i++) { bwt[i] = text[sa[i] + to_add[sa[i] == 0]]; }
@@ -93,6 +122,22 @@ main(int argc, char** argv)
       {
         text.serialize(out); out.close();
         std::cout << "BWT written to " << filename << std::endl;
+      }
+    }
+
+    // Write SA samples.
+    if(sample_rate > 0)
+    {
+      std::string filename = base_name + SAMPLE_EXTENSION;
+      std::ofstream out(filename.c_str(), std::ios_base::binary);
+      if(!out)
+      {
+        std::cerr << "build_bwt: Cannot open SA sample file " << filename << std::endl;
+      }
+      else
+      {
+        write_member(sample_rate, out); samples.serialize(out); out.close();
+        std::cout << "SA samples written to " << filename << std::endl;
       }
     }
 

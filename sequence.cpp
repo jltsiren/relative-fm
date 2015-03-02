@@ -282,11 +282,11 @@ RLSequence::buildRank()
 uint64_t
 RLSequence::hash(const Alphabet& alpha) const
 {
-  uint64_t val = 0xcbf29ce484222325UL;
+  uint64_t val = FNV_OFFSET_BASIS;
   for(uint64_t i = 0; i < this->runs(); i++)
   {
     uint64_t c = alpha.comp2char[charValue(this->data[i])], l = runLength(this->data[i]);
-    for(uint64_t j = 0; j < l; j++) { val = (val ^ c) * 0x100000001b3UL; }
+    for(uint64_t j = 0; j < l; j++) { val = fnv1a_hash(c, val); }
   }
   return val;
 }
@@ -296,6 +296,8 @@ RLSequence::hash(const Alphabet& alpha) const
 template<>
 SimpleFM<RLSequence>::SimpleFM(const std::string& base_name, LoadMode mode)
 {
+  this->sample_rate = 0;
+
   if(mode == mode_native || mode == mode_ropebwt2)
   {
     std::string filename = base_name + NATIVE_BWT_EXTENSION;
@@ -313,7 +315,9 @@ SimpleFM<RLSequence>::SimpleFM(const std::string& base_name, LoadMode mode)
     RLSequence temp(buffer, buffer.size());
     this->bwt.swap(temp);
   }
+
   this->loadAlphabet(base_name);
+  this->loadSamples(base_name);
 }
 
 template<>

@@ -4,7 +4,6 @@
 #include <sdsl/construct_sa.hpp>
 
 #include "rlz.h"
-#include "utils.h"
 
 namespace relative
 {

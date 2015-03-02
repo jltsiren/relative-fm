@@ -22,7 +22,7 @@ namespace relative
   alphabet in base_name.alpha.
 
   RankStructure must support the following operations:
-    - Queries: [i], rank(i, c)
+    - Queries: [i], rank(i, c), inverse_select(i)
     - Constructor: (), (int_vector_buffer<8>, uint64_t)
     - Basic operations: swap(), size(), load()
     - With the structure as a parameter: serialize(bwt, .., ..)
@@ -36,6 +36,8 @@ public:
   // This constructor has been specialized for SimpleFM<RLSequence>.
   explicit SimpleFM(const std::string& base_name, LoadMode mode = mode_plain)
   {
+    this->sample_rate = 0;
+
     if(mode == mode_native)
     {
       std::string filename = base_name + NATIVE_BWT_EXTENSION;
@@ -58,22 +60,31 @@ public:
       RankStructure temp(buffer, buffer.size());
       this->bwt.swap(temp);
     }
+
     this->loadAlphabet(base_name);
+    this->loadSamples(base_name);
   }
 
   ~SimpleFM()
   {
   }
 
+//------------------------------------------------------------------------------
+
   inline uint64_t size() const { return this->bwt.size(); }
   inline uint64_t sequences() const { return this->alpha.C[1]; }
 
   uint64_t reportSize(bool print = false) const
   {
-    uint64_t bytes = size_in_bytes(this->bwt) + size_in_bytes(this->alpha);
+    uint64_t bwt_bytes = size_in_bytes(this->bwt), sample_bytes = size_in_bytes(this->samples);
+    uint64_t bytes = bwt_bytes + size_in_bytes(this->alpha) + sample_bytes;
 
     if(print)
     {
+#ifdef VERBOSE_OUTPUT
+      printSize("BWT", bwt_bytes, this->size());
+      if(this->sample_rate > 0) { printSize("Samples", sample_bytes, this->size()); }
+#endif
       printSize("Simple FM", bytes, this->size());
       std::cout << std::endl;
     }
@@ -81,7 +92,7 @@ public:
     return bytes;
   }
 
-  void writeTo(const std::string& base_name) const
+  void writeTo(const std::string& base_name, bool native_format = false) const
   {
     {
       std::string filename = base_name + ALPHA_EXTENSION;
@@ -94,16 +105,45 @@ public:
       this->alpha.serialize(output); output.close();
     }
 
+    if(native_format)
+    {
+      std::string filename = base_name + NATIVE_BWT_EXTENSION;
+      std::ofstream output(filename.c_str(), std::ios_base::binary);
+      if(!output)
+      {
+        std::cerr << "SimpleFM::writeTo(): Cannot open native BWT file " << filename << std::endl;
+        return;
+      }
+      this->bwt.serialize(output); output.close();
+    }
+    else
     {
       std::string filename = base_name + BWT_EXTENSION;
-      int_vector_buffer<8> buffer(filename, std::ios::out);
-      for(uint64_t i = 0; i < this->size(); i++)
+      int_vector_buffer<8> output(filename, std::ios::out);
+      int_vector<8> buffer(MEGABYTE, 0);
+      for(uint64_t i = 0; i < this->size(); i += MEGABYTE)
       {
-        buffer[i] = this->alpha.comp2char[this->bwt[i]];
+        range_type range(i, std::min(i + MEGABYTE, this->size()) - 1);
+        this->extractBWT(range, buffer);
+        for(uint64_t j = range.first; j <= range.second; j++) { output[j] = buffer[j - i]; }
       }
-      buffer.close();
+      output.close();
+    }
+
+    if(this->sample_rate > 0)
+    {
+      std::string filename = base_name + SAMPLE_EXTENSION;
+      std::ofstream output(filename.c_str(), std::ios_base::binary);
+      if(!output)
+      {
+        std::cerr << "SimpleFM::writeTo(): Cannot open SA sample file " << filename << std::endl;
+        return;
+      }
+      write_member(this->sample_rate, output); this->samples.serialize(output); output.close();
     }
   }
+
+//------------------------------------------------------------------------------
 
   // Use length(res) == 0 to check whether the range is empty.
   inline range_type LF(range_type range, uint8_t c) const
@@ -142,8 +182,51 @@ public:
     this->extractBWT(range_type(0, this->size() - 1), buffer);
   }
 
+  bool supportsLocate(bool print = false) const
+  {
+    if(this->sample_rate == 0)
+    {
+      if(print)
+      {
+        std::cerr << "SimpleFM::supportsLocate(): The index does not contain SA samples." << std::endl;
+      }
+      return false;
+    }
+    if(this->sequences() > 1)
+    {
+      if(print)
+      {
+        std::cerr << "SimpleFM::supportsLocate(): The index contains more than one sequence." << std::endl;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  // Call supportsLocate() first.
+  uint64_t locate(uint64_t i) const
+  {
+    if(i >= this->size()) { return 0; }
+
+    uint64_t steps = 0;
+    while(i % this->sample_rate != 0)
+    {
+      auto res = this->bwt.inverse_select(i);
+      if(res.second == 0) { return steps; }
+      i = this->alpha.C[res.second] + res.first; steps++;
+    }
+
+    return this->samples[i / this->sample_rate] + steps;
+  }
+
+//------------------------------------------------------------------------------
+
   RankStructure bwt;
-  Alphabet alpha;
+  Alphabet      alpha;
+  uint64_t      sample_rate;
+  int_vector<0> samples;
+
+//------------------------------------------------------------------------------
 
 private:
 
@@ -164,6 +247,16 @@ private:
         return;
       }
       if(temp.assign(SIMPLE_FM_DEFAULT_ALPHABET)) { this->alpha = temp; }
+    }
+  }
+
+  void loadSamples(const std::string& base_name)
+  {
+    std::string filename = base_name + SAMPLE_EXTENSION;
+    std::ifstream in(filename.c_str(), std::ios_base::binary);
+    if(in)
+    {
+      read_member(this->sample_rate, in); this->samples.load(in); in.close();
     }
   }
 

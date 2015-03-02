@@ -21,17 +21,17 @@ using namespace relative;
 
 
 // For bitvector RLZ tests.
-const uint64_t RLZ_SIZE = 128 * (uint64_t)1048576;
+const uint64_t RLZ_SIZE = 128 * MEGABYTE;
 
 // For string RLZ tests.
-const uint64_t STRING_SIZE = 128 * (uint64_t)1048576;
+const uint64_t STRING_SIZE = 128 * MEGABYTE;
 const uint64_t STRING_ALPHABET = 4;
 
 // For bitvector tests.
-const uint64_t BV_SIZE = 1024 * (uint64_t)1048576;
+const uint64_t BV_SIZE = 1024 * MEGABYTE;
 
 // For wavelet tree tests.
-const uint64_t WT_SIZE = 128 * (uint64_t)1048576;
+const uint64_t WT_SIZE = 128 * MEGABYTE;
 const uint8_t  WT_ALPHABET = 4;
 
 // For all tests.

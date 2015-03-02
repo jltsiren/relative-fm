@@ -192,6 +192,7 @@ public:
       printSize("ref_minus_lcs", ref_bytes, this->size());
       printSize("seq_minus_lcs", seq_bytes, this->size());
       printSize("bwt_lcs", lcs_bytes, this->size());
+  #endif
   #ifdef REPORT_RUNS
       std::cout << std::string(16, ' ') << "Ref: " << ref_runs << " runs (gap0 "
         << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
@@ -201,20 +202,6 @@ public:
         << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
         << " MB, run " << (inMegabytes(seq_run) / 8) << " MB, delta "
         << inMegabytes(seq_delta) << " MB)" << std::endl;
-  #endif
-  #else
-      printSize("BWT", bwt_bytes, this->size());
-      printSize("LCS", bitvector_bytes, this->size());
-  #ifdef REPORT_RUNS
-      std::cout << std::string(16, ' ') << "Ref: " << ref_runs << " runs (gap0 "
-        << (inMegabytes(ref_gap0) / 8) << " MB, gap1 " << (inMegabytes(ref_gap1) / 8)
-        << " MB, run " << (inMegabytes(ref_run) / 8) << " MB, delta "
-        << inMegabytes(ref_delta) << " MB)" << std::endl;
-      std::cout << std::string(16, ' ') << "Seq: " << seq_runs << " runs (gap0 "
-        << (inMegabytes(seq_gap0) / 8) << " MB, gap1 " << (inMegabytes(seq_gap1) / 8)
-        << " MB, run " << (inMegabytes(seq_run) / 8) << " MB, delta "
-        << inMegabytes(seq_delta) << " MB)" << std::endl;
-  #endif
   #endif
       printSize("Relative FM", bytes, this->size());
       std::cout << std::endl;
@@ -260,6 +247,18 @@ public:
     }
     return res;
   }
+
+  bool supportsLocate(bool print = false) const
+  {
+    if(print)
+    {
+      std::cerr << "RelativeFM::supportsLocate(): The index does not support locate()." << std::endl;
+    }
+    return false;
+  }
+
+  // Call supportsLocate() first.
+  uint64_t locate(uint64_t i) const { return i; }
 
 //------------------------------------------------------------------------------
 

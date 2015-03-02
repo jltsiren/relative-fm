@@ -28,8 +28,12 @@ namespace relative
 extern const std::string BWT_EXTENSION;               // .bwt
 extern const std::string NATIVE_BWT_EXTENSION;        // .cbwt
 extern const std::string ALPHA_EXTENSION;             // .alpha
+extern const std::string SAMPLE_EXTENSION;            // .samples
 extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;  // \0ACGNT
 extern const std::string ROPEBWT2_ALPHABET;           // \0ACGTN
+
+const uint64_t MEGABYTE = 1048576;
+const double MEGABYTE_DOUBLE = 1048576.0;
 
 //------------------------------------------------------------------------------
 
@@ -81,10 +85,27 @@ writeInteger(std::ofstream& output, A a)
 
 //------------------------------------------------------------------------------
 
+const uint64_t FNV_OFFSET_BASIS = 0xcbf29ce484222325UL;
+const uint64_t FNV_PRIME        = 0x100000001b3UL;
+
+inline uint64_t fnv1a_hash(uint8_t c, uint64_t seed)
+{
+  return (seed ^ c) * FNV_PRIME;
+}
+
+inline uint64_t fnv1a_hash(uint64_t val, uint64_t seed)
+{
+  uint8_t* chars = (uint8_t*)&val;
+  for(uint64_t i = 0; i < 8; i++) { seed = fnv1a_hash(chars[i], seed); }
+  return seed;
+}
+
+//------------------------------------------------------------------------------
+
 inline double
 inMegabytes(uint64_t bytes)
 {
-  return bytes / 1048576.0;
+  return bytes / MEGABYTE_DOUBLE;
 }
 
 inline double
@@ -94,7 +115,7 @@ inBPC(uint64_t bytes, uint64_t size)
 }
 
 void printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_t indent = 18);
-void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, uint64_t indent = 18);
+void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, bool occs, uint64_t indent = 18);
 
 //------------------------------------------------------------------------------
 
