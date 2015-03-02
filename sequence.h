@@ -172,6 +172,8 @@ public:
 
   inline uint8_t rawData(uint64_t i) const { return this->data[i]; }
 
+  uint64_t hash(const Alphabet& alpha) const;
+
 private:
   std::vector<uint8_t> data;
   CumulativeArray      samples[SIGMA];

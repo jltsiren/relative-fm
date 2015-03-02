@@ -138,6 +138,16 @@ main(int argc, char** argv)
       case SEQ_RLSEQUENCE:
         {
           SimpleFM<RLSequence> seq(argv[seq_arg], mode);
+          if(mode == mode_ropebwt2)
+          {
+            uint64_t hash_value = seq.bwt.hash(seq.alpha);
+            std::cerr << "BWT imported from ropebwt2 (hash value " << hash_value << ")" << std::endl;
+            for(uint64_t c = 0; c < seq.alpha.sigma; c++)
+            {
+              std::cerr << "  Character " << c << " (" << (char)(seq.alpha.comp2char[c])
+                        << "), count " << (seq.alpha.C[c + 1] - seq.alpha.C[c]) << std::endl;
+            }
+          }
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;

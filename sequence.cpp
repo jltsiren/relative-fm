@@ -279,6 +279,18 @@ RLSequence::buildRank()
   }
 }
 
+uint64_t
+RLSequence::hash(const Alphabet& alpha) const
+{
+  uint64_t val = 0xcbf29ce484222325UL;
+  for(uint64_t i = 0; i < this->runs(); i++)
+  {
+    uint64_t c = alpha.comp2char[charValue(this->data[i])], l = runLength(this->data[i]);
+    for(uint64_t j = 0; j < l; j++) { val = (val ^ c) * 0x100000001b3UL; }
+  }
+  return val;
+}
+
 //------------------------------------------------------------------------------
 
 template<>
