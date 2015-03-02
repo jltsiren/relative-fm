@@ -138,6 +138,7 @@ main(int argc, char** argv)
       case SEQ_RLSEQUENCE:
         {
           SimpleFM<RLSequence> seq(argv[seq_arg], mode);
+          testIndex(indexName(seq_enc), seq, patterns, chars, tags);
           if(mode == mode_ropebwt2)
           {
             uint64_t hash_value = seq.bwt.hash(seq.alpha);
@@ -148,7 +149,6 @@ main(int argc, char** argv)
                         << "), count " << (seq.alpha.C[c + 1] - seq.alpha.C[c]) << std::endl;
             }
           }
-          testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
       default:
