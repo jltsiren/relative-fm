@@ -100,6 +100,7 @@ public:
     uint64_t res = this->samples[c].sum(block);
     uint64_t rle_pos = block * SAMPLE_RATE;
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+
     while(seq_pos < i)
     {
       seq_pos += runLength(this->data[rle_pos]); // The starting position of the next run.
@@ -151,6 +152,7 @@ public:
     }
   }
 
+  // returns (rank(i, seq[i]), seq[i])
   inline range_type inverse_select(uint64_t i) const
   {
     range_type res(0, 0);
@@ -160,30 +162,17 @@ public:
     uint64_t rle_pos = block * SAMPLE_RATE;
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
 
-    // Determine the character.
-    uint64_t block_start = seq_pos;
-    while(true)
+    uint64_t c = 0;
+    uint64_t ranks[SIGMA] = {};
+    while(seq_pos <= i)
     {
-      seq_pos += runLength(this->data[rle_pos]) - 1;  // The last position in the run.
-      if(seq_pos >= i) { res.second = charValue(this->data[rle_pos]); }
-      seq_pos++; rle_pos++; // Move to the first position in the next run.
-    }
-
-    // Determine the rank.
-    res.first = this->samples[res.second].sum(block);
-    rle_pos = block * SAMPLE_RATE; seq_pos = block_start;
-    while(seq_pos < i)  // Determine the rank.
-    {
-      seq_pos += runLength(this->data[rle_pos]); // The starting position of the next run.
-      if(charValue(this->data[rle_pos]) == res.second)
-      {
-        res.first += runLength(this->data[rle_pos]); // Number of c's before the next run.
-        if(seq_pos > i) { res.first -= seq_pos - i; }
-      }
+      c = charValue(this->data[rle_pos]);
+      seq_pos += runLength(this->data[rle_pos]);  // Starting position of the next run.
+      ranks[c] += runLength(this->data[rle_pos]); // Number of c's before the next run.
       rle_pos++;
     }
 
-    return res;
+    return range_type(this->samples[c].sum(block) + ranks[c] - (seq_pos - i), c);
   }
 
   template<class ByteVector>
