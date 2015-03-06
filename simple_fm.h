@@ -76,7 +76,8 @@ public:
 
   uint64_t reportSize(bool print = false) const
   {
-    uint64_t bwt_bytes = size_in_bytes(this->bwt), sample_bytes = size_in_bytes(this->samples);
+    uint64_t bwt_bytes = size_in_bytes(this->bwt);
+    uint64_t sample_bytes = sizeof(this->sample_rate) + size_in_bytes(this->samples);
     uint64_t bytes = bwt_bytes + size_in_bytes(this->alpha) + sample_bytes;
 
     if(print)

@@ -171,7 +171,8 @@ public:
     uint64_t ref_bytes = size_in_bytes(this->ref_minus_lcs);
     uint64_t seq_bytes = size_in_bytes(this->seq_minus_lcs);
     uint64_t bwt_bytes = ref_bytes + seq_bytes;
-    uint64_t lcs_bytes = size_in_bytes(this->bwt_lcs);
+    uint64_t bwt_lcs_bytes = size_in_bytes(this->bwt_lcs);
+    uint64_t text_lcs_bytes = size_in_bytes(this->text_lcs);
 
   #ifdef REPORT_RUNS
     uint64_t ref_runs = 0, seq_runs = 0;
@@ -184,14 +185,15 @@ public:
     }
   #endif
 
-    uint64_t bytes = bwt_bytes + lcs_bytes + size_in_bytes(this->alpha);
+    uint64_t bytes = bwt_bytes + bwt_lcs_bytes + text_lcs_bytes + size_in_bytes(this->alpha) + sizeof(this->m_size);
 
     if(print)
     {
   #ifdef VERBOSE_OUTPUT
       printSize("ref_minus_lcs", ref_bytes, this->size());
       printSize("seq_minus_lcs", seq_bytes, this->size());
-      printSize("bwt_lcs", lcs_bytes, this->size());
+      printSize("bwt_lcs", bwt_lcs_bytes, this->size());
+      if(this->text_lcs.size() > 0) { printSize("text_lcs", text_lcs_bytes, this->size()); }
   #endif
   #ifdef REPORT_RUNS
       std::cout << std::string(16, ' ') << "Ref: " << ref_runs << " runs (gap0 "
@@ -228,6 +230,7 @@ public:
     this->ref_minus_lcs.serialize(output);
     this->seq_minus_lcs.serialize(output);
     this->bwt_lcs.serialize(output);
+    this->text_lcs.serialize(output);
     this->alpha.serialize(output);
   }
 
@@ -250,11 +253,15 @@ public:
 
   bool supportsLocate(bool print = false) const
   {
-    if(print)
+    if(this->text_lcs.size() == 0)
     {
-      std::cerr << "RelativeFM::supportsLocate(): The index does not support locate()." << std::endl;
+      if(print)
+      {
+        std::cerr << "RelativeFM::supportsLocate(): The index does not contain text_lcs." << std::endl;
+      }
+      return false;
     }
-    return false;
+    return true;
   }
 
   // Call supportsLocate() first.
@@ -264,7 +271,7 @@ public:
 
   const reference_type&       reference;
   SequenceType                ref_minus_lcs, seq_minus_lcs;
-  LCS                         bwt_lcs;
+  LCS                         bwt_lcs, text_lcs;
   Alphabet                    alpha;
   uint64_t                    m_size;
 
@@ -276,6 +283,7 @@ private:
     this->ref_minus_lcs.load(input);
     this->seq_minus_lcs.load(input);
     this->bwt_lcs.load(input);
+    this->text_lcs.load(input);
     this->alpha.load(input);
     this->m_size = this->reference.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
   }
