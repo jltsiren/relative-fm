@@ -121,13 +121,47 @@ RLSequence::RLSequence()
 {
 }
 
+inline void
+addBasicRun(uint64_t c, uint64_t run, std::vector<uint8_t>& runs)
+{
+  runs.push_back(c + RLSequence::SIGMA * (run - 1));
+}
+
 void
 addRun(uint64_t c, uint64_t run, std::vector<uint8_t>& runs)
 {
   while(run > 0)
   {
-    uint64_t temp = (run > RLSequence::MAX_RUN ? RLSequence::MAX_RUN : run); run -= temp;
-    runs.push_back(RLSequence::encode(c, temp));
+    // Runs of length <= 41 are encoded in a single byte.
+    if(run < RLSequence::MAX_RUN)
+    {
+      addBasicRun(c, run, runs);
+      return;
+    }
+
+    uint64_t bytes_remaining = RLSequence::SAMPLE_RATE - (runs.size() % RLSequence::SAMPLE_RATE);
+    uint64_t l = (bytes_remaining < 2 ? RLSequence::MAX_RUN - 1 : RLSequence::MAX_RUN);
+    addBasicRun(c, l, runs); run -= l;
+    if(bytes_remaining < 2) { continue; } // No room for the additional run length in the current block.
+    bytes_remaining--;
+
+    // Write the rest of the run with 7 bits/byte, least significant byte first.
+    if(bitlength(run) > 7 * bytes_remaining)  // Cannot encode the entire run in current block.
+    {
+      uint64_t temp = 0;
+      for(uint64_t i = 1; i < bytes_remaining; i++) { runs.push_back(0xFF); temp = (temp << 7) | 0x7F; }
+      runs.push_back(0x7F); run -= (temp << 7) | 0x7F;
+    }
+    else
+    {
+      do
+      {
+        uint8_t val = run & 0x7F; run >>= 7;
+        if(run > 0) { val |= 0x80; }
+        runs.push_back(val);
+      }
+      while(run > 0);
+    }
   }
 }
 
@@ -247,17 +281,18 @@ void
 RLSequence::buildRank()
 {
   std::vector<uint64_t> block_ends;
-  for(uint64_t i = 1, pos = 0; i <= this->runs(); i++)
+  uint64_t seq_pos = 0, rle_pos = 0;
+  while(rle_pos < this->runs())
   {
-    pos += runLength(this->data[i - 1]);
-    if(i == this->runs() || i % SAMPLE_RATE == 0) { block_ends.push_back(pos - 1); }
+    range_type run = this->readRun(rle_pos); seq_pos += run.second;
+    if(rle_pos >= this->runs() || rle_pos % SAMPLE_RATE == 0) { block_ends.push_back(seq_pos - 1); }
   }
 
   // Block boundaries.
   uint64_t blocks = block_ends.size();
   {
     sd_vector<> temp(block_ends.begin(), block_ends.end());
-    { std::vector<uint64_t> temp_v; temp_v.swap(block_ends); }
+    util::clear(block_ends);
     this->block_boundaries.swap(temp);
     util::init_support(this->block_rank, &(this->block_boundaries));
     util::init_support(this->block_select, &(this->block_boundaries));
@@ -269,10 +304,11 @@ RLSequence::buildRank()
     int_vector<0> temp(blocks, 0, bitlength(this->size()));
     for(uint64_t block = 0; block < blocks; block++)
     {
-      uint64_t limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
-      for(uint64_t i = block * SAMPLE_RATE; i < limit; i++)
+      uint64_t rle_pos = block * SAMPLE_RATE, limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
+      while(rle_pos < limit)
       {
-        if(charValue(this->data[i]) == c) { temp[block] += runLength(this->data[i]); }
+        range_type run = this->readRun(rle_pos);
+        if(run.first == c) { temp[block] += run.second; }
       }
     }
     util::assign(this->samples[c], CumulativeArray(temp, temp.size()));
@@ -282,11 +318,11 @@ RLSequence::buildRank()
 uint64_t
 RLSequence::hash(const Alphabet& alpha) const
 {
-  uint64_t val = FNV_OFFSET_BASIS;
-  for(uint64_t i = 0; i < this->runs(); i++)
+  uint64_t rle_pos = 0, val = FNV_OFFSET_BASIS;
+  while(rle_pos < this->runs())
   {
-    uint64_t c = alpha.comp2char[charValue(this->data[i])], l = runLength(this->data[i]);
-    for(uint64_t j = 0; j < l; j++) { val = fnv1a_hash(c, val); }
+    range_type run = this->readRun(rle_pos); run.first = alpha.comp2char[run.first];
+    for(uint64_t i = 0; i < run.second; i++) { val = fnv1a_hash(run.first, val); }
   }
   return val;
 }
@@ -326,10 +362,11 @@ characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& count
 {
   for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
 
-  for(uint64_t i = 0; i < sequence.runs(); i++)
+  uint64_t rle_pos = 0;
+  while(rle_pos < sequence.runs())
   {
-    uint8_t temp = sequence.rawData(i);
-    counts[RLSequence::charValue(temp)] += RLSequence::runLength(temp);
+    range_type run = sequence.readRun(rle_pos);
+    counts[run.first] += run.second;
   }
 }
 

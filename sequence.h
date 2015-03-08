@@ -70,10 +70,6 @@ public:
   const static uint64_t MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
   typedef uint64_t size_type;
 
-  inline static uint64_t charValue(uint8_t code) { return code % SIGMA; }
-  inline static uint64_t runLength(uint8_t code) { return code / SIGMA + 1; }
-  inline static uint8_t encode(uint64_t c, uint64_t run) { return c + SIGMA * (run - 1); }
-
   RLSequence();
   RLSequence(int_vector_buffer<8>& buffer, uint64_t _size);
   RLSequence(const RLSequence& s);
@@ -88,7 +84,7 @@ public:
   void load(std::istream& in, bool rebuild_samples = false);
 
   inline uint64_t size() const { return this->block_boundaries.size(); }
-  inline uint64_t runs() const { return this->data.size(); }
+  inline uint64_t runs() const { return this->data.size(); }  // Not real runs anymore.
   inline uint64_t count(uint8_t c) const { return this->samples[c].sum(); }
 
   inline uint64_t rank(uint64_t i, uint8_t c) const
@@ -103,13 +99,13 @@ public:
 
     while(seq_pos < i)
     {
-      seq_pos += runLength(this->data[rle_pos]); // The starting position of the next run.
-      if(charValue(this->data[rle_pos]) == c)
+      range_type run = this->readRun(rle_pos);
+      seq_pos += run.second;  // The starting position of the next run.
+      if(run.first == c)
       {
-        res += runLength(this->data[rle_pos]); // Number of c's before the next run.
+        res += run.second;  // Number of c's before the next run.
         if(seq_pos > i) { res -= seq_pos - i; }
       }
-      rle_pos++;
     }
 
     return res;
@@ -127,13 +123,14 @@ public:
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(true)
     {
-      seq_pos += runLength(this->data[rle_pos]) - 1; // The last position in the run.
-      if(charValue(this->data[rle_pos]) == c)
+      range_type run = this->readRun(rle_pos);
+      seq_pos += run.second - 1;  // The last position in the run.
+      if(run.first == c)
       {
-        count += runLength(this->data[rle_pos]);  // Number of c's up to the end of the run.
+        count += run.second;  // Number of c's up to the end of the run.
         if(count >= i) { return seq_pos + i - count; }
       }
-      seq_pos++; rle_pos++; // Move to the first position in the next run.
+      seq_pos++;  // Move to the first position in the next run.
     }
   }
 
@@ -146,9 +143,10 @@ public:
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(true)
     {
-      seq_pos += runLength(this->data[rle_pos]) - 1; // The last position in the run.
-      if(seq_pos >= i) { return charValue(this->data[rle_pos]); }
-      seq_pos++; rle_pos++; // Move to the first position in the next run.
+      range_type run = this->readRun(rle_pos);
+      seq_pos += run.second - 1;  // The last position in the run.
+      if(seq_pos >= i) { return run.first; }
+      seq_pos++;  // Move to the first position in the next run.
     }
   }
 
@@ -162,17 +160,16 @@ public:
     uint64_t rle_pos = block * SAMPLE_RATE;
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
 
-    uint64_t c = 0;
+    range_type run(0, 0);
     uint64_t ranks[SIGMA] = {};
     while(seq_pos <= i)
     {
-      c = charValue(this->data[rle_pos]);
-      seq_pos += runLength(this->data[rle_pos]);  // Starting position of the next run.
-      ranks[c] += runLength(this->data[rle_pos]); // Number of c's before the next run.
-      rle_pos++;
+      run = this->readRun(rle_pos);
+      seq_pos += run.second;  // The starting position of the next run.
+      ranks[run.first] += run.second; // Number of c's before the next run.
     }
 
-    return range_type(this->samples[c].sum(block) + ranks[c] - (seq_pos - i), c);
+    return range_type(this->samples[run.first].sum(block) + ranks[run.first] - (seq_pos - i), run.first);
   }
 
   template<class ByteVector>
@@ -185,24 +182,47 @@ public:
     uint64_t block = this->block_rank(range.first);
     uint64_t rle_pos = block * SAMPLE_RATE;
     uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    range_type run(0, 0);
+
     while(true)
     {
-      seq_pos += runLength(this->data[rle_pos]) - 1; // The last position in the run.
+      run = this->readRun(rle_pos);
+      seq_pos += run.second - 1;  // The last position in the run.
       if(seq_pos >= range.first) { break; }
-      seq_pos++; rle_pos++; // Move to the first position in the next run.
+      seq_pos++;  // Move to the first position in the next run.
     }
 
     // Fill the buffer.
     for(uint64_t i = range.first; i <= range.second; i++)
     {
-      if(i > seq_pos) { rle_pos++; seq_pos += runLength(this->data[rle_pos]); }
-      buffer[i - range.first] = charValue(this->data[rle_pos]);
+      if(i > seq_pos)
+      {
+        run = this->readRun(rle_pos);
+        seq_pos += run.second;
+      }
+      buffer[i - range.first] = run.first;
     }
   }
 
   inline uint8_t rawData(uint64_t i) const { return this->data[i]; }
 
   uint64_t hash(const Alphabet& alpha) const;
+
+  // Returns (character, length).
+  inline range_type readRun(uint64_t& rle_pos) const
+  {
+    range_type run(this->data[rle_pos] % SIGMA, this->data[rle_pos] / SIGMA + 1); rle_pos++;
+    if(run.second >= MAX_RUN)
+    {
+      uint64_t temp = this->data[rle_pos] & 0x7F, offset = 7;
+      while(this->data[rle_pos] & 0x80)
+      {
+        rle_pos++; temp |= ((uint64_t)(this->data[rle_pos] & 0x7F)) << offset; offset += 7;
+      }
+      run.second += temp; rle_pos++;
+    }
+    return run;
+  }
 
 private:
   std::vector<uint8_t> data;
