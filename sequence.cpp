@@ -321,8 +321,9 @@ RLSequence::hash(const Alphabet& alpha) const
   uint64_t rle_pos = 0, val = FNV_OFFSET_BASIS;
   while(rle_pos < this->runs())
   {
-    range_type run = this->readRun(rle_pos); run.first = alpha.comp2char[run.first];
-    for(uint64_t i = 0; i < run.second; i++) { val = fnv1a_hash(run.first, val); }
+    range_type run = this->readRun(rle_pos);
+    uint8_t c = alpha.comp2char[run.first];
+    for(uint64_t i = 0; i < run.second; i++) { val = fnv1a_hash(c, val); }
   }
   return val;
 }
