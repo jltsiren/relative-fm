@@ -24,6 +24,7 @@ main(int argc, char** argv)
               << align_parameters::MAX_LENGTH << ")." << std::endl;
     std::cerr << "  -p    Preallocate buffers for LCS computation." << std::endl;
     std::cerr << "  -r    BWTs were built by ropebwt2." << std::endl;
+    std::cerr << "  -s    Find a BWT-invariant subsequence that supports SA samples (negates most options)." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
@@ -31,7 +32,7 @@ main(int argc, char** argv)
   LoadMode mode = mode_plain;
   align_parameters parameters;
   int c = 0;
-  while((c = getopt(argc, argv, "b:d:l:pr")) != -1)
+  while((c = getopt(argc, argv, "b:d:l:prs")) != -1)
   {
     switch(c)
     {
@@ -45,6 +46,8 @@ main(int argc, char** argv)
       parameters.preallocate = true; break;
     case 'r':
       mode = mode_ropebwt2; parameters.sorted_alphabet = false; break;
+    case 's':
+      parameters.samples = true; break;
     case '?':
       return 2;
     default:
@@ -57,11 +60,15 @@ main(int argc, char** argv)
   std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
 #endif
   std::cout << std::endl;
-  std::cout << "Block size: " << parameters.block_size << std::endl;
-  std::cout << "Maximum diagonal: " << parameters.max_d << std::endl;
-  std::cout << "Maximum length: " << parameters.max_length << std::endl;
+  std::cout << "Algorithm: " << (parameters.samples ? "samples" : "partitioning") << std::endl;
   std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
-  std::cout << "Buffers: " << (parameters.preallocate ? "preallocated" : "on demand") << std::endl;
+  if(!(parameters.samples))
+  {
+    std::cout << "Block size: " << parameters.block_size << std::endl;
+    std::cout << "Maximum diagonal: " << parameters.max_d << std::endl;
+    std::cout << "Maximum length: " << parameters.max_length << std::endl;
+    std::cout << "Buffers: " << (parameters.preallocate ? "preallocated" : "on demand") << std::endl;
+  }
   std::cout << std::endl;
   std::cout << "Reference: " << argv[optind] << std::endl;
   std::cout << std::endl;

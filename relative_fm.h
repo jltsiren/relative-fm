@@ -20,14 +20,15 @@ struct align_parameters
 
   align_parameters() :
     block_size(BLOCK_SIZE), max_length(MAX_LENGTH), seed_length(SEED_LENGTH), max_d(MAX_D),
-    sorted_alphabet(true), preallocate(false)
+    sorted_alphabet(true), preallocate(false), samples(false)
   {
   }
 
   uint64_t block_size, max_length, seed_length;
   int      max_d;
-  bool     sorted_alphabet; // comp values are sorted by character values.
+  bool     sorted_alphabet; // comp values are sorted by character values, making partitioning a bit faster.
   bool     preallocate;     // Use preallocated arrays in Myers' algorithm.
+  bool     samples;         // Find a BWT-invariant subsequence that supports relative SA samples.
 };
 
 //------------------------------------------------------------------------------
@@ -40,6 +41,14 @@ template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t& lcs,
+  const align_parameters& parameters, bool print);
+
+template<class ReferenceType>
+void
+alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
+  bit_vector& bwt_ref_lcs, bit_vector& bwt_seq_lcs,
+  bit_vector& text_ref_lcs, bit_vector& text_seq_lcs,
+  uint64_t& lcs,
   const align_parameters& parameters, bool print);
 
 //------------------------------------------------------------------------------
@@ -108,6 +117,9 @@ private:
 
 const std::string RELATIVE_FM_EXTENSION = ".rfm";
 
+/*
+  The two indexes must have identical or sorted alphabets.
+*/
 template<class ReferenceBWTType = bwt_type, class SequenceType = bwt_type>
 class RelativeFM
 {
@@ -116,25 +128,37 @@ public:
 
 //------------------------------------------------------------------------------
 
-  /*
-    If the alphabet is not sorted, only characters in seq.alpha will be considered for partitioning
-    the BWTs.
-  */
   RelativeFM(const reference_type& ref, const reference_type& seq,
     const align_parameters parameters = align_parameters(), bool print = false) :
     reference(ref)
   {
-    this->m_size = seq.size();
-
     uint64_t lcs_length = 0;
-    bit_vector ref_lcs, seq_lcs;
-    alignBWTs(ref, seq, ref_lcs, seq_lcs, lcs_length, parameters, print);
+    bit_vector bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs;
+    if(parameters.samples)
+    {
+      if(!(ref.supportsLocate(true)) || !(seq.supportsLocate(true)))
+      {
+        std::cerr << "RelativeFM::RelativeFM(): Both indexes must have SA samples with this construction option!" << std::endl;
+        return;
+      }
+      alignBWTs(ref, seq, bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs, lcs_length, parameters, print);
+    }
+    else
+    {
+      alignBWTs(ref, seq, bwt_ref_lcs, bwt_seq_lcs, lcs_length, parameters, print);
+    }
 
-    getComplement(ref.bwt, this->ref_minus_lcs, ref_lcs, lcs_length);
-    getComplement(seq.bwt, this->seq_minus_lcs, seq_lcs, lcs_length);
-    util::assign(this->bwt_lcs, LCS(ref_lcs, seq_lcs, lcs_length));
-
+    getComplement(ref.bwt, this->ref_minus_lcs, bwt_ref_lcs, lcs_length);
+    getComplement(seq.bwt, this->seq_minus_lcs, bwt_seq_lcs, lcs_length);
+    util::assign(this->bwt_lcs, LCS(bwt_ref_lcs, bwt_seq_lcs, lcs_length));
+    util::clear(bwt_ref_lcs); util::clear(bwt_seq_lcs);
+    if(parameters.samples)
+    {
+      util::assign(this->text_lcs, LCS(text_ref_lcs, text_seq_lcs, lcs_length));
+      util::clear(text_ref_lcs); util::clear(text_seq_lcs);
+    }
     this->alpha = seq.alpha;
+    this->m_size = seq.size();
   }
 
   RelativeFM(const reference_type& ref, const std::string& base_name) :
@@ -645,20 +669,19 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
   util::clear(ref_lcs); util::clear(seq_lcs);
 
-  // Build the union of the alphabets.
   uint64_t sigma = 0;
   uint8_t alphabet[256];
-  if(parameters.sorted_alphabet)
+  if(parameters.sorted_alphabet)  // Use the intersection of the alphabets.
   {
     for(uint64_t c = 0; c < 256; c++)
     {
-      if(hasChar(ref.alpha, c) || hasChar(seq.alpha, c))
+      if(hasChar(ref.alpha, c) && hasChar(seq.alpha, c))
       {
         alphabet[sigma] = c; sigma++;
       }
     }
   }
-  else
+  else  // Use the alphabet from seq.
   {
     sigma = seq.alpha.sigma;
     for(uint64_t c = 0; c < sigma; c++) { alphabet[c] = seq.alpha.comp2char[c]; }
@@ -791,6 +814,275 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     std::cout << "Found a common subsequence of length " << lcs << " in "
               << (readTimer() - timestamp) << " seconds" << std::endl;
     std::cout << "LCS losses: exact " << (intersection - lcs - losses) << ", heuristics " << losses << std::endl;
+    std::cout << std::endl;
+  }
+}
+
+//------------------------------------------------------------------------------
+
+struct range_pair
+{
+  range_type ref_range, seq_range;
+
+  range_pair(range_type ref, range_type seq) : ref_range(ref), seq_range(seq) {}
+};
+
+struct range_pair_comparator
+{
+  bool operator() (const range_pair& a, const range_pair& b) const
+  {
+    return (a.ref_range < b.ref_range);
+  }
+};
+
+template<class ReferenceType>
+struct Match
+{
+  const ReferenceType& seq;
+  uint64_t pos, distance, length, text_pos;
+  bool char_matched;
+
+  Match(const ReferenceType& _seq) :
+    seq(_seq)
+  {
+    this->reset();
+  }
+
+  void reset()
+  {
+    this->pos = this->seq.size(); this->distance = 0; this->length = 0; this->text_pos = this->seq.size();
+    this->char_matched = false;
+  }
+
+  void newRun(uint64_t new_pos)
+  {
+    this->pos = new_pos; this->distance = 0; this->length = 1; this->text_pos = this->seq.size();
+    this->char_matched = true;
+    this->setSample();
+  }
+
+  inline void setSample()
+  {
+    if(this->pos % this->seq.sample_rate == 0)
+    {
+      this->text_pos = this->seq.samples[this->pos / this->seq.sample_rate] + this->distance;
+    }
+  }
+
+  // c is the character that should match the one used for LF.
+  void advance(uint64_t c)
+  {
+    if(this->pos >= this->seq.size()) { return; }
+
+    range_type temp = this->seq.LF(this->pos);
+    if(!hasChar(this->seq.alpha, c) || this->seq.alpha.char2comp[c] != temp.second)
+    {
+      this->char_matched = false;
+    }
+    if(temp.second == 0)
+    {
+      this->pos = this->seq.size();
+      this->text_pos = this->distance;
+    }
+    else
+    {
+      this->pos = temp.first; this->distance++;
+      this->setSample();
+    }
+  }
+
+  void addRun(std::vector<range_pair>& vec, uint64_t ref_starting_pos)
+  {
+    if(this->length <= 1) { return; }
+    range_type ref_run(ref_starting_pos, ref_starting_pos + this->length - 1);
+    this->findSample();
+    range_type seq_run(this->text_pos + 1 - this->length, this->text_pos);
+    vec.push_back(range_pair(ref_run, seq_run));
+  }
+
+  void findSample()
+  {
+    if(this->pos >= this->seq.size()) { return; }
+    while(this->text_pos >= this->seq.size()) { this->advance(0); }
+  }
+};
+
+template<class ReferenceType>
+void
+alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
+  bit_vector& bwt_ref_lcs, bit_vector& bwt_seq_lcs,
+  bit_vector& text_ref_lcs, bit_vector& text_seq_lcs,
+  uint64_t& lcs,
+  const align_parameters& parameters, bool print)
+{
+  if(print)
+  {
+    std::cout << "Reference size: " << ref.size() << std::endl;
+    std::cout << "Target size: " << seq.size() << std::endl;
+  }
+  util::clear(bwt_ref_lcs); util::clear(bwt_seq_lcs);
+  util::clear(text_ref_lcs); util::clear(text_seq_lcs);
+
+  // Build a mapping from the comp values of seq to the comp values of ref.
+  int_vector<64> comp_mapping(seq.alpha.sigma);
+  bit_vector in_ref(seq.alpha.sigma);
+  if(parameters.sorted_alphabet)  // Use first ref_c >= seq_c.
+  {
+    uint64_t ref_comp = 0;
+    for(uint64_t seq_comp = 0; seq_comp < seq.alpha.sigma; seq_comp++)
+    {
+      uint64_t seq_c = seq.alpha.comp2char[seq_comp];
+      while(ref_comp < ref.alpha.sigma && ref.alpha.comp2char[ref_comp] < seq_c) { ref_comp++; }
+      comp_mapping[seq_comp] = ref_comp;
+      in_ref[seq_comp] = (ref_comp < ref.alpha.sigma && ref.alpha.comp2char[ref_comp] == seq_c);
+    }
+  }
+  else  // Assume an identical alphabet.
+  {
+    for(uint64_t i = 0; i < seq.alpha.sigma; i++) { comp_mapping[i] = i; in_ref[i] = true; }
+  }
+
+  // Build the merging bitvector.
+  double timestamp = readTimer();
+  bit_vector merge_vector(ref.size() + seq.size());
+  {
+    uint64_t ref_pos = ref.sequences(), seq_pos = 0; // Number of suffixes smaller than the current one.
+    while(true)
+    {
+      merge_vector[ref_pos + seq_pos] = 1;
+      range_type temp = seq.LF(seq_pos);
+      if(temp.second == 0) { break; }
+      seq_pos = temp.first;
+      if(in_ref[temp.second])
+      {
+        temp.second = comp_mapping[temp.second];
+        ref_pos = ref.alpha.C[temp.second] + ref.bwt.rank(ref_pos, temp.second);
+      }
+      else
+      {
+        ref_pos = ref.alpha.C[comp_mapping[temp.second]];
+      }
+    }
+  }
+  if(print)
+  {
+    std::cout << "Built the merging bitvector in " << (readTimer() - timestamp) << " seconds" << std::endl;
+  }
+
+  // Build left match and right match arrays.
+  // FIXME: Parallelize: left/right separately
+  std::vector<range_pair> left_matches, right_matches;
+  timestamp = readTimer();
+  {
+    /*
+      Invariant: SA(ref)[ref_pos] = ref_text_pos
+
+      Positions ref[ref_text_pos + 1, ref_text_pos + left.length] have a run of left matches.
+      If left.text_pos is valid, the run of left matches ends at that position.
+    */
+    uint64_t ref_pos = 0, ref_text_pos = ref.size() - 1;
+    Match<ReferenceType> left(seq), right(seq);
+    uint64_t total_matches = 0; // Statistics.
+    uint64_t left_total = 0, left_runs = 0, left_boundaries = 0;
+    uint64_t right_total = 0, right_runs = 0, right_boundaries = 0;
+    bit_vector::select_0_type ref_select(&merge_vector);
+    bit_vector::rank_1_type seq_rank(&merge_vector);
+
+    // FIXME try again
+    // Compute the initial matches
+    // while(true)
+    //   advance ref or quit if at beginning
+    //   try to advance the match and check if we have a sample
+    //   if adjacent and starts with the same character, increase length and continue
+    //   if not adjacent, output the match
+    //   if starts with a different character or is a different match, start a new match
+
+    while(true)
+    {
+      uint64_t mutual_pos = ref_select(ref_pos + 1);
+      bool found = false;
+      if(mutual_pos > 0 && merge_vector[mutual_pos - 1] == 1) // There is a left match.
+      {
+        left_total++; found = true;
+        if(left.char_matched)
+        {
+          uint64_t left_match_pos = seq_rank(mutual_pos - 1);
+          if(left_match_pos != left.pos)  // The left match starts a new run.
+          {
+            left.addRun(left_matches, ref_text_pos + 1);
+            left.newRun(left_match_pos); left_runs++;
+          }
+          else { left.length++; }
+        }
+        else  // The left match is on the other side of a character boundary.
+        {
+          left.addRun(left_matches, ref_text_pos + 1); left.reset();
+          left_boundaries++;
+        }
+      }
+      else  // No left match.
+      {
+        left.addRun(left_matches, ref_text_pos + 1);
+        left.reset();
+      }
+      if(mutual_pos + 1 < merge_vector.size() && merge_vector[mutual_pos + 1] == 1)
+      {
+        right_total++; found = true;
+        if(right.char_matched)
+        {
+          uint64_t right_match_pos = seq_rank(mutual_pos + 1);
+          if(right_match_pos != right.pos)  // The right match starts a new run.
+          {
+            right.addRun(right_matches, ref_text_pos + 1);
+            right.newRun(right_match_pos); right_runs++;
+          }
+          else { right.length++; }
+        }
+        else  // The right match is on the other side of a character boundary.
+        {
+          right.addRun(right_matches, ref_text_pos + 1); right.reset();
+          right_boundaries++;
+        }
+      }
+      else  // No right match.
+      {
+        right.addRun(right_matches, ref_text_pos + 1);
+        right.reset();
+      }
+      if(found) { total_matches++; }
+
+      // Advance to the previous position.
+      if(ref_text_pos == 0) { break; }
+      range_type temp = ref.LF(ref_pos); ref_pos = temp.first;
+      temp.second = ref.alpha.comp2char[temp.second];
+      left.advance(temp.second); right.advance(temp.second);
+    }
+    left.addRun(left_matches, 0); right.addRun(right_matches, 0);
+    if(print)
+    {
+      std::cout << "Left matches: " << left_total << " total, " << left_runs << " runs, "
+                << left_matches.size() << " nontrivial runs "
+                << left_boundaries << " accross char boundaries" << std::endl;
+      std::cout << "Right matches: " << right_total << " total, " << right_runs << " runs, "
+                << right_matches.size() << " nontrivial runs "
+                << right_boundaries << " accross char boundaries" << std::endl;
+      std::cout << "Total matches: " << total_matches << " positions in "
+                << (readTimer() - timestamp) << " seconds" << std::endl;
+    }
+  }
+  util::clear(merge_vector);
+
+  // Find an increasing subsequence in the arrays and mark it in text_lcs bitvectors.
+  lcs = 0;
+  // FIXME from here
+  util::clear(left_matches); util::clear(right_matches);
+
+  // Traverse both CSAs to build the bwt_lcs bitvectors.
+
+  if(print)
+  {
+    std::cout << "Found a common subsequence of length " << lcs << " in "
+              << (readTimer() - timestamp) << " seconds" << std::endl;
     std::cout << std::endl;
   }
 }

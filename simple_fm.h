@@ -153,6 +153,13 @@ public:
     return relative::LF(this->bwt, this->alpha, range, c);
   }
 
+  // Returns (LF(i), BWT[i]) = (LF(i), char(LF(i))); the character is a comp value.
+  inline range_type LF(uint64_t i) const
+  {
+    auto temp = this->bwt.inverse_select(i);
+    return range_type(temp.first + this->alpha.C[temp.second], temp.second);
+  }
+
   template<class Iter> range_type find(Iter begin, Iter end) const
   {
     range_type res(0, this->size() - 1);
@@ -212,9 +219,9 @@ public:
     uint64_t steps = 0;
     while(i % this->sample_rate != 0)
     {
-      auto res = this->bwt.inverse_select(i);
+      range_type res = this->LF(i);
       if(res.second == 0) { return steps; }
-      i = this->alpha.C[res.second] + res.first; steps++;
+      i = res.first; steps++;
     }
 
     return this->samples[i / this->sample_rate] + steps;
