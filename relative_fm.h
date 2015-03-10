@@ -445,26 +445,12 @@ struct short_record_comparator
   }
 };
 
-// The interpretation of ref_lcs and seq_lcs depends on whether OpenMP is used.
-range_type mostFrequentChar(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
-  range_type ref_range, range_type seq_range);
-
-// No LCS, just greedily match the runs.
-// The interpretation of ref_lcs and seq_lcs depends on whether OpenMP is used.
-range_type matchRuns(std::vector<uint8_t>& ref_buffer, std::vector<uint8_t>& seq_buffer,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
-  range_type ref_range, range_type seq_range,
-  const uint8_t* alphabet, uint64_t sigma);
-
-// Diagonal i has 2i+3 elements: -(i+1) to (i+1).
-inline int offsetFor(int pos, int d) { return (d + 3) * d + pos + 1; }
-
 /*
   Eugene W. Myers: An O(ND) Difference Algorithm and Its Variations. Algorithmica, 1986.
 
   The implementation assumes that offsets fit into int. If OpenMP is used, bitvectors
-  should have the same length as the corresponding ranges. Without OpenMP, they are the
+  should have the same length as the corresponding ranges, plus some padding to make the
+  word boundaries match with the original bitvectors. Without OpenMP, they are the
   global bitvectors, and the function updates the range specified by ref_range/seq_range.
   The return value is (LCS length, heuristic losses).
 
@@ -476,103 +462,12 @@ inline int offsetFor(int pos, int d) { return (d + 3) * d + pos + 1; }
   To use a preallocated buffer, set parameters.preallocated and pass a pointer to a buffer
   of size at least (max_d + 3) * (max_d + 1).
 */
-template<class ReferenceType>
-range_type
-greedyLCS(const ReferenceType& ref, const ReferenceType& seq,
+range_type greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& seq_extract,
   bit_vector& ref_lcs, bit_vector& seq_lcs,
   short_record_type& record,
   const uint8_t* alphabet, uint64_t sigma,
   const align_parameters& parameters,
-  std::vector<int>* buf)
-{
-  range_type ref_range = record.first(), seq_range = record.second();
-  bool onlyNs = record.onlyNs(), endmarker = record.endmarker();
-  if(isEmpty(ref_range) || isEmpty(seq_range)) { return range_type(0, 0); }
-
-  std::vector<uint8_t> ref_buffer; ref.extractBWT(ref_range, ref_buffer); int ref_len = length(ref_range);
-  std::vector<uint8_t> seq_buffer; seq.extractBWT(seq_range, seq_buffer); int seq_len = length(seq_range);
-
-  if(endmarker)
-  {
-    return matchRuns(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range, alphabet, sigma);
-  }
-  else if(onlyNs || abs(ref_len - seq_len) > parameters.max_d)
-  {
-    return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
-  }
-
-  // buffer[offsetFor(k, d)] stores how many characters of ref have been processed on diagonal k.
-  bool found = false;
-  if(!(parameters.preallocate)) { buf = new std::vector<int>; buf->reserve(align_parameters::BUFFER_SIZE); }
-  std::vector<int>& buffer = *buf; buffer.resize(3, 0);
-  int d = 0;  // Current diagonal; becomes the number of diagonals.
-  for(d = 0; !found && d <= parameters.max_d; d++)
-  {
-    for(int k = -d; k <= d; k += 2)
-    {
-      int x = 0;
-      if(k == -d || (k != d && buffer[offsetFor(k - 1, d)] < buffer[offsetFor(k + 1, d)]))
-      {
-        x = buffer[offsetFor(k + 1, d)];
-      }
-      else
-      {
-        x = buffer[offsetFor(k - 1, d)] + 1;
-      }
-      int y = x - k;
-      while(x < ref_len && y < seq_len && ref_buffer[x] == seq_buffer[y]) { x++; y++; }
-      buffer[offsetFor(k, d)] = x;
-      if(x >= ref_len && y >= seq_len) { found = true; }
-    }
-    buffer.resize(buffer.size() + 2 * d + 5, 0);  // Add space for diagonal d+1.
-    for(int i = 0, curr_pos = offsetFor(-d, d), next_pos = offsetFor(-d, d + 1); i < 2 * d + 3; i++)
-    {
-      buffer[next_pos + i] = buffer[curr_pos + i];  // Initialize the next diagonal.
-    }
-
-    // Too much memory required, match just the most frequent characters.
-    if(d >= parameters.max_d && !found)
-    {
-#ifdef VERBOSE_STATUS_INFO
-#ifdef _OPENMP
-      #pragma omp critical (stderr)
-#endif
-      std::cerr << "MAX_D exceeded on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
-#endif
-      if(!(parameters.preallocate)) { delete buf; buf = 0; }
-      return mostFrequentChar(ref_buffer, seq_buffer, ref_lcs, seq_lcs, ref_range, seq_range);
-    }
-  }
-
-  // Extract the LCS.
-  uint64_t lcs = 0;
-  d--;  // The last diagonal.
-#ifdef _OPENMP
-  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
-#else
-  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
-#endif
-  for(int k = ref_len - seq_len; d >= 0; d--)
-  {
-    int x_lim = 0, next_k = 0;
-    if(d == 0) { x_lim = 0; }
-    else if(k == -d || (k != d && buffer[offsetFor(k - 1, d - 1)] < buffer[offsetFor(k + 1, d - 1)]))
-    {
-      x_lim = buffer[offsetFor(k + 1, d - 1)]; next_k = k + 1;
-    }
-    else { x_lim = buffer[offsetFor(k - 1, d - 1)] + 1; next_k = k - 1; }
-    for(int x = buffer[offsetFor(k, d)]; x > x_lim; x--)
-    {
-      ref_lcs[ref_padding + x - 1] = 1;
-      seq_lcs[seq_padding + x - 1 - k] = 1;
-      lcs++;
-    }
-    k = next_k;
-  }
-
-  if(!(parameters.preallocate)) { delete buf; buf = 0; }
-  return range_type(lcs, 0);
-}
+  std::vector<int>* buf);
 
 //------------------------------------------------------------------------------
 
@@ -763,7 +658,10 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     range_type ref_range = results[i].first(), seq_range = results[i].second();
     bit_vector ref_buffer(length(ref_range) + ref_range.first % 64, 0);
     bit_vector seq_buffer(length(seq_range) + seq_range.first % 64, 0);
-    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i],
+    std::vector<uint8_t> ref_extract; ref.extractBWT(ref_range, ref_extract);
+    std::vector<uint8_t> seq_extract; seq.extractBWT(seq_range, seq_extract);
+
+    range_type temp = greedyLCS(ref_extract, seq_extract, ref_buffer, seq_buffer, results[i],
       alphabet, sigma, parameters, buffers[omp_get_thread_num()]);
     #pragma omp critical (alignbwts)
     {
@@ -796,7 +694,9 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
   for(uint64_t i = 0; i < results.size(); i++)
   {
-    range_type temp = greedyLCS(ref, seq, ref_buffer, seq_buffer, results[i], alphabet, sigma, parameters, buffer);
+    int_vector<8> ref_extract; ref.extractBWT(ref_range, ref_buffer);
+    int_vector<8> seq_extract; seq.extractBWT(seq_range, seq_buffer);
+    range_type temp = greedyLCS(ref_extract, seq_extract, ref_lcs, seq_lcs, results[i], alphabet, sigma, parameters, buffer);
     lcs += temp.first; losses += temp.second;
     processed++;
     if(processed >= (percentage / 100.0) * results.size())
@@ -835,12 +735,26 @@ struct range_pair_comparator
   }
 };
 
+/*
+  We have implicitly two arrays over the reference, where range ref_range has values seq_range.
+  This function finds the longest increasing subsequence over the reference, where each value can be
+  from either of the two arrays. Return value is subsequence length, the positions of the
+  subsequence are marked in ref_lcs, and the values in the subsequence are marked in seq_lcs.
+
+  The function clears left_matches and right_matches.
+*/
+uint64_t increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
+  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t ref_len, uint64_t seq_len);
+
 template<class ReferenceType>
 struct Match
 {
   const ReferenceType& seq;
-  uint64_t pos, distance, length, text_pos;
-  bool char_matched;
+  uint64_t bwt_pos;
+  uint64_t text_pos;  // Ending position of the run in the text.
+  uint64_t distance;  // Distance from SA[bwt_pos] to text_pos.
+  uint64_t length;    // Length of the run.
+  bool following;
 
   Match(const ReferenceType& _seq) :
     seq(_seq)
@@ -850,59 +764,63 @@ struct Match
 
   void reset()
   {
-    this->pos = this->seq.size(); this->distance = 0; this->length = 0; this->text_pos = this->seq.size();
-    this->char_matched = false;
+    this->bwt_pos = this->seq.size(); this->text_pos = this->seq.size();
+    this->distance = 0; this->length = 0;
+    this->following = false;
   }
 
-  void newRun(uint64_t new_pos)
+  void follow(uint64_t new_pos)
   {
-    this->pos = new_pos; this->distance = 0; this->length = 1; this->text_pos = this->seq.size();
-    this->char_matched = true;
+    this->bwt_pos = new_pos; this->text_pos = this->seq.size();
+    this->distance = 0; this->length = 1;
+    this->following = true;
     this->setSample();
   }
 
   inline void setSample()
   {
-    if(this->pos % this->seq.sample_rate == 0)
+    if(this->bwt_pos % this->seq.sample_rate == 0)
     {
-      this->text_pos = this->seq.samples[this->pos / this->seq.sample_rate] + this->distance;
+      this->text_pos = this->seq.samples[this->bwt_pos / this->seq.sample_rate] + this->distance;
     }
   }
 
   // c is the character that should match the one used for LF.
   void advance(uint64_t c)
   {
-    if(this->pos >= this->seq.size()) { return; }
+    if(this->bwt_pos >= this->seq.size()) { return; }
 
-    range_type temp = this->seq.LF(this->pos);
+    range_type temp = this->seq.LF(this->bwt_pos);
     if(!hasChar(this->seq.alpha, c) || this->seq.alpha.char2comp[c] != temp.second)
     {
-      this->char_matched = false;
+      this->following = false;
     }
     if(temp.second == 0)
     {
-      this->pos = this->seq.size();
       this->text_pos = this->distance;
+      this->following = false;
     }
     else
     {
-      this->pos = temp.first; this->distance++;
+      this->bwt_pos = temp.first; this->distance++;
       this->setSample();
     }
   }
 
   void addRun(std::vector<range_pair>& vec, uint64_t ref_starting_pos)
   {
-    if(this->length <= 1) { return; }
-    range_type ref_run(ref_starting_pos, ref_starting_pos + this->length - 1);
-    this->findSample();
-    range_type seq_run(this->text_pos + 1 - this->length, this->text_pos);
-    vec.push_back(range_pair(ref_run, seq_run));
+    if(this->length > 1)
+    {
+      range_type ref_run(ref_starting_pos, ref_starting_pos + this->length - 1);
+      this->findSample();
+      range_type seq_run(this->text_pos + 1 - this->length, this->text_pos);
+      vec.push_back(range_pair(ref_run, seq_run));
+    }
+    this->reset();
   }
 
   void findSample()
   {
-    if(this->pos >= this->seq.size()) { return; }
     while(this->text_pos >= this->seq.size()) { this->advance(0); }
   }
 };
@@ -942,6 +860,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     for(uint64_t i = 0; i < seq.alpha.sigma; i++) { comp_mapping[i] = i; in_ref[i] = true; }
   }
 
+
   // Build the merging bitvector.
   double timestamp = readTimer();
   bit_vector merge_vector(ref.size() + seq.size());
@@ -969,122 +888,107 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     std::cout << "Built the merging bitvector in " << (readTimer() - timestamp) << " seconds" << std::endl;
   }
 
+
   // Build left match and right match arrays.
   // FIXME: Parallelize: left/right separately
   std::vector<range_pair> left_matches, right_matches;
   timestamp = readTimer();
   {
-    /*
-      Invariant: SA(ref)[ref_pos] = ref_text_pos
-
-      Positions ref[ref_text_pos + 1, ref_text_pos + left.length] have a run of left matches.
-      If left.text_pos is valid, the run of left matches ends at that position.
-    */
-    uint64_t ref_pos = 0, ref_text_pos = ref.size() - 1;
+    uint64_t bwt_pos = 0, text_pos = ref.size() - 1;  // SA(ref)[bwt_pos] = text_pos
     Match<ReferenceType> left(seq), right(seq);
-    uint64_t total_matches = 0; // Statistics.
-    uint64_t left_total = 0, left_runs = 0, left_boundaries = 0;
-    uint64_t right_total = 0, right_runs = 0, right_boundaries = 0;
+    right.follow(0);  // The empty suffix of seq is the right match of the empty suffix of ref.
     bit_vector::select_0_type ref_select(&merge_vector);
     bit_vector::rank_1_type seq_rank(&merge_vector);
 
-    // FIXME try again
-    // Compute the initial matches
-    // while(true)
-    //   advance ref or quit if at beginning
-    //   try to advance the match and check if we have a sample
-    //   if adjacent and starts with the same character, increase length and continue
-    //   if not adjacent, output the match
-    //   if starts with a different character or is a different match, start a new match
-
-    while(true)
+    while(text_pos > 0)
     {
-      uint64_t mutual_pos = ref_select(ref_pos + 1);
-      bool found = false;
-      if(mutual_pos > 0 && merge_vector[mutual_pos - 1] == 1) // There is a left match.
-      {
-        left_total++; found = true;
-        if(left.char_matched)
-        {
-          uint64_t left_match_pos = seq_rank(mutual_pos - 1);
-          if(left_match_pos != left.pos)  // The left match starts a new run.
-          {
-            left.addRun(left_matches, ref_text_pos + 1);
-            left.newRun(left_match_pos); left_runs++;
-          }
-          else { left.length++; }
-        }
-        else  // The left match is on the other side of a character boundary.
-        {
-          left.addRun(left_matches, ref_text_pos + 1); left.reset();
-          left_boundaries++;
-        }
-      }
-      else  // No left match.
-      {
-        left.addRun(left_matches, ref_text_pos + 1);
-        left.reset();
-      }
-      if(mutual_pos + 1 < merge_vector.size() && merge_vector[mutual_pos + 1] == 1)
-      {
-        right_total++; found = true;
-        if(right.char_matched)
-        {
-          uint64_t right_match_pos = seq_rank(mutual_pos + 1);
-          if(right_match_pos != right.pos)  // The right match starts a new run.
-          {
-            right.addRun(right_matches, ref_text_pos + 1);
-            right.newRun(right_match_pos); right_runs++;
-          }
-          else { right.length++; }
-        }
-        else  // The right match is on the other side of a character boundary.
-        {
-          right.addRun(right_matches, ref_text_pos + 1); right.reset();
-          right_boundaries++;
-        }
-      }
-      else  // No right match.
-      {
-        right.addRun(right_matches, ref_text_pos + 1);
-        right.reset();
-      }
-      if(found) { total_matches++; }
-
       // Advance to the previous position.
-      if(ref_text_pos == 0) { break; }
-      range_type temp = ref.LF(ref_pos); ref_pos = temp.first;
-      temp.second = ref.alpha.comp2char[temp.second];
-      left.advance(temp.second); right.advance(temp.second);
+      range_type prev = ref.LF(bwt_pos); bwt_pos = prev.first; text_pos--;
+      prev.second = ref.alpha.comp2char[prev.second];
+      uint64_t mutual_pos = ref_select(bwt_pos + 1);
+
+      // Left match. We stop following, if the character is wrong, the match has reached the beginning of
+      // the sequence, there is no longer a left match, or the old left match is no longer adjacent.
+      if(left.following)
+      {
+        left.advance(prev.second);
+        uint64_t new_match = seq.size();
+        if(merge_vector[mutual_pos - 1] == 0) { left.following = false; }
+        else if((new_match = seq_rank(mutual_pos - 1)) != left.bwt_pos) { left.following = false; }
+        if(left.following) { left.length++; }
+        else
+        {
+          left.addRun(left_matches, text_pos + 1);
+          if(new_match < seq.size()) { left.follow(new_match); }
+        }
+      }
+      else if(mutual_pos > 0 && merge_vector[mutual_pos - 1] == 1)
+      {
+        left.follow(seq_rank(mutual_pos - 1));
+      }
+
+      // Right match.
+      if(right.following)
+      {
+        right.advance(prev.second);
+        uint64_t new_match = seq.size();
+        if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 0) { right.following = false; }
+        else if((new_match = seq_rank(mutual_pos + 1)) != right.bwt_pos) { right.following = false; }
+        if(right.following) { right.length++; }
+        else
+        {
+          right.addRun(right_matches, text_pos + 1);
+          if(new_match < seq.size()) { right.follow(new_match); }
+        }
+      }
+      else if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 1)
+      {
+        right.follow(seq_rank(mutual_pos + 1));
+      }
     }
     left.addRun(left_matches, 0); right.addRun(right_matches, 0);
+    util::clear(merge_vector);
+    range_pair_comparator comp;
+    parallelMergeSort(left_matches.begin(), left_matches.end(), comp);
+    parallelMergeSort(right_matches.begin(), right_matches.end(), comp);
     if(print)
     {
-      std::cout << "Left matches: " << left_total << " total, " << left_runs << " runs, "
-                << left_matches.size() << " nontrivial runs "
-                << left_boundaries << " accross char boundaries" << std::endl;
-      std::cout << "Right matches: " << right_total << " total, " << right_runs << " runs, "
-                << right_matches.size() << " nontrivial runs "
-                << right_boundaries << " accross char boundaries" << std::endl;
+      uint64_t left_total = 0, right_total = 0, total_matches = 0;
+      bit_vector found(seq.size());
+      for(uint64_t i = 0; i < left_matches.size(); i++)
+      {
+        range_type range = left_matches[i].seq_range;
+        left_total += length(range);
+        for(uint64_t j = range.first; j <= range.second; j++) { found[j] = 1; }
+      }
+      for(uint64_t i = 0; i < right_matches.size(); i++)
+      {
+        range_type range = right_matches[i].seq_range;
+        right_total += length(range);
+        for(uint64_t j = range.first; j <= range.second; j++) { found[j] = 1; }
+      }
+      total_matches = util::cnt_one_bits(found);
+      std::cout << "Left matches: " << left_total << " positions in "
+                << left_matches.size() << " runs" << std::endl;
+      std::cout << "Right matches: " << right_total << " positions in "
+                << right_matches.size() << " runs" << std::endl;
       std::cout << "Total matches: " << total_matches << " positions in "
                 << (readTimer() - timestamp) << " seconds" << std::endl;
     }
   }
-  util::clear(merge_vector);
 
   // Find an increasing subsequence in the arrays and mark it in text_lcs bitvectors.
-  lcs = 0;
-  // FIXME from here
-  util::clear(left_matches); util::clear(right_matches);
-
-  // Traverse both CSAs to build the bwt_lcs bitvectors.
-
+  timestamp = readTimer();
+  lcs = increasingSubsequence(left_matches, right_matches, text_ref_lcs, text_seq_lcs, ref.size(), seq.size());
   if(print)
   {
     std::cout << "Found a common subsequence of length " << lcs << " in "
               << (readTimer() - timestamp) << " seconds" << std::endl;
     std::cout << std::endl;
   }
+
+  // FIXME from here
+  // Traverse both CSAs to build the bwt_lcs bitvectors.
 }
 
 //------------------------------------------------------------------------------
