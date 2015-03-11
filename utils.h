@@ -221,12 +221,15 @@ public:
 
   /*
     ByteVector only has to support operator[]. If there is a clearly faster way for sequential
-    access, function characterCounts() should be specialized.
+    access, function characterCounts() should be specialized. If the second parameter is missing,
+    ByteVector::size() is used to determine it.
   */
   template<class ByteVector>
-  Alphabet(const ByteVector& sequence, size_type size) :
+  explicit Alphabet(const ByteVector& sequence, size_type size = 0) :
     char2comp(m_char2comp), comp2char(m_comp2char), C(m_C), sigma(m_sigma)
   {
+    if(size == 0) { size = sequence.size(); }
+
     util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
     util::assign(this->m_comp2char, int_vector<8>(MAX_SIGMA, 0));
     util::assign(this->m_C, int_vector<64>(MAX_SIGMA + 1, 0));
@@ -442,11 +445,12 @@ public:
     The IntVector has to support operator[] that returns a non-const reference.
     The input is the original array, which gets overwritten by a cumulative array.
     This can be reversed by calling CumulativeArray::cumulativeToOriginal().
+    If the second parameter is 0, IntVector::size() is used to determine the size.
   */
   template<class IntVector>
-  CumulativeArray(IntVector& sequence, size_type _size)
+  explicit CumulativeArray(IntVector& sequence, size_type _size = 0)
   {
-    this->m_size = _size;
+    this->m_size = (_size == 0 ? sequence.size() : _size);
 
     for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1] + 1; }
     this->v = sd_vector<>(sequence.begin(), sequence.end());
@@ -491,7 +495,8 @@ public:
   {
     if(i >= this->sum()) { return this->size(); }
 
-    return this->rank(this->select_0(i + 1));
+//    return this->rank(this->select_0(i + 1));
+    return this->select_0(i + 1) - i;
   }
 
   // Is item i the last item in its element.

@@ -253,7 +253,7 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
 
   // Initialize phrases and blocks.
   this->phrases.init(phrase_starts, phrase_lengths);
-  util::assign(this->blocks, CumulativeArray(phrase_lengths, phrase_lengths.size()));
+  util::assign(this->blocks, CumulativeArray(phrase_lengths));
   CumulativeArray::cumulativeToOriginal(phrase_lengths, phrase_lengths.size());
 
   // Initialize ones and zeros, using phrase_starts for ones and phrase_lengths for zeros.
@@ -263,8 +263,8 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
     if(this->mismatches[i]) { phrase_starts[i]++; }
     phrase_lengths[i] -= phrase_starts[i];
   }
-  util::assign(this->ones, CumulativeArray(phrase_starts, phrase_starts.size()));
-  util::assign(this->zeros, CumulativeArray(phrase_lengths, phrase_lengths.size()));
+  util::assign(this->ones, CumulativeArray(phrase_starts));
+  util::assign(this->zeros, CumulativeArray(phrase_lengths));
 }
 
 RLZVector::RLZVector(std::istream& input, const bit_vector& _reference,

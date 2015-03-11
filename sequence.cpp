@@ -7,116 +7,6 @@ namespace relative
 
 //------------------------------------------------------------------------------
 
-Sequence::Sequence()
-{
-  this->sigma = 0;
-}
-
-Sequence::Sequence(int_vector_buffer<8>& buffer, uint64_t _size, uint64_t _sigma)
-{
-  this->sigma = _sigma;
-  if(this->sigma > 0) { this->data.width(bitlength(this->sigma - 1)); }
-  else { this->data.width(8); }
-  this->data.resize(_size);
-  for(uint64_t i = 0; i < this->size(); i++) { this->data[i] = buffer[i]; }
-
-  if(this->sigma == 0)
-  {
-    util::bit_compress(this->data);
-    this->sigma = *std::max_element(this->data.begin(), this->data.end()) + 1;
-  }
-
-  this->buildRank();
-}
-
-Sequence::Sequence(const Sequence& s)
-{
-  this->copy(s);
-}
-
-Sequence::Sequence(Sequence&& s)
-{
-  *this = std::move(s);
-}
-
-Sequence::~Sequence()
-{
-}
-
-void
-Sequence::copy(const Sequence& s)
-{
-  this->data = s.data;
-  this->samples = s.samples;
-  this->sigma = s.sigma;
-}
-
-void
-Sequence::swap(Sequence& s)
-{
-  if(this != &s)
-  {
-    this->data.swap(s.data);
-    this->samples.swap(s.samples);
-    std::swap(this->sigma, s.sigma);
-  }
-}
-
-Sequence&
-Sequence::operator=(const Sequence& s)
-{
-  if(this != &s) { this->copy(s); }
-  return *this;
-}
-
-Sequence&
-Sequence::operator=(Sequence&& s)
-{
-  if(this != &s)
-  {
-    this->data = std::move(s.data);
-    this->samples = std::move(s.samples);
-    this->sigma = s.sigma;
-  }
-  return *this;
-}
-
-uint64_t
-Sequence::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
-{
-  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
-  uint64_t written_bytes = 0;
-  written_bytes += this->data.serialize(out, child, "data");
-  written_bytes += this->samples.serialize(out, child, "samples");
-  written_bytes += write_member(this->sigma, out, child, "sigma");
-  structure_tree::add_size(child, written_bytes);
-  return written_bytes;
-}
-
-void
-Sequence::load(std::istream& in)
-{
-  this->data.load(in);
-  this->samples.load(in);
-  read_member(this->sigma, in);
-}
-
-void
-Sequence::buildRank()
-{
-  uint64_t blocks = (this->size() + SAMPLE_RATE - 1) / SAMPLE_RATE;
-  int_vector<0> temp((blocks + 1) * this->sigma, 0, bitlength(this->size()));
-  for(uint64_t block = 0; block < blocks; block++)
-  {
-    for(uint64_t c = 0; c < this->sigma; c++) { temp[(block + 1) * this->sigma + c] = temp[block * this->sigma + c]; }
-    uint64_t limit = std::min(this->size(), (block + 1) * SAMPLE_RATE);
-    for(uint64_t i = block * SAMPLE_RATE; i < limit; i++) { temp[(block + 1) * this->sigma + this->data[i]]++; }
-  }
-  util::bit_compress(temp); this->samples.swap(temp);
-}
-
-//------------------------------------------------------------------------------
-
 RLSequence::RLSequence()
 {
 }
@@ -298,21 +188,18 @@ RLSequence::buildRank()
     util::init_support(this->block_select, &(this->block_boundaries));
   }
 
-  // Samples. SIGMA passes vs. higher space usage? Multi-threaded?
-  for(uint64_t c = 0; c < SIGMA; c++)
+  int_vector<0> counts[SIGMA];
+  for(uint64_t c = 0; c < SIGMA; c++) { util::assign(counts[c], int_vector<0>(blocks, 0, bitlength(this->size()))); }
+  for(uint64_t block = 0; block < blocks; block++)
   {
-    int_vector<0> temp(blocks, 0, bitlength(this->size()));
-    for(uint64_t block = 0; block < blocks; block++)
+    uint64_t rle_pos = block * SAMPLE_RATE, limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
+    while(rle_pos < limit)
     {
-      uint64_t rle_pos = block * SAMPLE_RATE, limit = std::min(this->runs(), (block + 1) * SAMPLE_RATE);
-      while(rle_pos < limit)
-      {
-        range_type run = this->readRun(rle_pos);
-        if(run.first == c) { temp[block] += run.second; }
-      }
+      range_type run = this->readRun(rle_pos);
+      counts[run.first][block] += run.second;
     }
-    util::assign(this->samples[c], CumulativeArray(temp, temp.size()));
   }
+  for(uint64_t c = 0; c < SIGMA; c++) { util::assign(this->samples[c], CumulativeArray(counts[c])); }
 }
 
 uint64_t
@@ -363,11 +250,12 @@ characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& count
 {
   for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
 
-  uint64_t rle_pos = 0;
+  uint64_t rle_pos = 0, seq_pos = 0;
   while(rle_pos < sequence.runs())
   {
     range_type run = sequence.readRun(rle_pos);
-    counts[run.first] += run.second;
+    counts[run.first] += run.second; seq_pos += run.second;
+    if(seq_pos >= size) { counts[run.first] -= seq_pos - size; break; }
   }
 }
 

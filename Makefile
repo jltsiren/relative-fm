@@ -13,7 +13,7 @@ VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 #VERBOSE_FLAGS=-DVERBOSE_OUTPUT -DVERBOSE_STATUS_INFO
 
 # Hybrid bitvectors are slower, but they can sometimes be smaller.
-VECTOR_FLAGS=-DUSE_HYBRID_BITVECTORS
+#VECTOR_FLAGS=-DUSE_HYBRID_BITVECTORS
 
 # Multithreading with OpenMP. Not really tested without OpenMP support.
 # Currently used for RFM construction.
@@ -28,7 +28,7 @@ SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
 LIBS=-L$(LIB_DIR) -lsdsl -ldivsufsort -ldivsufsort64
-PROGRAMS=align_bwts build_bwt query_test bwt_benchmark test_rlz build_rlzfm
+PROGRAMS=align_bwts build_bwt query_test test_rlz build_rlzfm
 EXTRA=lcs
 
 all: $(PROGRAMS)
@@ -43,9 +43,6 @@ build_bwt:build_bwt.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
 query_test:query_test.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
-
-bwt_benchmark:bwt_benchmark.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
 test_rlz:test_rlz.o $(LIBOBJS)
@@ -66,4 +63,3 @@ package:
 
 clean:
 	rm -f $(PROGRAMS) $(OBJS) $(EXTRA)
-	rm -f relative-fm.aux relative-fm.log relative-fm.pdf

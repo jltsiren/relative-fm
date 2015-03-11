@@ -30,7 +30,7 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
 
   // Initialize phrases and blocks.
   this->phrases.init(phrase_starts, phrase_lengths);
-  util::assign(this->blocks, CumulativeArray(phrase_lengths, phrase_lengths.size()));
+  util::assign(this->blocks, CumulativeArray(phrase_lengths));
   CumulativeArray::cumulativeToOriginal(phrase_lengths, phrase_lengths.size());
 
   // Initialize rank structures.
@@ -54,7 +54,7 @@ RLZFM::RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa) 
   }
   for(uint64_t c = 0; c < this->alpha.sigma; c++)
   {
-    util::assign(this->block_rank[c], CumulativeArray(rank_buffers[c], rank_buffers[c].size()));
+    util::assign(this->block_rank[c], CumulativeArray(rank_buffers[c]));
   }
   delete[] rank_buffers; rank_buffers = 0;
 }

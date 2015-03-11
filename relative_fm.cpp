@@ -1,3 +1,5 @@
+#include <map>
+
 #include "relative_fm.h"
 
 namespace relative
@@ -427,49 +429,158 @@ LCS::select(const LCS::vector_type& vec, const LCS::vector_type::rank_1_type& ra
 
 //------------------------------------------------------------------------------
 
-/*
-  FIXME: run-length encode the arrays.
-*/
+struct range_pair_comparator
+{
+  bool operator() (const range_pair& a, const range_pair& b) const
+  {
+    return (a.ref_range < b.ref_range);
+  }
+};
+
+struct seq_node
+{
+  uint64_t pos, val, len; // Run of consecutive values [val, val+len-1] at [pos, pos+len-1].
+  uint64_t path_length;   // Length of the longest increasing subsequence ending at pos.
+  seq_node*  prev;
+
+  seq_node(uint64_t _pos, uint64_t _val, uint64_t _len) :
+    pos(_pos), val(_val), len(_len),
+    path_length(1), prev(0)
+  {
+  }
+};
+
+std::ostream& operator<<(std::ostream& stream, const seq_node& node)
+{
+  return stream << "(pos = " << node.pos << ", val = " << node.val << ", len = " << node.len
+                << ", path_length = " << node.path_length << ", prev = " << node.prev << ")";
+}
+
 uint64_t
 increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
   bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t ref_len, uint64_t seq_len)
 {
-  /*
-    end_pos[k] contains pair (ref_pos, seq_pos), where seq_pos is the smallest element
-    in the processed range that ends an increasing subsequence of length k. The element
-    occurs in position ref_pos % ref_len.
-
-    If pair is a position pair from end_pos or previous, previous[pair.first] contains
-    its predecessor. Positions 0 to ref_len - 1 correspond to left_matches, while
-    positions ref_len to 2 * ref_len - 1 correspond to right_matches.
-  */
-  std::vector<range_type> end_pos(ref_len + 1, range_type(2 * ref_len, seq_len));
-  std::vector<range_type> previous(2 * ref_len, range_type(ref_len, seq_len));
-  uint64_t lcs = 0;
-
-  std::vector<range_pair>::const_iterator left = left_matches.begin(), right = right_matches.begin();
-//  while(left != left_matches.end() || right != right_matches.end())
+  if(left_matches.size() == 0 || right_matches.size() == 0)
   {
-    // FIXME we advance over the reference, processing one position at a time and following the runs
-    // if no runs previously
-    //   if starting one run: process it
-    //   if starting two runs: process the one with smaller seq_range.first
-    // if one run previously and now: process it
-    // if one run previously, two now
-    //   if new run has smaller seq_range.first than current value: process it
-    //   else: process the current run
-    // FIXME still need to update the previous array even if not processing a run
+    util::assign(ref_lcs, bit_vector(ref_len)); util::assign(seq_lcs, bit_vector(seq_len));
+    return 0;
   }
-  util::clear(left_matches); util::clear(right_matches);
+
+  // Sort the matches and add guards.
+  {
+    range_pair_comparator comp;
+    parallelMergeSort(left_matches.begin(), left_matches.end(), comp);
+    parallelMergeSort(right_matches.begin(), right_matches.end(), comp);
+    left_matches.push_back(range_pair(range_type(ref_len, ref_len + 1), range_type(seq_len, seq_len + 1)));
+    right_matches.push_back(range_pair(range_type(ref_len, ref_len + 1), range_type(seq_len, seq_len + 1)));
+  }
+
+  // Convert the matches into seq_nodes.
+  std::vector<seq_node> nodes;
+  {
+    std::vector<range_pair>::iterator l = left_matches.begin(), r = right_matches.begin();
+    while(l->ref_range.first < ref_len || r->ref_range.first < seq_len)
+    {
+      if(l->ref_range.first < r->ref_range.first)
+      {
+        uint64_t len = std::min(l->ref_range.second, r->ref_range.first) - l->ref_range.first;
+        nodes.push_back(seq_node(l->ref_range.first, l->seq_range.first, len));
+        l->ref_range.first += len; l->seq_range.first += len;
+      }
+      else if(l->ref_range.first > r->ref_range.first)
+      {
+        uint64_t len = std::min(r->ref_range.second, l->ref_range.first) - r->ref_range.first;
+        nodes.push_back(seq_node(r->ref_range.first, r->seq_range.first, len));
+        r->ref_range.first += len; r->seq_range.first += len;
+      }
+      else
+      {
+        uint64_t len = std::min(length(l->ref_range), length(r->ref_range)) - 1;
+        nodes.push_back(seq_node(l->ref_range.first, l->seq_range.first, len));
+        nodes.push_back(seq_node(r->ref_range.first, r->seq_range.first, len));
+        l->ref_range.first += len; l->seq_range.first += len;
+        r->ref_range.first += len; r->seq_range.first += len;
+      }
+      if(l->ref_range.first >= l->ref_range.second) { ++l; }
+      if(r->ref_range.first >= r->ref_range.second) { ++r; }
+    }
+    util::clear(left_matches); util::clear(right_matches);
+  }
+
+  /*
+    longest contains the ends of the paths that can potentially be extended into the
+    longest increasing subsequence.
+
+    Let (v, k) be a position, where v is a node and k is an offset with 0 <= k < v.len.
+    longest[i] points to the node v with the largest v.path_length among all positions
+    (v, k) with v.val + k <= i.
+  */
+  uint64_t lcs = 0;
+  seq_node* path_end = 0;
+  {
+    std::map<uint64_t, seq_node*> longest;
+    for(auto& node : nodes)
+    {
+      if(longest.empty()) { longest[node.val] = &node; lcs = node.len; path_end = &node; }
+      else
+      {
+        auto next = longest.lower_bound(node.val);  // next.val >= node.val
+        if(next != longest.begin())
+        {
+          auto prev = std::prev(next); // prev.val < node.val
+          node.path_length = prev->second->path_length +
+            std::min(prev->second->len, node.val - prev->second->val);
+          node.prev = prev->second;
+        }
+
+        /*
+          1) Always insert to the end.
+          2) Insert if longest[node.val] does not exist.
+          3) Insert if path_length is longer than in the existing longest[node.val].
+          FIXME What if the run supercedes only a part of a node?
+            (if the deleted run extends into a longer path than in this node)
+            in that case we have to create a new node from the remaining part
+              the old one remains as it could be a prev node
+        */
+        if(next == longest.end() || next->second->val > node.val || node.path_length > next->second->path_length)
+        {
+          if(next != longest.end())
+          {
+            auto end = next;
+            while(true)
+            {
+              uint64_t path_length = node.path_length + std::min(end->second->val - node.val, node.len - 1);
+              if(path_length <= end->second->path_length) { break; }
+              ++end;
+            }
+            if(end != next) { longest.erase(next, end); }
+          }
+          longest[node.val] = &node;
+          if(node.path_length + node.len - 1 > lcs)
+          {
+            lcs = node.path_length + node.len - 1;
+            path_end = &node;
+          }
+        }
+      }
+    }
+  }
 
   // Fill the bitvectors.
-  util::assign(ref_lcs, bit_vector(ref_len)); util::assign(seq_lcs, bit_vector(seq_len));
-  range_type match = end_pos[lcs];
-  for(uint64_t i = lcs; i > 0; i--)
+  util::assign(ref_lcs, bit_vector(ref_len, 0)); util::assign(seq_lcs, bit_vector(seq_len, 0));
+  uint64_t limit = ref_len;
+  for(seq_node* node = path_end; node != 0; node = node->prev)
   {
-    ref_lcs[match.first % ref_len] = 1; seq_lcs[match.second] = 1;
-    match = previous[match.first];
+    limit = std::min(node->len, limit - node->pos);
+    for(uint64_t i = 0; i < limit; i++)
+    {
+      ref_lcs[node->pos + i] = 1; seq_lcs[node->val + i] = 1;
+    }
+    limit = node->pos;
   }
+  std::cout << "lcs is " << lcs << ", bitvectors have "
+            << range_type(util::cnt_one_bits(ref_lcs), util::cnt_one_bits(seq_lcs)) << " ones" << std::endl;
+
 
   return lcs;
 }

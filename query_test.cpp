@@ -18,9 +18,8 @@ const uint64_t SEQ_UNKNOWN    = 0;
 const uint64_t SEQ_WT_PLAIN   = 1;
 const uint64_t SEQ_WT_RRR     = 2;
 const uint64_t SEQ_WT_RLZ     = 3;
-const uint64_t SEQ_SEQUENCE   = 4;
-const uint64_t SEQ_RLSEQUENCE = 5;
-const uint64_t SEQ_REPRESENTATIONS = 6; // Largest representation identifier + 1.
+const uint64_t SEQ_RLSEQUENCE = 4;
+const uint64_t SEQ_REPRESENTATIONS = 5; // Largest representation identifier + 1.
 
 const uint64_t TAG_ROPEBWT2_ALPHABET = 0x01;
 const uint64_t TAG_BUILD_INDEXES     = 0x02;
@@ -69,7 +68,6 @@ main(int argc, char** argv)
     std::cerr << "  p    Plain bitvectors in a wavelet tree" << std::endl;
     std::cerr << "  r    RRR bitvectors in a wavelet tree" << std::endl;
     std::cerr << "  l    RLZ bitvectors in a wavelet tree (only for SimpleFM)" << std::endl;
-    std::cerr << "  S    Sequence" << std::endl;
     std::cerr << "  R    RLSequence" << std::endl;
     std::cerr << std::endl;
     // FIXME RLZ bitvectors may need native format for both ref and seq.
@@ -131,12 +129,6 @@ main(int argc, char** argv)
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
-      case SEQ_SEQUENCE:
-        {
-          SimpleFM<Sequence> seq(argv[seq_arg], mode);
-          testIndex(indexName(seq_enc), seq, patterns, chars, tags);
-        }
-        break;
       case SEQ_RLSEQUENCE:
         {
           SimpleFM<RLSequence> seq(argv[seq_arg], mode);
@@ -171,9 +163,6 @@ main(int argc, char** argv)
       case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
         testIndex<bwt_type, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
-      case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_SEQUENCE:
-        testIndex<bwt_type, Sequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
       case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
         testIndex<bwt_type, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
@@ -184,24 +173,8 @@ main(int argc, char** argv)
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
         testIndex<wt_huff<rrr_vector<63> >, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
-      case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_SEQUENCE:
-        testIndex<wt_huff<rrr_vector<63> >, Sequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
         testIndex<wt_huff<rrr_vector<63> >, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-
-      case SEQ_SEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_PLAIN:
-        testIndex<Sequence, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-      case SEQ_SEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
-        testIndex<Sequence, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-      case SEQ_SEQUENCE * SEQ_REPRESENTATIONS + SEQ_SEQUENCE:
-        testIndex<Sequence, Sequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-      case SEQ_SEQUENCE * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
-        testIndex<Sequence, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
 
       case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_PLAIN:
@@ -209,9 +182,6 @@ main(int argc, char** argv)
         break;
       case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
         testIndex<RLSequence, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-      case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_SEQUENCE:
-        testIndex<RLSequence, Sequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
         testIndex<RLSequence, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
@@ -363,7 +333,6 @@ seqRepresentation(uint8_t type)
     case 'p': return SEQ_WT_PLAIN;
     case 'r': return SEQ_WT_RRR;
     case 'l': return SEQ_WT_RLZ;
-    case 'S': return SEQ_SEQUENCE;
     case 'R': return SEQ_RLSEQUENCE;
   }
   return SEQ_UNKNOWN;
@@ -377,7 +346,6 @@ encodingName(uint64_t representation)
     case SEQ_WT_PLAIN:   return "plain";
     case SEQ_WT_RRR:     return "rrr";
     case SEQ_WT_RLZ:     return "rlz";
-    case SEQ_SEQUENCE:   return "seq";
     case SEQ_RLSEQUENCE: return "rle";
   }
   return "unknown";
@@ -391,7 +359,6 @@ indexName(uint64_t representation)
     case SEQ_WT_PLAIN:   return "SimpleFM<plain>";
     case SEQ_WT_RRR:     return "SimpleFM<rrr>";
     case SEQ_WT_RLZ:     return "SimpleFM<rlz>";
-    case SEQ_SEQUENCE:   return "SimpleFM<seq>";
     case SEQ_RLSEQUENCE: return "SimpleFM<rle>";
   }
   return "Unknown";

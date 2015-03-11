@@ -722,17 +722,9 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
 struct range_pair
 {
-  range_type ref_range, seq_range;
+  range_type ref_range, seq_range;  // Semiopen ranges [begin, end).
 
   range_pair(range_type ref, range_type seq) : ref_range(ref), seq_range(seq) {}
-};
-
-struct range_pair_comparator
-{
-  bool operator() (const range_pair& a, const range_pair& b) const
-  {
-    return (a.ref_range < b.ref_range);
-  }
 };
 
 /*
@@ -948,31 +940,22 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     }
     left.addRun(left_matches, 0); right.addRun(right_matches, 0);
     util::clear(merge_vector);
-    range_pair_comparator comp;
-    parallelMergeSort(left_matches.begin(), left_matches.end(), comp);
-    parallelMergeSort(right_matches.begin(), right_matches.end(), comp);
     if(print)
     {
-      uint64_t left_total = 0, right_total = 0, total_matches = 0;
+      uint64_t total_matches = 0;
       bit_vector found(seq.size());
       for(uint64_t i = 0; i < left_matches.size(); i++)
       {
         range_type range = left_matches[i].seq_range;
-        left_total += length(range);
-        for(uint64_t j = range.first; j <= range.second; j++) { found[j] = 1; }
+        for(uint64_t j = range.first; j < range.second; j++) { found[j] = 1; }
       }
       for(uint64_t i = 0; i < right_matches.size(); i++)
       {
         range_type range = right_matches[i].seq_range;
-        right_total += length(range);
-        for(uint64_t j = range.first; j <= range.second; j++) { found[j] = 1; }
+        for(uint64_t j = range.first; j < range.second; j++) { found[j] = 1; }
       }
       total_matches = util::cnt_one_bits(found);
-      std::cout << "Left matches: " << left_total << " positions in "
-                << left_matches.size() << " runs" << std::endl;
-      std::cout << "Right matches: " << right_total << " positions in "
-                << right_matches.size() << " runs" << std::endl;
-      std::cout << "Total matches: " << total_matches << " positions in "
+      std::cout << "Matches: " << total_matches << " positions in "
                 << (readTimer() - timestamp) << " seconds" << std::endl;
     }
   }

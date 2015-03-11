@@ -92,7 +92,7 @@ main(int argc, char** argv)
 
     // Compact the alphabet and write it if necessary.
     {
-      Alphabet alpha(text, size + 1);
+      Alphabet alpha(text);
       for(uint64_t i = 0; i <= size; i++) { text[i] = alpha.char2comp[text[i]]; }
       if(write_alphabet)
       {

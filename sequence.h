@@ -8,57 +8,6 @@ namespace relative
 
 //------------------------------------------------------------------------------
 
-class Sequence
-{
-public:
-  const static uint64_t SAMPLE_RATE = 128;
-  typedef uint64_t size_type;
-
-  Sequence();
-  Sequence(int_vector_buffer<8>& buffer, uint64_t _size, uint64_t _sigma = 0);  // Set sigma in advance to save memory.
-  Sequence(const Sequence& s);
-  Sequence(Sequence&& s);
-  ~Sequence();
-
-  void swap(Sequence& s);
-  Sequence& operator=(const Sequence& s);
-  Sequence& operator=(Sequence&& s);
-
-  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
-  void load(std::istream& in);
-
-  inline uint64_t size() const { return this->data.size(); }
-
-  inline uint64_t rank(uint64_t i, uint8_t c) const
-  {
-    if(c >= this->sigma) { return 0; }
-    if(i > this->size()) { i = this->size(); }
-
-    uint64_t block = i / SAMPLE_RATE;
-    uint64_t res = this->samples[block * this->sigma + c];
-    for(uint64_t pos = block * SAMPLE_RATE; pos < i; pos++) { if(this->data[pos] == c) { res++; } }
-    return res;
-  }
-
-  inline uint64_t operator[](uint64_t i) const { return this->data[i]; }
-
-  inline range_type inverse_select(uint64_t i) const
-  {
-    range_type res(0, (*this)[i]);
-    res.first = this->rank(i, res.second);
-    return res;
-  }
-
-private:
-  int_vector<0> data, samples;
-  uint64_t      sigma;
-
-  void copy(const Sequence& s);
-  void buildRank();
-};  // class Sequence
-
-//------------------------------------------------------------------------------
-
 /*
   A basic run-length encoded sequence for alphabet 0-5.
 */
