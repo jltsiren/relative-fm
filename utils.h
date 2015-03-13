@@ -7,7 +7,6 @@
 
 #include <sdsl/wavelet_trees.hpp>
 
-#ifdef _OPENMP
 /*
   Critical sections:
 
@@ -16,7 +15,6 @@
   stdout      Writing to std::cout within parallel sections.
 */
 #include <omp.h>
-#endif
 
 using namespace sdsl;
 

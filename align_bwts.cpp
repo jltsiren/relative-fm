@@ -56,9 +56,7 @@ main(int argc, char** argv)
   }
 
   std::cout << "Relative FM-index builder" << std::endl;
-#ifdef _OPENMP
   std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
-#endif
   std::cout << std::endl;
   std::cout << "Algorithm: " << (parameters.samples ? "samples" : "partitioning") << std::endl;
   std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;

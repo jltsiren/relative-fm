@@ -22,11 +22,7 @@ mostFrequentChar(const std::vector<uint8_t>& ref_extract, const std::vector<uint
     if(temp > max_f) { max_c = c; max_f = temp; }
   }
 
-#ifdef _OPENMP
   uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
-#else
-  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
-#endif
   for(uint64_t i = 0, found = 0; i < length(ref_range) && found < max_f; i++)
   {
     if(ref_extract[i] == max_c) { ref_lcs[ref_padding + i] = 1; found++; }
@@ -37,9 +33,7 @@ mostFrequentChar(const std::vector<uint8_t>& ref_extract, const std::vector<uint
   }
 
 #ifdef VERBOSE_STATUS_INFO
-  #ifdef _OPENMP
   #pragma omp critical (stderr)
-  #endif
   {
     std::cerr << "Finding the most frequent character in " << std::make_pair(ref_range, seq_range) << std::endl;
     if(max_f == 0)
@@ -67,11 +61,7 @@ matchRuns(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
 {
   uint64_t ref_pos = 0, seq_pos = 0, found = 0;
   range_type ref_run(0, 0), seq_run(0, 0);
-#ifdef _OPENMP
   uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
-#else
-  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
-#endif
   while(ref_pos < length(ref_range) && seq_pos < length(seq_range))
   {
     if(ref_run.second <= ref_pos) // Find the next ref_run if needed.
@@ -107,9 +97,7 @@ matchRuns(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
   }
 
 #ifdef VERBOSE_STATUS_INFO
-  #ifdef _OPENMP
   #pragma omp critical (stderr)
-  #endif
   {
     std::cerr << "Matching the runs in " << std::make_pair(ref_range, seq_range) << std::endl;
     std::cerr << "  Matched " << found << " characters from sequences of length "
@@ -177,9 +165,7 @@ greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
     if(d >= parameters.max_d && !found)
     {
 #ifdef VERBOSE_STATUS_INFO
-#ifdef _OPENMP
       #pragma omp critical (stderr)
-#endif
       std::cerr << "MAX_D exceeded on ranges " << std::make_pair(ref_range, seq_range) << std::endl;
 #endif
       if(!(parameters.preallocate)) { delete buf; buf = 0; }
@@ -190,11 +176,7 @@ greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
   // Extract the LCS.
   uint64_t lcs = 0;
   d--;  // The last diagonal.
-#ifdef _OPENMP
   uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
-#else
-  uint64_t ref_padding = ref_range.first, seq_padding = seq_range.first;
-#endif
   for(int k = ref_len - seq_len; d >= 0; d--)
   {
     int x_lim = 0, next_k = 0;
@@ -437,23 +419,65 @@ struct range_pair_comparator
   }
 };
 
-struct seq_node
+void
+processRange(uint64_t pos, uint64_t val, uint64_t len,
+  int_vector<0>& smallest, int_vector<0>& previous, uint64_t& lcs)
 {
-  uint64_t pos, val, len; // Run of consecutive values [val, val+len-1] at [pos, pos+len-1].
-  uint64_t path_length;   // Length of the longest increasing subsequence ending at pos.
-  seq_node*  prev;
-
-  seq_node(uint64_t _pos, uint64_t _val, uint64_t _len) :
-    pos(_pos), val(_val), len(_len),
-    path_length(1), prev(0)
+  // Find the longest increasing subsequence with last value < val.
+  uint64_t low = 1, high = lcs;
+  while(low <= high)
   {
+    uint64_t mid = low + (high - low) / 2;
+    if(smallest[2 * mid + 1] < val) { low = mid + 1; }
+    else { high = mid - 1; }
   }
-};
 
-std::ostream& operator<<(std::ostream& stream, const seq_node& node)
+  // low is now the length of the found subsequence + 1.
+  for(uint64_t i = 0; i < len; i++)
+  {
+    previous[2 * (pos + i)] = smallest[2 * (low + i) - 2];
+    previous[2 * (pos + i) + 1] = smallest[2 * (low + i) - 1];
+    smallest[2 * (low + i)] = pos + i;
+    smallest[2 * (low + i) + 1] = val + i;
+  }
+  lcs = std::max(lcs, low + len - 1);
+}
+
+void
+sortMatches(std::vector<range_pair>& matches, uint64_t ref_len, uint64_t seq_len)
 {
-  return stream << "(pos = " << node.pos << ", val = " << node.val << ", len = " << node.len
-                << ", path_length = " << node.path_length << ", prev = " << node.prev << ")";
+  range_pair_comparator comp;
+  parallelMergeSort(matches.begin(), matches.end(), comp);
+  matches.push_back(range_pair(range_type(ref_len, ref_len + 1), range_type(seq_len, seq_len + 1)));
+}
+
+uint64_t
+countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches, uint64_t ref_len)
+{
+  uint64_t total_matches = 0, pos = 0;
+  std::vector<range_pair>::iterator l = left_matches.begin(), r = right_matches.begin();
+  while(l->ref_range.first < ref_len || r->ref_range.first < ref_len)
+  {
+    if(l->ref_range.first <= r->ref_range.first)
+    {
+      if(l->ref_range.second > pos)
+      {
+        total_matches += l->ref_range.second - std::max(l->ref_range.first, pos);
+        pos = l->ref_range.second;
+      }
+      ++l;
+    }
+    else
+    {
+      if(r->ref_range.second > pos)
+      {
+        total_matches += r->ref_range.second - std::max(r->ref_range.first, pos);
+        pos = r->ref_range.second;
+      }
+      ++r;
+    }
+  }
+  return total_matches;
 }
 
 uint64_t
@@ -466,38 +490,47 @@ increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_p
     return 0;
   }
 
-  // Sort the matches and add guards.
-  {
-    range_pair_comparator comp;
-    parallelMergeSort(left_matches.begin(), left_matches.end(), comp);
-    parallelMergeSort(right_matches.begin(), right_matches.end(), comp);
-    left_matches.push_back(range_pair(range_type(ref_len, ref_len + 1), range_type(seq_len, seq_len + 1)));
-    right_matches.push_back(range_pair(range_type(ref_len, ref_len + 1), range_type(seq_len, seq_len + 1)));
-  }
-
-  // Convert the matches into seq_nodes.
-  std::vector<seq_node> nodes;
+  /*
+    Let smallest(i) = smallest[2 * i, 2 * i + 1] and previous(i) = previous[2 * i, 2 * i + 1].
+    smallest(i) = (pos, val) is the ending position of the increasing subsequence of
+    length i with the smallest val. previous(pos) = (pos', val') is the predecessor of
+    position pos in the longest increasing subsequence pos is a part of. Note that if pos
+    is a right match, the actual position is pos - ref_len.
+  */
+  int_vector<0> smallest(2 * (ref_len + 1), 2 * ref_len, bitlength(2 * ref_len));
+  int_vector<0> previous(4 * ref_len, 2 * ref_len, bitlength(2 * ref_len));
+  uint64_t lcs = 0;
   {
     std::vector<range_pair>::iterator l = left_matches.begin(), r = right_matches.begin();
-    while(l->ref_range.first < ref_len || r->ref_range.first < seq_len)
+    while(l->ref_range.first < ref_len || r->ref_range.first < ref_len)
     {
       if(l->ref_range.first < r->ref_range.first)
       {
         uint64_t len = std::min(l->ref_range.second, r->ref_range.first) - l->ref_range.first;
-        nodes.push_back(seq_node(l->ref_range.first, l->seq_range.first, len));
+        processRange(l->ref_range.first, l->seq_range.first, len, smallest, previous, lcs);
         l->ref_range.first += len; l->seq_range.first += len;
       }
       else if(l->ref_range.first > r->ref_range.first)
       {
         uint64_t len = std::min(r->ref_range.second, l->ref_range.first) - r->ref_range.first;
-        nodes.push_back(seq_node(r->ref_range.first, r->seq_range.first, len));
+        processRange(r->ref_range.first + ref_len, r->seq_range.first, len, smallest, previous, lcs);
         r->ref_range.first += len; r->seq_range.first += len;
       }
       else
       {
+        // Process the larger values first, because they cannot interfere with the smaller values.
+        // This works because the ranges of left and right matches cannot overlap.
         uint64_t len = std::min(length(l->ref_range), length(r->ref_range)) - 1;
-        nodes.push_back(seq_node(l->ref_range.first, l->seq_range.first, len));
-        nodes.push_back(seq_node(r->ref_range.first, r->seq_range.first, len));
+        if(l->seq_range.first > r->seq_range.first)
+        {
+          processRange(l->ref_range.first, l->seq_range.first, len, smallest, previous, lcs);
+          processRange(r->ref_range.first + ref_len, r->seq_range.first, len, smallest, previous, lcs);
+        }
+        else
+        {
+          processRange(r->ref_range.first + ref_len, r->seq_range.first, len, smallest, previous, lcs);
+          processRange(l->ref_range.first, l->seq_range.first, len, smallest, previous, lcs);
+        }
         l->ref_range.first += len; l->seq_range.first += len;
         r->ref_range.first += len; r->seq_range.first += len;
       }
@@ -507,80 +540,14 @@ increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_p
     util::clear(left_matches); util::clear(right_matches);
   }
 
-  /*
-    longest contains the ends of the paths that can potentially be extended into the
-    longest increasing subsequence.
-
-    Let (v, k) be a position, where v is a node and k is an offset with 0 <= k < v.len.
-    longest[i] points to the node v with the largest v.path_length among all positions
-    (v, k) with v.val + k <= i.
-  */
-  uint64_t lcs = 0;
-  seq_node* path_end = 0;
-  {
-    std::map<uint64_t, seq_node*> longest;
-    for(auto& node : nodes)
-    {
-      if(longest.empty()) { longest[node.val] = &node; lcs = node.len; path_end = &node; }
-      else
-      {
-        auto next = longest.lower_bound(node.val);  // next.val >= node.val
-        if(next != longest.begin())
-        {
-          auto prev = std::prev(next); // prev.val < node.val
-          node.path_length = prev->second->path_length +
-            std::min(prev->second->len, node.val - prev->second->val);
-          node.prev = prev->second;
-        }
-
-        /*
-          1) Always insert to the end.
-          2) Insert if longest[node.val] does not exist.
-          3) Insert if path_length is longer than in the existing longest[node.val].
-          FIXME What if the run supercedes only a part of a node?
-            (if the deleted run extends into a longer path than in this node)
-            in that case we have to create a new node from the remaining part
-              the old one remains as it could be a prev node
-        */
-        if(next == longest.end() || next->second->val > node.val || node.path_length > next->second->path_length)
-        {
-          if(next != longest.end())
-          {
-            auto end = next;
-            while(true)
-            {
-              uint64_t path_length = node.path_length + std::min(end->second->val - node.val, node.len - 1);
-              if(path_length <= end->second->path_length) { break; }
-              ++end;
-            }
-            if(end != next) { longest.erase(next, end); }
-          }
-          longest[node.val] = &node;
-          if(node.path_length + node.len - 1 > lcs)
-          {
-            lcs = node.path_length + node.len - 1;
-            path_end = &node;
-          }
-        }
-      }
-    }
-  }
-
   // Fill the bitvectors.
   util::assign(ref_lcs, bit_vector(ref_len, 0)); util::assign(seq_lcs, bit_vector(seq_len, 0));
-  uint64_t limit = ref_len;
-  for(seq_node* node = path_end; node != 0; node = node->prev)
+  uint64_t pos = smallest[2 * lcs], val = smallest[2 * lcs + 1];
+  for(uint64_t i = lcs; i > 0; i--)
   {
-    limit = std::min(node->len, limit - node->pos);
-    for(uint64_t i = 0; i < limit; i++)
-    {
-      ref_lcs[node->pos + i] = 1; seq_lcs[node->val + i] = 1;
-    }
-    limit = node->pos;
+    ref_lcs[pos % ref_len] = 1; seq_lcs[val] = 1;
+    val = previous[2 * pos + 1]; pos = previous[2 * pos];
   }
-  std::cout << "lcs is " << lcs << ", bitvectors have "
-            << range_type(util::cnt_one_bits(ref_lcs), util::cnt_one_bits(seq_lcs)) << " ones" << std::endl;
-
 
   return lcs;
 }

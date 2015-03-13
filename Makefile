@@ -15,7 +15,7 @@ VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 # Hybrid bitvectors are slower, but they can sometimes be smaller.
 #VECTOR_FLAGS=-DUSE_HYBRID_BITVECTORS
 
-# Multithreading with OpenMP. Not really tested without OpenMP support.
+# Multithreading with OpenMP. No longer compiles without OpenMP support.
 # Currently used for RFM construction.
 PARALLEL_FLAGS=-fopenmp
 

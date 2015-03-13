@@ -289,7 +289,46 @@ public:
   }
 
   // Call supportsLocate() first.
-  uint64_t locate(uint64_t i) const { return i; }
+  uint64_t locate(uint64_t i) const
+  {
+    if(i >= this->size()) { return 0; }
+
+//    std::cout << "locate(" << i << ")" << std::endl;
+
+    // Find an LCS position in BWT(seq).
+    uint64_t steps = 0;
+    while(this->bwt_lcs.seq[i] == 0)
+    {
+      uint64_t c = this->alpha.comp2char[this->seq_minus_lcs[i - this->bwt_lcs.seq_rank(i)]];
+//      std::cout << "  c = " << c << std::endl;
+      if(c == 0) { return steps; }
+      i = cumulative(this->alpha, c) + this->rank(i, c); steps++;
+//      std::cout << "    i = " << i << std::endl;
+    }
+//    std::cout << "  steps = " << steps << std::endl;
+
+    // Map the LCS position into the corresponding position in BWT(ref).
+    i = this->bwt_lcs.ref_select(this->bwt_lcs.seq_rank(i) + 1);
+//    std::cout << "  ref_bwt_pos = " << i << std::endl;
+
+    // Locate the position in ref and convert it into a position in seq.
+    // FIXME the located position may not be in LCS, but the previous one is
+    // FIXME what happens when ref.locate returns 0? It can't because there is LCS position before i?
+    // FIXME Except that the LCS position may be the empty suffix. Fix this in the construction.
+    i = this->reference.locate(i);
+//    std::cout << "  ref_text_pos = " << i << std::endl;
+    i = this->text_lcs.seq_select(this->text_lcs.ref_rank(i) + 1);
+//    std::cout << "  seq_text_pos = " << i << std::endl;
+
+    return i + steps;
+  }
+
+  inline range_type LF(uint64_t i) const
+  {
+    auto temp = this->bwt.inverse_select(i);
+    return range_type(temp.first + this->alpha.C[temp.second], temp.second);
+  }
+
 
 //------------------------------------------------------------------------------
 
@@ -367,9 +406,7 @@ getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vecto
   }
   directConstruct(output, buffer);
 #ifdef VERBOSE_STATUS_INFO
-  #ifdef _OPENMP
   #pragma omp critical (stderr)
-  #endif
   {
     std::cerr << "Extracted complement of length " << buffer.size() << " in "
               << (readTimer() - timestamp) << " seconds" << std::endl;
@@ -490,9 +527,7 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
     if(curr.pattern.length() >= parameters.max_length)
     {
 #ifdef VERBOSE_STATUS_INFO
-#ifdef _OPENMP
       #pragma omp critical (stderr)
-#endif
       {
         std::cerr << "Pattern length became " << curr.pattern.length() << " on ranges "
                   << std::make_pair(curr.left, curr.right) << std::endl;
@@ -587,7 +622,6 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   uint64_t intersection = 0;
   std::vector<short_record_type> results;
   {
-#ifdef _OPENMP
     std::vector<record_type> record_array;
     generatePatterns(record_array, alphabet, sigma, ref, seq, parameters.seed_length);
     #pragma omp parallel for schedule(dynamic, 1)
@@ -602,10 +636,6 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     }
     short_record_comparator comp;
     parallelMergeSort(results.begin(), results.end(), comp);
-#else
-    record_type root(range_type(0, ref.size() - 1), range_type(0, seq.size() - 1), "", true, false);
-    processSubtree(root, alphabet, sigma, ref, seq, results, parameters);
-#endif
   }
   if(print)
   {
@@ -639,7 +669,6 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   uint64_t losses = 0, processed = 0, percentage = 1;
   util::assign(ref_lcs, bit_vector(ref.size(), 0));
   util::assign(seq_lcs, bit_vector(seq.size(), 0));
-#ifdef _OPENMP
   uint64_t threads = omp_get_max_threads();
   uint64_t chunk = std::max((uint64_t)1, results.size() / (threads * threads));
   std::vector<std::vector<int>*> buffers(threads, 0);
@@ -685,30 +714,6 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   {
     for(uint64_t i = 0; i < threads; i++) { delete buffers[i]; buffers[i] = 0; }
   }
-#else
-  std::vector<int>* buffer = 0;
-  if(parameters.preallocate)
-  {
-    buffer = new std::vector<int>;
-    buffer.reserve((parameters.max_d + 3) * (parameters.max_d + 1));
-  }
-  for(uint64_t i = 0; i < results.size(); i++)
-  {
-    int_vector<8> ref_extract; ref.extractBWT(ref_range, ref_buffer);
-    int_vector<8> seq_extract; seq.extractBWT(seq_range, seq_buffer);
-    range_type temp = greedyLCS(ref_extract, seq_extract, ref_lcs, seq_lcs, results[i], alphabet, sigma, parameters, buffer);
-    lcs += temp.first; losses += temp.second;
-    processed++;
-    if(processed >= (percentage / 100.0) * results.size())
-    {
-      double curr = readTimer();
-      std::cerr << "Processed " << processed << " / " << results.size() << " ranges in "
-                << (curr - timestamp) << " seconds" << std::endl;
-      percentage++;
-    }
-  }
-  if(parameters.preallocate) { delete buffer; buffer = 0; }
-#endif
   if(print)
   {
     std::cout << "Found a common subsequence of length " << lcs << " in "
@@ -737,6 +742,12 @@ struct range_pair
 */
 uint64_t increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
   bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t ref_len, uint64_t seq_len);
+
+// Sort the matches and add a guard to the end.
+void sortMatches(std::vector<range_pair>& matches, uint64_t ref_len, uint64_t seq_len);
+
+// Determine the number of positions covered by a left/right match.
+uint64_t countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches, uint64_t ref_len);
 
 template<class ReferenceType>
 struct Match
@@ -819,6 +830,81 @@ struct Match
 
 template<class ReferenceType>
 void
+findMatches(const ReferenceType& ref, const ReferenceType& seq,
+  std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
+  const bit_vector& merge_vector)
+{
+  uint64_t bwt_pos = 0, text_pos = ref.size() - 1;  // SA(ref)[bwt_pos] = text_pos
+  Match<ReferenceType> left(seq), right(seq);
+  right.follow(0);  // The empty suffix of seq is the right match of the empty suffix of ref.
+  bit_vector::select_0_type ref_select(&merge_vector);
+  bit_vector::rank_1_type seq_rank(&merge_vector);
+
+  while(text_pos > 0)
+  {
+    // Advance to the previous position.
+    range_type prev = ref.LF(bwt_pos); bwt_pos = prev.first; text_pos--;
+    prev.second = ref.alpha.comp2char[prev.second];
+    uint64_t mutual_pos = ref_select(bwt_pos + 1);
+
+    // We stop following, if the character is wrong, the match has reached the beginning of
+    // the sequence, there is no longer a match, or the old match is no longer adjacent.
+    if(left.following)
+    {
+      left.advance(prev.second);
+      uint64_t new_match = seq.size();
+      if(merge_vector[mutual_pos - 1] == 0) { left.following = false; }
+      else if((new_match = seq_rank(mutual_pos - 1)) != left.bwt_pos) { left.following = false; }
+      if(left.following) { left.length++; }
+      else
+      {
+        left.addRun(left_matches, text_pos + 1);
+        if(new_match < seq.size()) { left.follow(new_match); }
+      }
+    }
+    else if(mutual_pos > 0 && merge_vector[mutual_pos - 1] == 1)
+    {
+      left.follow(seq_rank(mutual_pos - 1));
+    }
+
+    if(right.following)
+    {
+      right.advance(prev.second);
+      uint64_t new_match = seq.size();
+      if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 0) { right.following = false; }
+      else if((new_match = seq_rank(mutual_pos + 1)) != right.bwt_pos) { right.following = false; }
+      if(right.following) { right.length++; }
+      else
+      {
+        right.addRun(right_matches, text_pos + 1);
+        if(new_match < seq.size()) { right.follow(new_match); }
+      }
+    }
+    else if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 1)
+    {
+      right.follow(seq_rank(mutual_pos + 1));
+    }
+  }
+
+  left.addRun(left_matches, 0); right.addRun(right_matches, 0);
+}
+
+template<class ReferenceType>
+void
+permuteVector(const bit_vector& source, bit_vector& target, const ReferenceType& index)
+{
+  util::assign(target, bit_vector(index.size(), 0));
+  uint64_t bwt_pos = 0;
+  for(uint64_t i = index.size(); i > 1; i--)
+  {
+    target[bwt_pos] = source[i - 2];
+    bwt_pos = index.LF(bwt_pos).first;
+  }
+  target[bwt_pos] = source[index.size() - 1];
+}
+
+template<class ReferenceType>
+void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& bwt_ref_lcs, bit_vector& bwt_seq_lcs,
   bit_vector& text_ref_lcs, bit_vector& text_seq_lcs,
@@ -852,7 +938,6 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     for(uint64_t i = 0; i < seq.alpha.sigma; i++) { comp_mapping[i] = i; in_ref[i] = true; }
   }
 
-
   // Build the merging bitvector.
   double timestamp = readTimer();
   bit_vector merge_vector(ref.size() + seq.size());
@@ -880,82 +965,18 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     std::cout << "Built the merging bitvector in " << (readTimer() - timestamp) << " seconds" << std::endl;
   }
 
-
   // Build left match and right match arrays.
-  // FIXME: Parallelize: left/right separately
   std::vector<range_pair> left_matches, right_matches;
   timestamp = readTimer();
   {
-    uint64_t bwt_pos = 0, text_pos = ref.size() - 1;  // SA(ref)[bwt_pos] = text_pos
-    Match<ReferenceType> left(seq), right(seq);
-    right.follow(0);  // The empty suffix of seq is the right match of the empty suffix of ref.
-    bit_vector::select_0_type ref_select(&merge_vector);
-    bit_vector::rank_1_type seq_rank(&merge_vector);
-
-    while(text_pos > 0)
-    {
-      // Advance to the previous position.
-      range_type prev = ref.LF(bwt_pos); bwt_pos = prev.first; text_pos--;
-      prev.second = ref.alpha.comp2char[prev.second];
-      uint64_t mutual_pos = ref_select(bwt_pos + 1);
-
-      // Left match. We stop following, if the character is wrong, the match has reached the beginning of
-      // the sequence, there is no longer a left match, or the old left match is no longer adjacent.
-      if(left.following)
-      {
-        left.advance(prev.second);
-        uint64_t new_match = seq.size();
-        if(merge_vector[mutual_pos - 1] == 0) { left.following = false; }
-        else if((new_match = seq_rank(mutual_pos - 1)) != left.bwt_pos) { left.following = false; }
-        if(left.following) { left.length++; }
-        else
-        {
-          left.addRun(left_matches, text_pos + 1);
-          if(new_match < seq.size()) { left.follow(new_match); }
-        }
-      }
-      else if(mutual_pos > 0 && merge_vector[mutual_pos - 1] == 1)
-      {
-        left.follow(seq_rank(mutual_pos - 1));
-      }
-
-      // Right match.
-      if(right.following)
-      {
-        right.advance(prev.second);
-        uint64_t new_match = seq.size();
-        if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 0) { right.following = false; }
-        else if((new_match = seq_rank(mutual_pos + 1)) != right.bwt_pos) { right.following = false; }
-        if(right.following) { right.length++; }
-        else
-        {
-          right.addRun(right_matches, text_pos + 1);
-          if(new_match < seq.size()) { right.follow(new_match); }
-        }
-      }
-      else if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 1)
-      {
-        right.follow(seq_rank(mutual_pos + 1));
-      }
-    }
-    left.addRun(left_matches, 0); right.addRun(right_matches, 0);
+    findMatches(ref, seq, left_matches, right_matches, merge_vector);
     util::clear(merge_vector);
+    sortMatches(left_matches, ref.size(), seq.size());
+    sortMatches(right_matches, ref.size(), seq.size());
     if(print)
     {
-      uint64_t total_matches = 0;
-      bit_vector found(seq.size());
-      for(uint64_t i = 0; i < left_matches.size(); i++)
-      {
-        range_type range = left_matches[i].seq_range;
-        for(uint64_t j = range.first; j < range.second; j++) { found[j] = 1; }
-      }
-      for(uint64_t i = 0; i < right_matches.size(); i++)
-      {
-        range_type range = right_matches[i].seq_range;
-        for(uint64_t j = range.first; j < range.second; j++) { found[j] = 1; }
-      }
-      total_matches = util::cnt_one_bits(found);
-      std::cout << "Matches: " << total_matches << " positions in "
+      uint64_t total_matches = countCoverage(left_matches, right_matches, ref.size());
+      std::cout << "Matched " << total_matches << " positions in "
                 << (readTimer() - timestamp) << " seconds" << std::endl;
     }
   }
@@ -967,11 +988,24 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   {
     std::cout << "Found a common subsequence of length " << lcs << " in "
               << (readTimer() - timestamp) << " seconds" << std::endl;
-    std::cout << std::endl;
   }
 
-  // FIXME from here
   // Traverse both CSAs to build the bwt_lcs bitvectors.
+  timestamp = readTimer();
+  {
+    const ReferenceType* index[2] = { &ref, &seq };
+    bit_vector* text_lcs[2] = { &text_ref_lcs, &text_seq_lcs };
+    bit_vector* bwt_lcs[2] = { &bwt_ref_lcs, &bwt_seq_lcs };
+    #pragma omp parallel for
+    for(uint64_t i = 0; i < 2; i++)
+    {
+      permuteVector(*(text_lcs[i]), *(bwt_lcs[i]), *(index[i]));
+    }
+  }
+  if(print)
+  {
+    std::cout << "Built the bwt_lcs bitvectors in " << (readTimer() - timestamp) << " seconds" << std::endl;
+  }
 }
 
 //------------------------------------------------------------------------------
