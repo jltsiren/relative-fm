@@ -14,21 +14,27 @@ struct align_parameters
   const static uint64_t MAX_LENGTH  = 32;   // Maximum length of a pattern used to split the BWTs.
   const static uint64_t SEED_LENGTH = 4;    // Generate all patterns of this length before parallelizing.
   const static int      MAX_D       = 8192; // Number of diagonals to consider in Myers' algorithm.
+  const static uint64_t SAMPLE_RATE = 0;    // Sample rate for relative FM.
 
   // Default size for on demand LCS buffer; enough for d = 100.
   const static uint64_t BUFFER_SIZE = 103 * 101;
 
+  // Default sample rate with a BWT-invariant subsequence.
+  const static uint64_t SECONDARY_SAMPLE_RATE = 257;
+
   align_parameters() :
     block_size(BLOCK_SIZE), max_length(MAX_LENGTH), seed_length(SEED_LENGTH), max_d(MAX_D),
-    sorted_alphabet(true), preallocate(false), samples(false)
+    sample_rate(SAMPLE_RATE),
+    sorted_alphabet(true), preallocate(false), invariant(false)
   {
   }
 
   uint64_t block_size, max_length, seed_length;
   int      max_d;
+  uint64_t sample_rate;
   bool     sorted_alphabet; // comp values are sorted by character values, making partitioning a bit faster.
   bool     preallocate;     // Use preallocated arrays in Myers' algorithm.
-  bool     samples;         // Find a BWT-invariant subsequence that supports relative SA samples.
+  bool     invariant;       // Find a BWT-invariant subsequence that supports relative SA samples.
 };
 
 //------------------------------------------------------------------------------
@@ -132,27 +138,30 @@ public:
     const align_parameters parameters = align_parameters(), bool print = false) :
     reference(ref)
   {
+    this->m_size = 0; this->sample_rate = parameters.sample_rate;
+
     uint64_t lcs_length = 0;
     bit_vector bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs;
-    if(parameters.samples)
+    if(parameters.invariant)
     {
       if(!(ref.supportsLocate(true)) || !(seq.supportsLocate(true)))
       {
         std::cerr << "RelativeFM::RelativeFM(): Both indexes must have SA samples with this construction option!" << std::endl;
         return;
       }
-      alignBWTs(ref, seq, bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs, lcs_length, parameters, print);
+      alignBWTs(ref, seq, bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs, lcs_length, this->samples, parameters, print);
     }
     else
     {
       alignBWTs(ref, seq, bwt_ref_lcs, bwt_seq_lcs, lcs_length, parameters, print);
+      this->buildSamples(seq);
     }
 
     getComplement(ref.bwt, this->ref_minus_lcs, bwt_ref_lcs, lcs_length);
     getComplement(seq.bwt, this->seq_minus_lcs, bwt_seq_lcs, lcs_length);
     util::assign(this->bwt_lcs, LCS(bwt_ref_lcs, bwt_seq_lcs, lcs_length));
     util::clear(bwt_ref_lcs); util::clear(bwt_seq_lcs);
-    if(parameters.samples)
+    if(parameters.invariant)
     {
       util::assign(this->text_lcs, LCS(text_ref_lcs, text_seq_lcs, lcs_length));
       util::clear(text_ref_lcs); util::clear(text_seq_lcs);
@@ -197,6 +206,7 @@ public:
     uint64_t bwt_bytes = ref_bytes + seq_bytes;
     uint64_t bwt_lcs_bytes = size_in_bytes(this->bwt_lcs);
     uint64_t text_lcs_bytes = size_in_bytes(this->text_lcs);
+    uint64_t sample_bytes = size_in_bytes(this->samples);
 
   #ifdef REPORT_RUNS
     uint64_t ref_runs = 0, seq_runs = 0;
@@ -209,7 +219,8 @@ public:
     }
   #endif
 
-    uint64_t bytes = bwt_bytes + bwt_lcs_bytes + text_lcs_bytes + size_in_bytes(this->alpha) + sizeof(this->m_size);
+    uint64_t bytes = bwt_bytes + bwt_lcs_bytes + text_lcs_bytes + size_in_bytes(this->alpha)
+                   + sizeof(this->m_size) + sizeof(this->sample_rate) + sample_bytes;
 
     if(print)
     {
@@ -218,6 +229,7 @@ public:
       printSize("seq_minus_lcs", seq_bytes, this->size());
       printSize("bwt_lcs", bwt_lcs_bytes, this->size());
       if(this->text_lcs.size() > 0) { printSize("text_lcs", text_lcs_bytes, this->size()); }
+      if(this->sample_rate > 0) { printSize("samples", sample_bytes, this->size()); }
   #endif
   #ifdef REPORT_RUNS
       std::cout << std::string(16, ' ') << "Ref: " << ref_runs << " runs (gap0 "
@@ -256,6 +268,8 @@ public:
     this->bwt_lcs.serialize(output);
     this->text_lcs.serialize(output);
     this->alpha.serialize(output);
+    write_member(this->sample_rate, output);
+    this->samples.serialize(output);
   }
 
 //------------------------------------------------------------------------------
@@ -277,11 +291,11 @@ public:
 
   bool supportsLocate(bool print = false) const
   {
-    if(this->text_lcs.size() == 0)
+    if(this->text_lcs.size() == 0 && this->sample_rate == 0)
     {
       if(print)
       {
-        std::cerr << "RelativeFM::supportsLocate(): The index does not contain text_lcs." << std::endl;
+        std::cerr << "RelativeFM::supportsLocate(): The index does not contain text_lcs or samples." << std::endl;
       }
       return false;
     }
@@ -293,32 +307,60 @@ public:
   {
     if(i >= this->size()) { return 0; }
 
-//    std::cout << "locate(" << i << ")" << std::endl;
+//    bool print = (i == 51946766);
+//    if(print) { std::cout << "locate(" << i << ")" << std::endl; }
 
-    // Find an LCS position in BWT(seq).
     uint64_t steps = 0;
-    while(this->bwt_lcs.seq[i] == 0)
+    if(this->text_lcs.size() == 0)
     {
-      uint64_t c = this->alpha.comp2char[this->seq_minus_lcs[i - this->bwt_lcs.seq_rank(i)]];
-//      std::cout << "  c = " << c << std::endl;
-      if(c == 0) { return steps; }
-      i = cumulative(this->alpha, c) + this->rank(i, c); steps++;
-//      std::cout << "    i = " << i << std::endl;
+      // Find an SA sample.
+      while(i % this->sample_rate != 0)
+      {
+        uint64_t c = this->alpha.comp2char[this->seq_minus_lcs[i - this->bwt_lcs.seq_rank(i)]];
+        if(c == 0) { return steps; }
+        i = cumulative(this->alpha, c) + this->rank(i, c); steps++;
+      }
+      return this->samples[i / this->sample_rate] + steps;
     }
-//    std::cout << "  steps = " << steps << std::endl;
+    else if(this->sample_rate > 0)
+    {
+      // Find an SA sample or an LCS position in BWT(seq).
+      while(this->bwt_lcs.seq[i] == 0)
+      {
+        if(i % this->sample_rate == 0)
+        {
+//          if(print) { std::cout << "  sample = " << this->samples[i / this->sample_rate] << std::endl; }
+          return this->samples[i / this->sample_rate] + steps;
+        }
+        uint64_t c = this->alpha.comp2char[this->seq_minus_lcs[i - this->bwt_lcs.seq_rank(i)]];
+//        if(print) { std::cout << "  c = " << c << std::endl; }
+        if(c == 0) { return steps; }
+        i = cumulative(this->alpha, c) + this->rank(i, c); steps++;
+//        if(print) { std::cout << "    i = " << i << std::endl; }
+      }
+    }
+    else
+    {
+      // Find an LCS position in BWT(seq).
+      while(this->bwt_lcs.seq[i] == 0)
+      {
+        uint64_t c = this->alpha.comp2char[this->seq_minus_lcs[i - this->bwt_lcs.seq_rank(i)]];
+        if(c == 0) { return steps; }
+        i = cumulative(this->alpha, c) + this->rank(i, c); steps++;
+      }
+    }
+//    if(print) { std::cout << "  steps = " << steps << std::endl; }
 
     // Map the LCS position into the corresponding position in BWT(ref).
     i = this->bwt_lcs.ref_select(this->bwt_lcs.seq_rank(i) + 1);
-//    std::cout << "  ref_bwt_pos = " << i << std::endl;
+//    if(print) { std::cout << "  ref_bwt_pos = " << i << std::endl; }
 
     // Locate the position in ref and convert it into a position in seq.
-    // FIXME the located position may not be in LCS, but the previous one is
-    // FIXME what happens when ref.locate returns 0? It can't because there is LCS position before i?
-    // FIXME Except that the LCS position may be the empty suffix. Fix this in the construction.
+    // Note that it is the previous position in the reference that is an LCS position.
     i = this->reference.locate(i);
-//    std::cout << "  ref_text_pos = " << i << std::endl;
-    i = this->text_lcs.seq_select(this->text_lcs.ref_rank(i) + 1);
-//    std::cout << "  seq_text_pos = " << i << std::endl;
+//    if(print) { std::cout << "  ref_text_pos = " << i << std::endl; }
+    i = this->text_lcs.seq_select(this->text_lcs.ref_rank(i)) + 1;
+//    if(print) { std::cout << "  seq_text_pos = " << i << std::endl; }
 
     return i + steps;
   }
@@ -332,11 +374,14 @@ public:
 
 //------------------------------------------------------------------------------
 
-  const reference_type&       reference;
-  SequenceType                ref_minus_lcs, seq_minus_lcs;
-  LCS                         bwt_lcs, text_lcs;
-  Alphabet                    alpha;
-  uint64_t                    m_size;
+  const reference_type& reference;
+  SequenceType          ref_minus_lcs, seq_minus_lcs;
+  LCS                   bwt_lcs, text_lcs;
+  Alphabet              alpha;
+  uint64_t              m_size;
+
+  uint64_t              sample_rate;
+  int_vector<0>         samples;
 
 //------------------------------------------------------------------------------
 
@@ -349,6 +394,29 @@ private:
     this->text_lcs.load(input);
     this->alpha.load(input);
     this->m_size = this->reference.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
+    read_member(this->sample_rate, input);
+    this->samples.load(input);
+  }
+
+  void buildSamples(const reference_type& seq)
+  {
+    if(this->sample_rate == 0) { return; }
+    if(this->sample_rate == seq.sample_rate)
+    {
+      this->samples = seq.samples;
+    }
+    else
+    {
+      util::assign(this->samples,
+        int_vector<0>((this->size() + this->sample_rate - 1) / this->sample_rate, 0, bitlength(this->size() - 1)));
+      uint64_t text_pos = this->size(), bwt_pos = 0;
+      while(text_pos > 0)
+      {
+        text_pos--;
+        if(bwt_pos % this->sample_rate == 0) { this->samples[bwt_pos / this->sample_rate] = text_pos; }
+        bwt_pos = seq.LF(bwt_pos).first;
+      }
+    }
   }
 
   /*
@@ -891,16 +959,35 @@ findMatches(const ReferenceType& ref, const ReferenceType& seq,
 
 template<class ReferenceType>
 void
-permuteVector(const bit_vector& source, bit_vector& target, const ReferenceType& index)
+permuteVector(const bit_vector& source, bit_vector& target, const ReferenceType& index,
+  uint64_t sample_rate, int_vector<0>* samples)
 {
   util::assign(target, bit_vector(index.size(), 0));
-  uint64_t bwt_pos = 0;
-  for(uint64_t i = index.size(); i > 1; i--)
+  uint64_t text_pos = index.size(), bwt_pos = 0;
+  if(sample_rate > 0 && samples != 0)
   {
-    target[bwt_pos] = source[i - 2];
-    bwt_pos = index.LF(bwt_pos).first;
+    int_vector<0>& s = *samples;
+    util::assign(s,
+      int_vector<0>((index.size() + sample_rate - 1) / sample_rate, 0, bitlength(index.size() - 1)));
+    while(text_pos > 1)
+    {
+      text_pos--; // Invariant: SA[bwt_pos] == text_pos
+      target[bwt_pos] = source[text_pos - 1];
+      if(bwt_pos % sample_rate == 0) { s[bwt_pos / sample_rate] = text_pos; }
+      bwt_pos = index.LF(bwt_pos).first;
+    }
+    target[bwt_pos] = source[index.size() - 1];
   }
-  target[bwt_pos] = source[index.size() - 1];
+  else
+  {
+    while(text_pos > 1)
+    {
+      text_pos--; // Invariant: SA[bwt_pos] == text_pos
+      target[bwt_pos] = source[text_pos - 1];
+      bwt_pos = index.LF(bwt_pos).first;
+    }
+    target[bwt_pos] = source[index.size() - 1];
+  }
 }
 
 template<class ReferenceType>
@@ -909,6 +996,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   bit_vector& bwt_ref_lcs, bit_vector& bwt_seq_lcs,
   bit_vector& text_ref_lcs, bit_vector& text_seq_lcs,
   uint64_t& lcs,
+  int_vector<0>& samples,
   const align_parameters& parameters, bool print)
 {
   if(print)
@@ -991,20 +1079,24 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
 
   // Traverse both CSAs to build the bwt_lcs bitvectors.
+  // Sample SA at the same time if necessary.
   timestamp = readTimer();
   {
     const ReferenceType* index[2] = { &ref, &seq };
     bit_vector* text_lcs[2] = { &text_ref_lcs, &text_seq_lcs };
     bit_vector* bwt_lcs[2] = { &bwt_ref_lcs, &bwt_seq_lcs };
+    int_vector<0>* sample_ptr[2] = { 0, (parameters.sample_rate == 0 ? 0 : &samples) };
     #pragma omp parallel for
     for(uint64_t i = 0; i < 2; i++)
     {
-      permuteVector(*(text_lcs[i]), *(bwt_lcs[i]), *(index[i]));
+      permuteVector(*(text_lcs[i]), *(bwt_lcs[i]), *(index[i]), parameters.sample_rate, sample_ptr[i]);
     }
   }
   if(print)
   {
-    std::cout << "Built the bwt_lcs bitvectors in " << (readTimer() - timestamp) << " seconds" << std::endl;
+    std::cout << "Built the bwt_lcs bitvectors ";
+    if(parameters.sample_rate > 0) { std::cout << "and SA samples "; }
+    std::cout << "in " << (readTimer() - timestamp) << " seconds" << std::endl;
   }
 }
 

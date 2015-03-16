@@ -288,7 +288,9 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
       {
         for(uint64_t i = res.first; i <= res.second; i++)
         {
-          hash = fnv1a_hash(index.locate(i), hash);
+          uint64_t temp = index.locate(i);
+//          std::cerr << "SA[" << i << "] = " << temp << std::endl;
+          hash = fnv1a_hash(temp, hash);
         }
       }
     }

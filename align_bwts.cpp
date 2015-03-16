@@ -16,6 +16,7 @@ main(int argc, char** argv)
   if(argc < 3)
   {
     std::cerr << "Usage: align_bwts [parameters] ref seq1 [seq2 ...]" << std::endl;
+
     std::cerr << "  -b N  Set BWT block size to N (default "
               << align_parameters::BLOCK_SIZE << ")." << std::endl;
     std::cerr << "  -d N  Set maximum diagonal in LCS computation to N (default "
@@ -23,8 +24,9 @@ main(int argc, char** argv)
     std::cerr << "  -l N  Partition by patterns of length up to N (default "
               << align_parameters::MAX_LENGTH << ")." << std::endl;
     std::cerr << "  -p    Preallocate buffers for LCS computation." << std::endl;
-    std::cerr << "  -r    BWTs were built by ropebwt2." << std::endl;
-    std::cerr << "  -s    Find a BWT-invariant subsequence that supports SA samples (negates most options)." << std::endl;
+    std::cerr << "  -r    BWTs were built with ropebwt2." << std::endl;
+
+    std::cerr << "  -i    Find a BWT-invariant subsequence that supports SA samples." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
@@ -32,7 +34,7 @@ main(int argc, char** argv)
   LoadMode mode = mode_plain;
   align_parameters parameters;
   int c = 0;
-  while((c = getopt(argc, argv, "b:d:l:prs")) != -1)
+  while((c = getopt(argc, argv, "b:d:l:pri")) != -1)
   {
     switch(c)
     {
@@ -46,8 +48,13 @@ main(int argc, char** argv)
       parameters.preallocate = true; break;
     case 'r':
       mode = mode_ropebwt2; parameters.sorted_alphabet = false; break;
-    case 's':
-      parameters.samples = true; break;
+    case 'i':
+      parameters.invariant = true;
+      if(parameters.sample_rate == align_parameters::SAMPLE_RATE)
+      {
+        parameters.sample_rate = align_parameters::SECONDARY_SAMPLE_RATE;
+      }
+      break;
     case '?':
       return 2;
     default:
@@ -58,9 +65,13 @@ main(int argc, char** argv)
   std::cout << "Relative FM-index builder" << std::endl;
   std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
   std::cout << std::endl;
-  std::cout << "Algorithm: " << (parameters.samples ? "samples" : "partitioning") << std::endl;
+  std::cout << "Algorithm: " << (parameters.invariant ? "invariant" : "partitioning") << std::endl;
   std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
-  if(!(parameters.samples))
+  if(parameters.sample_rate != align_parameters::SAMPLE_RATE)
+  {
+    std::cout << "Sample rate: " << parameters.sample_rate << std::endl;
+  }
+  if(!(parameters.invariant))
   {
     std::cout << "Block size: " << parameters.block_size << std::endl;
     std::cout << "Maximum diagonal: " << parameters.max_d << std::endl;
