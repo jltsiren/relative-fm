@@ -323,6 +323,52 @@ LF(const RankStructure& bwt, const Alphabet& alpha, range_type rng, uint8_t c)
   return range_type(begin + bwt.rank(rng.first, c), begin + bwt.rank(rng.second + 1, c) - 1);
 }
 
+/*
+  Returns SA[i]. Call index.supportsLocate() first.
+*/
+template<class Index>
+uint64_t
+locate(const Index& index, uint64_t i)
+{
+  if(i >= index.size()) { return 0; }
+
+  uint64_t steps = 0;
+  while(i % index.sa_sample_rate != 0)
+  {
+    range_type res = index.LF(i);
+    if(res.second == 0) { return steps; }
+    i = res.first; steps++;
+  }
+
+  return index.sa_samples[i / index.sa_sample_rate] + steps;
+}
+
+/*
+  Extracts text[range]. Call index.supportsExtract() first.
+*/
+template<class Index>
+std::string
+extract(const Index& index, range_type range)
+{
+  if(range.second >= index.size()) { range.second = index.size() - 1; }
+  if(isEmpty(range)) { return std::string(); }
+
+  uint64_t bwt_pos = index.inverse(range.second), text_pos = range.second, c = 0;
+  while(index.alpha.C[c + 1] < bwt_pos) { c++; }
+
+  // Extract the sequence.
+  std::string result(length(range), 0);
+  while(text_pos > range.first)
+  {
+    result[text_pos - range.first] = index.alpha.comp2char[c];
+    range_type temp = index.LF(bwt_pos);
+    bwt_pos = temp.first; c = temp.second; text_pos--;
+  }
+  result[0] = index.alpha.comp2char[c];
+
+  return result;
+}
+
 //------------------------------------------------------------------------------
 
 /*

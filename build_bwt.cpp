@@ -16,22 +16,25 @@ main(int argc, char** argv)
   {
     std::cerr << "Usage: build_bwt [options] input1 [input2 ...]" << std::endl;
     std::cerr << "  -a    Write the alphabet file." << std::endl;
+    std::cerr << "  -i N  Sample one out of N ISA values (default 0)." << std::endl;
     std::cerr << "  -s N  Sample one out of N SA values (default 0)." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
   bool write_alphabet = false, options = false;
-  uint64_t sample_rate = 0;
+  uint64_t sa_sample_rate = 0, isa_sample_rate = 0;
   int c = 0;
-  while((c = getopt(argc, argv, "as:")) != -1)
+  while((c = getopt(argc, argv, "ai:s:")) != -1)
   {
     switch(c)
     {
     case 'a':
       write_alphabet = true; options = true; break;
+    case 'i':
+      isa_sample_rate = atol(optarg); options = true; break;
     case 's':
-      sample_rate = atol(optarg); options = true; break;
+      sa_sample_rate = atol(optarg); options = true; break;
     case '?':
       return 2;
     default:
@@ -44,7 +47,8 @@ main(int argc, char** argv)
   {
     std::cout << "Options:";
     if(write_alphabet) { std::cout << " alphabet"; }
-    if(sample_rate > 0) { std::cout << " sample_rate=" << sample_rate; }
+    if(sa_sample_rate > 0) { std::cout << " sa_sample_rate=" << sa_sample_rate; }
+    if(isa_sample_rate > 0) { std::cout << " isa_sample_rate=" << isa_sample_rate; }
     std::cout << std::endl;
   }
   std::cout << std::endl;
@@ -71,15 +75,23 @@ main(int argc, char** argv)
     }
 
     // Build BWT and sample SA.
-    int_vector<0> samples;
+    int_vector<0> sa_samples, isa_samples;
     {
       double start = readTimer();
       int_vector<64> sa(size + 1);
       divsufsort64((const unsigned char*)(text.data()), (int64_t*)(sa.data()), size + 1);
-      if(sample_rate > 0)
+      if(sa_sample_rate > 0)
       {
-        util::assign(samples, int_vector<0>(size / sample_rate + 1, 0, bitlength(size)));
-        for(uint64_t i = 0; i <= size; i += sample_rate) { samples[i / sample_rate] = sa[i]; }
+        util::assign(sa_samples, int_vector<0>(size / sa_sample_rate + 1, 0, bitlength(size)));
+        for(uint64_t i = 0; i <= size; i += sa_sample_rate) { sa_samples[i / sa_sample_rate] = sa[i]; }
+      }
+      if(isa_sample_rate > 0)
+      {
+        util::assign(isa_samples, int_vector<0>(size / isa_sample_rate + 1, 0, bitlength(size)));
+        for(uint64_t i = 0; i <= size; i++)
+        {
+          if(sa[i] % isa_sample_rate == 0) { isa_samples[sa[i] / isa_sample_rate] = i; }
+        }
       }
       uint8_t* bwt = (uint8_t*)(sa.data()); // Overwrite SA with BWT.
       uint64_t to_add[2] = { (uint64_t)-1, size };
@@ -125,19 +137,21 @@ main(int argc, char** argv)
       }
     }
 
-    // Write SA samples.
-    if(sample_rate > 0)
+    // Write SA/ISA samples.
+    if(sa_sample_rate > 0 || isa_sample_rate > 0)
     {
       std::string filename = base_name + SAMPLE_EXTENSION;
       std::ofstream out(filename.c_str(), std::ios_base::binary);
       if(!out)
       {
-        std::cerr << "build_bwt: Cannot open SA sample file " << filename << std::endl;
+        std::cerr << "build_bwt: Cannot open the sample file " << filename << std::endl;
       }
       else
       {
-        write_member(sample_rate, out); samples.serialize(out); out.close();
-        std::cout << "SA samples written to " << filename << std::endl;
+        write_member(sa_sample_rate, out); sa_samples.serialize(out);
+        write_member(isa_sample_rate, out); isa_samples.serialize(out);
+        out.close();
+        std::cout << "Samples written to " << filename << std::endl;
       }
     }
 

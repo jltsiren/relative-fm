@@ -18,15 +18,15 @@ main(int argc, char** argv)
     std::cerr << "Usage: align_bwts [parameters] ref seq1 [seq2 ...]" << std::endl;
 
     std::cerr << "  -b N  Set BWT block size to N (default "
-              << align_parameters::BLOCK_SIZE << ")." << std::endl;
+              << align_parameters::BLOCK_SIZE << ")" << std::endl;
     std::cerr << "  -d N  Set maximum diagonal in LCS computation to N (default "
-              << align_parameters::MAX_D << ")." << std::endl;
+              << align_parameters::MAX_D << ")" << std::endl;
     std::cerr << "  -l N  Partition by patterns of length up to N (default "
-              << align_parameters::MAX_LENGTH << ")." << std::endl;
-    std::cerr << "  -p    Preallocate buffers for LCS computation." << std::endl;
-    std::cerr << "  -r    BWTs were built with ropebwt2." << std::endl;
+              << align_parameters::MAX_LENGTH << ")" << std::endl;
+    std::cerr << "  -p    Preallocate buffers for LCS computation" << std::endl;
+    std::cerr << "  -r    BWTs were built with ropebwt2" << std::endl;
 
-    std::cerr << "  -i    Find a BWT-invariant subsequence that supports SA samples." << std::endl;
+    std::cerr << "  -i    Find a BWT-invariant subsequence that supports SA/ISA samples" << std::endl;
     std::cerr << std::endl;
     return 1;
   }
@@ -50,9 +50,13 @@ main(int argc, char** argv)
       mode = mode_ropebwt2; parameters.sorted_alphabet = false; break;
     case 'i':
       parameters.invariant = true;
-      if(parameters.sample_rate == align_parameters::SAMPLE_RATE)
+      if(parameters.sa_sample_rate == align_parameters::SA_SAMPLE_RATE)
       {
-        parameters.sample_rate = align_parameters::SECONDARY_SAMPLE_RATE;
+        parameters.sa_sample_rate = align_parameters::SECONDARY_SA_SAMPLE_RATE;
+      }
+      if(parameters.isa_sample_rate == align_parameters::ISA_SAMPLE_RATE)
+      {
+        parameters.isa_sample_rate = align_parameters::SECONDARY_ISA_SAMPLE_RATE;
       }
       break;
     case '?':
@@ -67,9 +71,13 @@ main(int argc, char** argv)
   std::cout << std::endl;
   std::cout << "Algorithm: " << (parameters.invariant ? "invariant" : "partitioning") << std::endl;
   std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
-  if(parameters.sample_rate != align_parameters::SAMPLE_RATE)
+  if(parameters.sa_sample_rate != 0)
   {
-    std::cout << "Sample rate: " << parameters.sample_rate << std::endl;
+    std::cout << "SA sample rate: " << parameters.sa_sample_rate << std::endl;
+  }
+  if(parameters.isa_sample_rate != 0)
+  {
+    std::cout << "ISA sample rate: " << parameters.isa_sample_rate << std::endl;
   }
   if(!(parameters.invariant))
   {

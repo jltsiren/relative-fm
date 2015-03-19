@@ -36,7 +36,7 @@ public:
   // This constructor has been specialized for SimpleFM<RLSequence>.
   explicit SimpleFM(const std::string& base_name, LoadMode mode = mode_plain)
   {
-    this->sample_rate = 0;
+    this->sa_sample_rate = 0; this->isa_sample_rate = 0;
 
     if(mode == mode_native)
     {
@@ -77,14 +77,17 @@ public:
   uint64_t reportSize(bool print = false) const
   {
     uint64_t bwt_bytes = size_in_bytes(this->bwt);
-    uint64_t sample_bytes = sizeof(this->sample_rate) + size_in_bytes(this->samples);
-    uint64_t bytes = bwt_bytes + size_in_bytes(this->alpha) + sample_bytes;
+    uint64_t sa_bytes = size_in_bytes(this->sa_samples);
+    uint64_t isa_bytes = size_in_bytes(this->isa_samples);
+    uint64_t bytes = bwt_bytes + size_in_bytes(this->alpha) +
+      sizeof(this->sa_sample_rate) + sa_bytes + sizeof(this->isa_sample_rate) + isa_bytes;
 
     if(print)
     {
 #ifdef VERBOSE_OUTPUT
       printSize("BWT", bwt_bytes, this->size());
-      if(this->sample_rate > 0) { printSize("Samples", sample_bytes, this->size()); }
+      if(this->sa_sample_rate > 0) { printSize("SA samples", sa_bytes, this->size()); }
+      if(this->isa_sample_rate > 0) { printSize("ISA samples", isa_bytes, this->size()); }
 #endif
       printSize("Simple FM", bytes, this->size());
       std::cout << std::endl;
@@ -131,7 +134,7 @@ public:
       output.close();
     }
 
-    if(this->sample_rate > 0)
+    if(this->sa_sample_rate > 0)
     {
       std::string filename = base_name + SAMPLE_EXTENSION;
       std::ofstream output(filename.c_str(), std::ios_base::binary);
@@ -140,7 +143,9 @@ public:
         std::cerr << "SimpleFM::writeTo(): Cannot open SA sample file " << filename << std::endl;
         return;
       }
-      write_member(this->sample_rate, output); this->samples.serialize(output); output.close();
+      write_member(this->sa_sample_rate, output); this->sa_samples.serialize(output);
+      write_member(this->isa_sample_rate, output); this->isa_samples.serialize(output);
+      output.close();
     }
   }
 
@@ -192,7 +197,7 @@ public:
 
   bool supportsLocate(bool print = false) const
   {
-    if(this->sample_rate == 0)
+    if(this->sa_sample_rate == 0)
     {
       if(print)
       {
@@ -212,27 +217,67 @@ public:
   }
 
   // Call supportsLocate() first.
-  uint64_t locate(uint64_t i) const
+  inline uint64_t locate(uint64_t i) const
   {
-    if(i >= this->size()) { return 0; }
+    return relative::locate(*this, i);
+  }
 
-    uint64_t steps = 0;
-    while(i % this->sample_rate != 0)
+  bool supportsExtract(bool print = false) const
+  {
+    if(this->isa_sample_rate == 0)
     {
-      range_type res = this->LF(i);
-      if(res.second == 0) { return steps; }
-      i = res.first; steps++;
+      if(print)
+      {
+        std::cerr << "SimpleFM::supportsExtract(): The index does not contain ISA samples." << std::endl;
+      }
+      return false;
+    }
+    if(this->sequences() > 1)
+    {
+      if(print)
+      {
+        std::cerr << "SimpleFM::supportsExtract(): The index contains more than one sequence." << std::endl;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  // Call supportsExtract() first.
+  inline std::string extract(range_type range) const
+  {
+    return relative::extract(*this, range);
+  }
+
+  // Call supportsExtract() first.
+  inline std::string extract(uint64_t from, uint64_t to) const
+  {
+    return relative::extract(*this, range_type(from, to));
+  }
+
+  // Returns ISA[i]. Call supportsExtract() first.
+  inline uint64_t inverse(uint64_t i) const
+  {
+    uint64_t bwt_pos = 0, text_pos =
+      ((i + this->isa_sample_rate - 1) / this->isa_sample_rate) * this->isa_sample_rate;
+    if(text_pos >= this->size()) { text_pos = this->size() - 1; }
+    else { bwt_pos = this->isa_samples[text_pos / this->isa_sample_rate]; }
+
+    // Move backwards from the sample.
+    while(text_pos > i)
+    {
+      bwt_pos = this->LF(bwt_pos).first; text_pos--;
     }
 
-    return this->samples[i / this->sample_rate] + steps;
+    return bwt_pos;
   }
 
 //------------------------------------------------------------------------------
 
   RankStructure bwt;
   Alphabet      alpha;
-  uint64_t      sample_rate;
-  int_vector<0> samples;
+  uint64_t      sa_sample_rate, isa_sample_rate;
+  int_vector<0> sa_samples, isa_samples;
 
 //------------------------------------------------------------------------------
 
@@ -264,7 +309,9 @@ private:
     std::ifstream in(filename.c_str(), std::ios_base::binary);
     if(in)
     {
-      read_member(this->sample_rate, in); this->samples.load(in); in.close();
+      read_member(this->sa_sample_rate, in); this->sa_samples.load(in);
+      read_member(this->isa_sample_rate, in); this->isa_samples.load(in);
+      in.close();
     }
   }
 

@@ -26,6 +26,7 @@ const uint64_t TAG_BUILD_INDEXES     = 0x02;
 const uint64_t TAG_NATIVE_FORMAT     = 0x04;
 const uint64_t TAG_ROPEBWT2_FORMAT   = 0x08;
 const uint64_t TAG_LOCATE            = 0x10;
+const uint64_t TAG_VERIFY            = 0x20;
 
 uint64_t seqRepresentation(uint8_t type);
 std::string indexName(uint64_t representation);
@@ -60,6 +61,7 @@ main(int argc, char** argv)
     std::cerr << "  a    Use ropebwt2 alphabet (default: off)" << std::endl;
     std::cerr << "  b    Build relative indexes (default: off)" << std::endl;
     std::cerr << "  L    Execute locate() queries (default: off)" << std::endl;
+    std::cerr << "  V    Verify the results of locate() using extract() (default:off)" << std::endl;
     std::cerr << "  n    Load SimpleFMs in native format (default: off)" << std::endl;
     std::cerr << "  2    Load SimpleFMs in ropebwt2 format (default: off)" << std::endl;
     // FIXME Add an option to write the built index?
@@ -235,6 +237,12 @@ main(int argc, char** argv)
       else { std::cout << "Executing find() queries." << std::endl; }
       std::cout << std::endl;
       break;
+    case 'V':
+      tags ^= TAG_VERIFY;
+      if(tags & TAG_VERIFY) { std::cout << "Verifying the results with extract() queries." << std::endl; }
+      else { std::cout << "Switching off verification." << std::endl; }
+      std::cout << std::endl;
+      break;
     case 'n':
       tags ^= TAG_NATIVE_FORMAT; tags &= ~TAG_ROPEBWT2_FORMAT;
       mode = getMode(tags);
@@ -272,11 +280,13 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
     index.alpha.assign(ROPEBWT2_ALPHABET);
   }
 
-  bool locate = (tags & TAG_LOCATE);
+  bool locate = tags & TAG_LOCATE, verify = tags & TAG_VERIFY;
+  if(!locate) { verify = false; }
   if(locate && !(index.supportsLocate(true))) { locate = false; }
+  if(verify && !(index.supportsExtract(true))) { verify = false; }
 
   double start = readTimer();
-  uint64_t found = 0, matches = 0;
+  uint64_t found = 0, matches = 0, failed = 0;
   uint64_t hash = FNV_OFFSET_BASIS;
   for(auto pattern : patterns)
   {
@@ -286,11 +296,38 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
       found++; matches += length(res);
       if(locate)
       {
-        for(uint64_t i = res.first; i <= res.second; i++)
+        if(verify)
         {
-          uint64_t temp = index.locate(i);
-//          std::cerr << "SA[" << i << "] = " << temp << std::endl;
-          hash = fnv1a_hash(temp, hash);
+          bool fail = false;
+          uint64_t temp = 0;
+          if(res.first > 0) // The suffix before the range.
+          {
+            temp = index.locate(res.first - 1);
+            if(index.extract(temp, temp + pattern.length() - 1) >= pattern) { fail = true; }
+          }
+          { // The first suffix.
+            temp = index.locate(res.first); hash = fnv1a_hash(index.locate(res.first), hash);
+            if(index.extract(temp, temp + pattern.length() - 1) != pattern) { fail = true; }
+          }
+          for(uint64_t i = res.first + 2; i <= res.second; i++) // The middle suffixes.
+          {
+            hash = fnv1a_hash(index.locate(i - 1), hash);
+          }
+          if(res.second > res.first)  // The last suffix.
+          {
+            temp = index.locate(res.second); hash = fnv1a_hash(index.locate(res.second), hash);
+            if(index.extract(temp, temp + pattern.length() - 1) != pattern) { fail = true; }
+          }
+          if(res.second + 1 < index.size()) // The suffix after the range.
+          {
+            temp = index.locate(res.second + 1);
+            if(index.extract(temp, temp + pattern.length() - 1) <= pattern) { fail = true; }
+          }
+          if(fail) { failed++; }
+        }
+        else
+        {
+          for(uint64_t i = res.first; i <= res.second; i++) { hash = fnv1a_hash(index.locate(i), hash); }
         }
       }
     }
@@ -300,6 +337,7 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
   printSize(name, index.reportSize(), index.size());
   printTime(name, found, matches, chars, seconds, locate);
   if(locate) { std::cout << "Hash of located positions: " << hash << std::endl; }
+  if(verify && failed > 0) { std::cout << "Verification failed for " << failed << " patterns." << std::endl; }
   std::cout << std::endl;
 }
 

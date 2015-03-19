@@ -220,7 +220,7 @@ RLSequence::hash(const Alphabet& alpha) const
 template<>
 SimpleFM<RLSequence>::SimpleFM(const std::string& base_name, LoadMode mode)
 {
-  this->sample_rate = 0;
+  this->sa_sample_rate = 0; this->isa_sample_rate = 0;
 
   if(mode == mode_native || mode == mode_ropebwt2)
   {

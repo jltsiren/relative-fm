@@ -42,13 +42,31 @@ public:
   {
     if(print)
     {
-      std::cerr << "RelativeFM::supportsLocate(): The index does not support locate()." << std::endl;
+      std::cerr << "RLZFM::supportsLocate(): The index does not support locate()." << std::endl;
     }
     return false;
   }
 
   // Call supportsLocate() first.
   inline uint64_t locate(uint64_t i) const { return i; }
+
+  inline bool supportsExtract(bool print = false) const
+  {
+    if(print)
+    {
+      std::cerr << "RLZFM::supportsExtract(): The index does not support extract()." << std::endl;
+    }
+    return false;
+  }
+
+  // Call supportsExtract first.
+  inline std::string extract(range_type range) const
+  {
+    std::cerr << "RLZFM::extract(): Trying to extract range " << range << std::endl;
+    return std::string();
+  }
+
+  inline std::string extract(uint64_t from, uint64_t to) const { return this->extract(range_type(from, to)); }
 
   const SimpleFM<>&       reference;
 
