@@ -4,7 +4,6 @@
 #include <vector>
 
 #include <sdsl/suffix_arrays.hpp>
-#include <sdsl/vectors.hpp>
 
 #include "utils.h"
 

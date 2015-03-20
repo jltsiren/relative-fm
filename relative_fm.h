@@ -62,68 +62,6 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
 //------------------------------------------------------------------------------
 
-class LCS
-{
-public:
-  typedef uint64_t size_type;
-
-#ifdef USE_HYBRID_BITVECTORS
-  typedef hyb_vector<> vector_type;
-#else
-  typedef rrr_vector<63> vector_type;
-#endif
-
-  LCS();
-  LCS(const bit_vector& a, const bit_vector& b, size_type _lcs_size);
-  LCS(const LCS& l);
-  LCS(LCS&& l);
-  ~LCS();
-
-  void swap(LCS& l);
-  LCS& operator=(const LCS& l);
-  LCS& operator=(LCS&& l);
-
-  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
-  void load(std::istream& in);
-
-  inline uint64_t size() const { return this->lcs_size; }
-  inline uint64_t ref_size() const { return this->ref.size(); }
-  inline uint64_t seq_size() const { return this->seq.size(); }
-
-  /*
-    To find how many LCS bits are in ref before the 0-based position i, use ref_rank(i).
-    To find the 1-based LCS bit i in seq, use seq_select(i).
-  */
-
-  vector_type                ref;
-  vector_type::rank_1_type   ref_rank;
-#ifdef USE_HYBRID_BITVECTORS
-  inline uint64_t ref_select(uint64_t i) const { return this->select(this->ref, this->ref_rank, i); }
-#else
-  vector_type::select_1_type  ref_select;
-#endif
-
-  vector_type                seq;
-  vector_type::rank_1_type   seq_rank;
-#ifdef USE_HYBRID_BITVECTORS
-  inline uint64_t seq_select(uint64_t i) const { return this->select(this->seq, this->seq_rank, i); }
-#else
-  vector_type::select_1_type  seq_select;
-#endif
-
-  size_type lcs_size;
-
-private:
-  void copy(const LCS& l);
-  void set_vectors();
-
-#ifdef USE_HYBRID_BITVECTORS
-  uint64_t select(const vector_type& vec, const vector_type::rank_1_type& rank, uint64_t i) const;
-#endif
-};  // class LCS
-
-//------------------------------------------------------------------------------
-
 const std::string RELATIVE_FM_EXTENSION = ".rfm";
 
 /*

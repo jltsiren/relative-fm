@@ -1,4 +1,3 @@
-#include <sdsl/suffix_arrays.hpp>
 #include <sdsl/suffix_trees.hpp>
 
 #include "rlz.h"

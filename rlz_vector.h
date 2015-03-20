@@ -1,10 +1,8 @@
 #ifndef _RELATIVE_FM_RLZ_VECTOR_H
 #define _RELATIVE_FM_RLZ_VECTOR_H
 
-#include <sdsl/bit_vectors.hpp>
-
 #include "rlz.h"
-#include "utils.h"
+#include "support.h"
 
 namespace relative
 {

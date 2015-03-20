@@ -23,7 +23,7 @@ OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(PARA
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
-LIBOBJS=relative_fm.o rlz_vector.o rlz_fm.o rlz.o utils.o sequence.o
+LIBOBJS=relative_fm.o rlz_vector.o rlz_fm.o rlz.o utils.o sequence.o support.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)

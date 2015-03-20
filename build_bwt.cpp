@@ -1,10 +1,9 @@
 #include <cstdlib>
-#include <fstream>
 #include <unistd.h>
 
 #include <sdsl/construct.hpp>
 
-#include "utils.h"
+#include "support.h"
 
 using namespace relative;
 

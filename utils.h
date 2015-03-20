@@ -191,101 +191,6 @@ sequentialSort(Iterator first, Iterator last)
 
 //------------------------------------------------------------------------------
 
-// This function has been specialized for RLSequence.
-template<class ByteVector>
-void
-characterCounts(const ByteVector& sequence, uint64_t size, int_vector<64>& counts)
-{
-  for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
-  for(uint64_t i = 0; i < size; i++) { counts[sequence[i]]++; }
-}
-
-/*
-  This replaces the SDSL byte_alphabet. The main improvements are:
-    - The alphabet can be built from an existing sequence.
-    - The comp order does not need to be the same as character order, as long as \0 is the first character.
-*/
-
-class Alphabet
-{
-public:
-  typedef uint64_t size_type;
-  const static size_type MAX_SIGMA = 256;
-
-  Alphabet();
-  Alphabet(const Alphabet& s);
-  Alphabet(Alphabet&& s);
-  ~Alphabet();
-
-  /*
-    ByteVector only has to support operator[]. If there is a clearly faster way for sequential
-    access, function characterCounts() should be specialized. If the second parameter is missing,
-    ByteVector::size() is used to determine it.
-  */
-  template<class ByteVector>
-  explicit Alphabet(const ByteVector& sequence, size_type size = 0) :
-    char2comp(m_char2comp), comp2char(m_comp2char), C(m_C), sigma(m_sigma)
-  {
-    if(size == 0) { size = sequence.size(); }
-
-    util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
-    util::assign(this->m_comp2char, int_vector<8>(MAX_SIGMA, 0));
-    util::assign(this->m_C, int_vector<64>(MAX_SIGMA + 1, 0));
-    this->m_sigma = 0;
-    if(size == 0) { return; }
-
-    // Step 1: Count the occurrences and temporarily store them in m_C.
-    characterCounts(sequence, size, this->m_C);
-
-    // Step 2: Determine the effective alphabet and compact the alphabet.
-    for(size_type i = 0; i < MAX_SIGMA; i++)
-    {
-      if(this->m_C[i] > 0)
-      {
-        this->m_char2comp[i] = this->m_sigma;
-        this->m_comp2char[this->m_sigma] = i;
-        this->m_C[this->m_sigma] = this->m_C[i];
-        this->m_sigma++;
-      }
-    }
-    this->m_comp2char.resize(this->m_sigma);
-    this->m_C.resize(this->m_sigma + 1);
-
-    // Step 3: Determine the cumulative counts.
-    for(size_type i = this->m_sigma; i > 0; i--) { this->m_C[i] = this->m_C[i - 1]; }
-    this->m_C[0] = 0;
-    for(size_type i = 1; i <= this->m_sigma; i++) { this->m_C[i] += this->m_C[i - 1]; }
-  }
-
-  void swap(Alphabet& v);
-  Alphabet& operator=(const Alphabet& v);
-  Alphabet& operator=(Alphabet&& v);
-
-  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
-  void load(std::istream& in);
-
-  /*
-    Change the alphabet to the one specified by the string. The length of the string
-    must be sigma, and each character can occur at most once.
-  */
-  bool assign(const std::string& alphabet_string);
-
-private:
-  int_vector<8>  m_char2comp, m_comp2char;
-  int_vector<64> m_C;
-  size_type      m_sigma;
-
-  void copy(const Alphabet& v);
-
-public:
-  const int_vector<8>&  char2comp;
-  const int_vector<8>&  comp2char;
-  const int_vector<64>& C;
-  const size_type&      sigma;
-};  // class Alphabet
-
-//------------------------------------------------------------------------------
-
 typedef wt_huff<bit_vector, rank_support_v5<> > bwt_type;
 
 /*
@@ -293,30 +198,32 @@ typedef wt_huff<bit_vector, rank_support_v5<> > bwt_type;
   contiguous alphabet.
 */
 
+template<class AlphabetType>
 inline uint64_t
-cumulative(const Alphabet& alpha, uint8_t c)
+cumulative(const AlphabetType& alpha, uint8_t c)
 {
   return alpha.C[alpha.char2comp[c]];
 }
 
+template<class AlphabetType>
 inline bool
-hasChar(const Alphabet& alpha, uint8_t c)
+hasChar(const AlphabetType& alpha, uint8_t c)
 {
   return (c == 0 || alpha.char2comp[c] > 0);
 }
 
-template<class RankStructure>
+template<class RankStructure, class AlphabetType>
 inline range_type
-charRange(const RankStructure& bwt, const Alphabet& alpha, uint8_t c)
+charRange(const RankStructure& bwt, const AlphabetType& alpha, uint8_t c)
 {
   uint64_t comp = alpha.char2comp[c];
   if(comp < alpha.sigma) { return range_type(alpha.C[comp], alpha.C[comp + 1] - 1); }
   else { return range_type(alpha.C[comp], bwt.size() - 1); }
 }
 
-template<class RankStructure>
+template<class RankStructure, class AlphabetType>
 inline range_type
-LF(const RankStructure& bwt, const Alphabet& alpha, range_type rng, uint8_t c)
+LF(const RankStructure& bwt, const AlphabetType& alpha, range_type rng, uint8_t c)
 {
   c = alpha.char2comp[c];
   uint64_t begin = alpha.C[c];
@@ -467,98 +374,6 @@ countRuns(const VectorType& vec, uint64_t& runs, uint64_t& gap0, uint64_t& gap1,
   enc_vector<> delta_vec(buffer);
   delta = size_in_bytes(delta_vec);
 }
-
-//------------------------------------------------------------------------------
-
-/*
-  This class uses an sd_vector to encode the cumulative sum of an array of integers.
-  The array contains sum() items in size() elements. The array uses 0-based indexes.
-*/
-
-class CumulativeArray
-{
-public:
-  typedef uint64_t size_type;
-
-  CumulativeArray();
-  CumulativeArray(const CumulativeArray& s);
-  CumulativeArray(CumulativeArray&& s);
-  ~CumulativeArray();
-
-  /*
-    The IntVector has to support operator[] that returns a non-const reference.
-    The input is the original array, which gets overwritten by a cumulative array.
-    This can be reversed by calling CumulativeArray::cumulativeToOriginal().
-    If the second parameter is 0, IntVector::size() is used to determine the size.
-  */
-  template<class IntVector>
-  explicit CumulativeArray(IntVector& sequence, size_type _size = 0)
-  {
-    this->m_size = (_size == 0 ? sequence.size() : _size);
-
-    for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1] + 1; }
-    this->v = sd_vector<>(sequence.begin(), sequence.end());
-
-    util::init_support(this->rank, &(this->v));
-    util::init_support(this->select_1, &(this->v));
-    util::init_support(this->select_0, &(this->v));
-  }
-
-  template<class IntVector>
-  static void
-  cumulativeToOriginal(IntVector& sequence, size_type size)
-  {
-    for(size_type i = size - 1; i > 0; i--) { sequence[i] -= sequence[i - 1] + 1; }
-  }
-
-  void swap(CumulativeArray& v);
-  CumulativeArray& operator=(const CumulativeArray& v);
-  CumulativeArray& operator=(CumulativeArray&& v);
-
-  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
-  void load(std::istream& in);
-
-  inline size_type size() const { return this->m_size; }
-
-  // The sum of all elements.
-  inline size_type sum() const { return this->v.size() - this->size(); }
-
-  // The sum of the first k elements.
-  inline size_type sum(size_type k) const
-  {
-    if(k == 0) { return 0; }
-    if(k > this->size()) { k = this->size(); }
-
-    return this->select_1(k) - k + 1;
-  }
-
-  inline size_type operator[](size_type i) const { return this->sum(i + 1) - this->sum(i); }
-
-  // The inverse of sum(). Returns the element for item i.
-  inline size_type inverse(size_type i) const
-  {
-    if(i >= this->sum()) { return this->size(); }
-
-//    return this->rank(this->select_0(i + 1));
-    return this->select_0(i + 1) - i;
-  }
-
-  // Is item i the last item in its element.
-  inline bool isLast(size_type i) const
-  {
-    if(i >= this->sum()) { return false; }
-    return this->v[this->select_0(i + 1) + 1];
-  }
-
-private:
-  sd_vector<>                v;
-  sd_vector<>::rank_1_type   rank;
-  sd_vector<>::select_1_type select_1;
-  sd_vector<>::select_0_type select_0;
-  size_type                  m_size;  // Size of the original array.
-
-  void copy(const CumulativeArray& v);
-};  // class CumulativeArray
 
 //------------------------------------------------------------------------------
 
