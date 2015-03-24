@@ -330,7 +330,7 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
             {
               std::cerr << "testIndex(): Verification failed for the following patterns:" << std::endl;
             }
-            std::cerr << pattern;
+            std::cerr << pattern << std::endl;
 #endif
             failed++;
           }

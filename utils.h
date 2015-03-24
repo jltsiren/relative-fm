@@ -261,7 +261,7 @@ extract(const Index& index, range_type range)
   if(isEmpty(range)) { return std::string(); }
 
   uint64_t bwt_pos = index.inverse(range.second), text_pos = range.second, c = 0;
-  while(index.alpha.C[c + 1] < bwt_pos) { c++; }
+  while(index.alpha.C[c + 1] <= bwt_pos) { c++; }
 
   // Extract the sequence.
   std::string result(length(range), 0);
