@@ -552,12 +552,22 @@ testCST(int argc, char** argv)
 
 //------------------------------------------------------------------------------
 
-// Encode (val - prev) as a positive integer.
-uint64_t
+// Encode (val - prev) as a non-negative integer.
+// Note that character value 0 is not supported by RLZ.
+// FIXME Better RLZ parsing options.
+inline uint64_t
 differentialValue(uint64_t prev, uint64_t val)
 {
-  if(val >= prev) { return 2 * (val - prev); }
+  if(val >= prev) { return 2 * (val + 1 - prev); }
   else            { return 2 * (prev - val) - 1; }
+}
+
+// Decode the above.
+inline uint64_t
+decodeValue(uint64_t prev, uint64_t code)
+{
+  if(code & 1) { return prev - ((code + 1) / 2); }
+  else         { return code / 2 - 1 + prev; }
 }
 
 typedef cst_sada<csa_sada<>, lcp_bitcompressed<> > lcp_cst;
@@ -565,7 +575,7 @@ typedef cst_sada<csa_sada<>, lcp_bitcompressed<> > lcp_cst;
 void
 differentialLCP(const std::string& base_name, int_vector<0>& lcp)
 {
-  std::string file_name = base_name + ".lcp";
+  std::string file_name = base_name + ".dlcp";
   if(file_exists(file_name))
   {
     load_from_file(lcp, file_name);
@@ -574,17 +584,33 @@ differentialLCP(const std::string& base_name, int_vector<0>& lcp)
   {
     lcp_cst cst;
     construct(cst, base_name, 1);
-    lcp.width(bitlength(2 * cst.size()));
-    lcp.resize(cst.size());
+    util::assign(lcp, int_vector<0>(cst.size(), 0, bitlength(2 * cst.size())));
     uint64_t prev = 0;
     for(uint64_t i = 0; i < cst.size(); i++)
     {
-      lcp[i] = differentialValue(prev, cst.lcp[i]); prev = cst.lcp[i];
+      lcp[i] = differentialValue(prev, cst.lcp[i]);
+      prev = cst.lcp[i];
     }
     util::bit_compress(lcp);
     store_to_file(lcp, file_name);
   }
   std::cout << "LCP size " << lcp.size() << ", width " << (uint64_t)(lcp.width()) << "." << std::endl;
+}
+
+void
+absoluteSamples(const int_vector<0>& seq_lcp,
+  const std::vector<uint64_t>& starts, const std::vector<uint64_t>& lengths,
+  int_vector<0>& mismatches)
+{
+  for(uint64_t i = 0, val = 0, phrase = 0; i < seq_lcp.size(); i++)
+  {
+    val = decodeValue(val, seq_lcp[i]);
+    if(i == starts[phrase] + lengths[phrase] - 1)
+    {
+      mismatches[phrase] = val;
+      phrase++;
+    }
+  }
 }
 
 void
@@ -616,17 +642,16 @@ testLCP(int argc, char** argv)
     int_vector<0> mismatches;
     relativeLZ(seq_lcp, ref_lcp, starts, lengths, mismatches);
     std::cout << "The RLZ parsing consists of " << starts.size() << " phrases." << std::endl;
-    util::bit_compress(mismatches);
+    absoluteSamples(seq_lcp, starts, lengths, mismatches);
     relative_encoder phrases; phrases.init(starts, lengths);
     CumulativeArray blocks(lengths);
-    SLArray mismatch_compressed(mismatches);
+    SLArray samples(mismatches);
 
-    uint64_t phrase_bytes = phrases.reportSize(), block_bytes = size_in_bytes(blocks), mismatch_bytes = size_in_bytes(mismatch_compressed);
+    uint64_t phrase_bytes = phrases.reportSize(), block_bytes = size_in_bytes(blocks), sample_bytes = size_in_bytes(samples);
     printSize("Phrases", phrase_bytes, seq_lcp.size());
     printSize("Blocks", block_bytes, seq_lcp.size());
-    printSize("Mismatches", mismatch_bytes, seq_lcp.size());
-    printSize("(Mismatches)", size_in_bytes(mismatches), seq_lcp.size());
-    printSize("RLZ parsing", phrase_bytes + block_bytes + mismatch_bytes, seq_lcp.size());
+    printSize("Samples", sample_bytes, seq_lcp.size());
+    printSize("RLZ parsing", phrase_bytes + block_bytes + sample_bytes, seq_lcp.size());
 
     std::cout << std::endl;
   }

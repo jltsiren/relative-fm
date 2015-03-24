@@ -16,15 +16,16 @@ main(int argc, char** argv)
     std::cerr << "Usage: build_bwt [options] input1 [input2 ...]" << std::endl;
     std::cerr << "  -a    Write the alphabet file." << std::endl;
     std::cerr << "  -i N  Sample one out of N ISA values (default 0)." << std::endl;
+    std::cerr << "  -l    Build the LCP array." << std::endl;
     std::cerr << "  -s N  Sample one out of N SA values (default 0)." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
-  bool write_alphabet = false, options = false;
+  bool write_alphabet = false, build_lcp = false, options = false;
   uint64_t sa_sample_rate = 0, isa_sample_rate = 0;
   int c = 0;
-  while((c = getopt(argc, argv, "ai:s:")) != -1)
+  while((c = getopt(argc, argv, "ai:ls:")) != -1)
   {
     switch(c)
     {
@@ -32,6 +33,8 @@ main(int argc, char** argv)
       write_alphabet = true; options = true; break;
     case 'i':
       isa_sample_rate = atol(optarg); options = true; break;
+    case 'l':
+      build_lcp = true; options = true;
     case 's':
       sa_sample_rate = atol(optarg); options = true; break;
     case '?':
@@ -46,8 +49,9 @@ main(int argc, char** argv)
   {
     std::cout << "Options:";
     if(write_alphabet) { std::cout << " alphabet"; }
-    if(sa_sample_rate > 0) { std::cout << " sa_sample_rate=" << sa_sample_rate; }
     if(isa_sample_rate > 0) { std::cout << " isa_sample_rate=" << isa_sample_rate; }
+    if(build_lcp) { std::cout << " lcp"; }
+    if(sa_sample_rate > 0) { std::cout << " sa_sample_rate=" << sa_sample_rate; }
     std::cout << std::endl;
   }
   std::cout << std::endl;

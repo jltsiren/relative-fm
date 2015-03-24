@@ -323,7 +323,17 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
             temp = index.locate(res.second + 1);
             if(index.extract(temp, temp + pattern.length() - 1) <= pattern) { fail = true; }
           }
-          if(fail) { failed++; }
+          if(fail)
+          {
+#ifdef VERBOSE_STATUS_INFO
+            if(failed == 0)
+            {
+              std::cerr << "testIndex(): Verification failed for the following patterns:" << std::endl;
+            }
+            std::cerr << pattern;
+#endif
+            failed++;
+          }
         }
         else
         {

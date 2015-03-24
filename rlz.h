@@ -5,7 +5,7 @@
 
 #include <sdsl/suffix_arrays.hpp>
 
-#include "utils.h"
+#include "support.h"
 
 using namespace sdsl;
 
@@ -209,41 +209,43 @@ struct relative_encoder
       direct_max = std::max(direct_max, temp);
       text_pos += lengths[i];
     }
-    double rle_bits = runs * (bits::hi(rle_max) + 1) + ref_pos.size() * 1.25;
-    double direct_bits = ref_pos.size() * (bits::hi(direct_max) + 1);
+    double rle_bits = runs * bitlength(rle_max) + ref_pos.size() * 1.25;
+    double direct_bits = ref_pos.size() * bitlength(direct_max);
 
     if(rle_bits >= direct_bits) // Use direct encoding.
     {
 #ifdef VERBOSE_STATUS_INFO
       std::cout << "Using direct encoding for starting positions." << std::endl;
 #endif
-      this->values.width(bits::hi(direct_max) + 1); this->values.resize(ref_pos.size());
+      int_vector<0> buffer(ref_pos.size(), 0, bitlength(direct_max));
       text_pos = 0;
       for(uint64_t i = 0; i < ref_pos.size(); i++)
       {
-        this->values[i] = encode(ref_pos[i], text_pos);
+        buffer[i] = encode(ref_pos[i], text_pos);
         text_pos += lengths[i];
       }
+      util::assign(this->values, buffer);
     }
     else  // Use run-length encoding.
     {
 #ifdef VERBOSE_STATUS_INFO
       std::cout << "Using run-length encoding for starting positions." << std::endl;
 #endif
-      this->values.width(bits::hi(rle_max) + 1); this->values.resize(runs);
-      this->rle.resize(ref_pos.size()); util::set_to_value(this->rle, 0);
+      int_vector<0> buffer(runs, 0, bitlength(rle_max));
+      util::assign(this->rle, bit_vector(ref_pos.size(), 0));
       text_pos = 0; prev = 0; runs = 0;
       for(uint64_t i = 0; i < ref_pos.size(); i++)
       {
         uint64_t temp = encode(ref_pos[i], text_pos);
         if(i == 0 || (temp != prev && lengths[i] > 1))
         {
-          this->values[runs] = temp;
+          buffer[runs] = temp;
           prev = temp; runs++;
           this->rle[i] = 1;
         }
         text_pos += lengths[i];
       }
+      util::assign(this->values, buffer);
       util::init_support(this->rank, &(this->rle));
     }
   }
