@@ -2,6 +2,7 @@
 #include <unistd.h>
 
 #include <sdsl/construct.hpp>
+#include <sdsl/lcp.hpp>
 
 #include "support.h"
 
@@ -34,7 +35,7 @@ main(int argc, char** argv)
     case 'i':
       isa_sample_rate = atol(optarg); options = true; break;
     case 'l':
-      build_lcp = true; options = true;
+      build_lcp = true; options = true; break;
     case 's':
       sa_sample_rate = atol(optarg); options = true; break;
     case '?':
@@ -61,6 +62,7 @@ main(int argc, char** argv)
     std::string base_name = argv[i];
     std::cout << "File: " << base_name << std::endl;
     int_vector<8> text;
+    cache_config config;
     uint64_t size = 0;
 
     // Read text.
@@ -137,7 +139,12 @@ main(int argc, char** argv)
       {
         text.serialize(out); out.close();
         std::cout << "BWT written to " << filename << std::endl;
+        if(build_lcp)
+        {
+          config.file_map[conf::KEY_BWT] = filename;
+        }
       }
+      util::clear(text);
     }
 
     // Write SA/ISA samples.
@@ -147,7 +154,7 @@ main(int argc, char** argv)
       std::ofstream out(filename.c_str(), std::ios_base::binary);
       if(!out)
       {
-        std::cerr << "build_bwt: Cannot open the sample file " << filename << std::endl;
+        std::cerr << "build_bwt: Cannot open sample file " << filename << std::endl;
       }
       else
       {
@@ -156,6 +163,31 @@ main(int argc, char** argv)
         out.close();
         std::cout << "Samples written to " << filename << std::endl;
       }
+      util::clear(sa_samples); util::clear(isa_samples);
+    }
+
+    // Build and write LCP.
+    if(build_lcp)
+    {
+      double start = readTimer();
+      construct_lcp_bwt_based(config);
+      int_vector<0> lcp_buffer;
+      load_from_file(lcp_buffer, cache_file_name(conf::KEY_LCP, config));
+      SLArray lcp(lcp_buffer);
+      double seconds = readTimer() - start;
+      std::cout << "LCP array built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
+      std::string filename = base_name + LCP_EXTENSION;
+      std::ofstream out(filename.c_str(), std::ios_base::binary);
+      if(!out)
+      {
+        std::cerr << "build_bwt: Cannot open LCP file " << filename << std::endl;
+      }
+      else
+      {
+        lcp.serialize(out); out.close();
+        std::cout << "LCP array written to " << filename << std::endl;
+      }
+      sdsl::remove(cache_file_name(conf::KEY_LCP, config));
     }
 
     std::cout << std::endl;
