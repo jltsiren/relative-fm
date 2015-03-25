@@ -30,11 +30,14 @@ public:
   RLSequence& operator=(RLSequence&& v);
 
   uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
-  void load(std::istream& in, bool rebuild_samples = false);
+  void load(std::istream& in, LoadMode mode = mode_native);
 
   inline uint64_t size() const { return this->block_boundaries.size(); }
-  inline uint64_t runs() const { return this->data.size(); }  // Not real runs anymore.
+  inline uint64_t bytes() const { return this->data.size(); }
   inline uint64_t count(uint8_t c) const { return this->samples[c].sum(); }
+
+  // FIXME implement
+  uint64_t countRuns() const;
 
   inline uint64_t rank(uint64_t i, uint8_t c) const
   {
@@ -198,7 +201,7 @@ SimpleFM<RLSequence>::extractBWT(range_type range, ByteVector& buffer) const
 }
 
 template<>
-void characterCounts(const RLSequence& sequence, uint64_t size, int_vector<64>& counts);
+void characterCounts(const RLSequence& sequence, int_vector<64>& counts);
 
 //------------------------------------------------------------------------------
 

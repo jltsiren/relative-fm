@@ -13,6 +13,7 @@ void mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMod
 int
 main(int argc, char** argv)
 {
+  // FIXME add support for mode_ropebwt
   if(argc < 3)
   {
     std::cerr << "Usage: align_bwts [parameters] ref seq1 [seq2 ...]" << std::endl;
@@ -106,7 +107,7 @@ void
 mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mode)
 {
   SimpleFM<BWTType> ref(argv[0], mode);
-  if(mode == mode_ropebwt2) { ref.alpha.assign(ROPEBWT2_ALPHABET); }
+  if(mode == mode_ropebwt2) { ref.alpha.assign(ROPEBWT_ALPHABET); }
   ref.reportSize(true);
   std::cout << std::endl;
 
@@ -114,7 +115,7 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
   {
     std::cout << "Target: " << argv[arg] << std::endl;
     SimpleFM<BWTType> seq(argv[arg], mode);
-    if(mode == mode_ropebwt2) { seq.alpha.assign(ROPEBWT2_ALPHABET); }
+    if(mode == mode_ropebwt2) { seq.alpha.assign(ROPEBWT_ALPHABET); }
     double start = readTimer();
     RelativeFM<BWTType> rel(ref, seq, parameters, true);
     double seconds = readTimer() - start;

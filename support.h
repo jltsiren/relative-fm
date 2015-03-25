@@ -13,10 +13,10 @@ namespace relative
 // This function has been specialized for RLSequence.
 template<class ByteVector>
 void
-characterCounts(const ByteVector& sequence, uint64_t size, int_vector<64>& counts)
+characterCounts(const ByteVector& sequence, int_vector<64>& counts)
 {
   for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
-  for(uint64_t i = 0; i < size; i++) { counts[sequence[i]]++; }
+  for(uint64_t i = 0; i < sequence.size(); i++) { counts[sequence[i]]++; }
 }
 
 /*
@@ -38,23 +38,20 @@ public:
 
   /*
     ByteVector only has to support operator[]. If there is a clearly faster way for sequential
-    access, function characterCounts() should be specialized. If the second parameter is missing,
-    ByteVector::size() is used to determine it.
+    access, function characterCounts() should be specialized.
   */
   template<class ByteVector>
-  explicit Alphabet(const ByteVector& sequence, size_type size = 0) :
+  explicit Alphabet(const ByteVector& sequence) :
     char2comp(m_char2comp), comp2char(m_comp2char), C(m_C), sigma(m_sigma)
   {
-    if(size == 0) { size = sequence.size(); }
-
     util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
     util::assign(this->m_comp2char, int_vector<8>(MAX_SIGMA, 0));
     util::assign(this->m_C, int_vector<64>(MAX_SIGMA + 1, 0));
     this->m_sigma = 0;
-    if(size == 0) { return; }
+    if(sequence.size() == 0) { return; }
 
     // Step 1: Count the occurrences and temporarily store them in m_C.
-    characterCounts(sequence, size, this->m_C);
+    characterCounts(sequence, this->m_C);
 
     // Step 2: Determine the effective alphabet and compact the alphabet.
     for(size_type i = 0; i < MAX_SIGMA; i++)
@@ -124,12 +121,11 @@ public:
     The IntVector has to support operator[] that returns a non-const reference.
     The input is the original array, which gets overwritten by a cumulative array.
     This can be reversed by calling CumulativeArray::cumulativeToOriginal().
-    If the second parameter is 0, IntVector::size() is used to determine the size.
   */
   template<class IntVector>
-  explicit CumulativeArray(IntVector& sequence, size_type _size = 0)
+  explicit CumulativeArray(IntVector& sequence)
   {
-    this->m_size = (_size == 0 ? sequence.size() : _size);
+    this->m_size = sequence.size();
 
     for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1] + 1; }
     this->v = sd_vector<>(sequence.begin(), sequence.end());
@@ -281,10 +277,9 @@ public:
   ~SLArray();
 
   template<class IntVector>
-  SLArray(const IntVector& source, size_type _size = 0)
+  explicit SLArray(const IntVector& source)
   {
-    if(_size == 0) { _size = source.size(); }
-    util::assign(this->small, int_vector<8>(_size, 0));
+    util::assign(this->small, int_vector<8>(source.size(), 0));
 
     size_type  large_values = 0;
     value_type max_large = 0;

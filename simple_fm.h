@@ -46,6 +46,11 @@ public:
       }
       this->bwt.load(in); in.close();
     }
+    else if(mode == mode_ropebwt)
+    {
+      std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt" << std::endl;
+      return;
+    }
     else if(mode == mode_ropebwt2)
     {
       std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt2" << std::endl;
@@ -287,7 +292,7 @@ private:
     if(in) { this->alpha.load(in); in.close(); }
     else  // Try the default alphabet.
     {
-      Alphabet temp(this->bwt, this->size());
+      Alphabet temp(this->bwt);
       if(temp.sigma != SIMPLE_FM_DEFAULT_ALPHABET.length())
       {
         std::cerr << "SimpleFM()::loadAlphabet(): Alphabet file " << filename

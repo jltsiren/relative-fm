@@ -29,7 +29,7 @@ extern const std::string ALPHA_EXTENSION;             // .alpha
 extern const std::string SAMPLE_EXTENSION;            // .samples
 extern const std::string LCP_EXTENSION;               // .lcp
 extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;  // \0ACGNT
-extern const std::string ROPEBWT2_ALPHABET;           // \0ACGTN
+extern const std::string ROPEBWT_ALPHABET;            // \0ACGTN
 
 const uint64_t MEGABYTE = 1048576;
 const double MEGABYTE_DOUBLE = 1048576.0;
@@ -38,7 +38,7 @@ const double MEGABYTE_DOUBLE = 1048576.0;
 
 typedef std::pair<uint64_t, uint64_t> range_type;
 
-enum LoadMode { mode_plain, mode_native, mode_ropebwt2 };
+enum LoadMode { mode_plain, mode_native, mode_ropebwt, mode_ropebwt2 };
 
 template<class A, class B>
 std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
@@ -64,22 +64,6 @@ inline uint64_t
 bitlength(uint64_t val)
 {
   return bits::hi(val) + 1;
-}
-
-//------------------------------------------------------------------------------
-
-template<class A>
-void
-readInteger(std::ifstream& input, A a)
-{
-  input.read((char*)&a, sizeof(A));
-}
-
-template<class A>
-void
-writeInteger(std::ofstream& output, A a)
-{
-  output.write((char*)&a, sizeof(A));
 }
 
 //------------------------------------------------------------------------------
