@@ -6,11 +6,5 @@ query_test
 bwt_benchmark
 test_rlz
 build_rlzfm
-*.aux
-*.bak
-*.bbl
-*.blg
-*.log
-relative.pdf
-relative-fm.pdf
+index_dlcp
 .DS_Store

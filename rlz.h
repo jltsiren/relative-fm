@@ -29,18 +29,20 @@ void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
 
 /*
-  These versions use temporary files on disk. Use reverseIndex(reference, csa)
-  to build index for the reverse reference. The sequence and the reference may contain
-  character value 0 or character value 1, but not both.
-
-  For the int_vector<0> variant, it is advisable to use util::bit_compress(mismatches)
-  afterwards.
+  This version uses temporary files on disk. Alternatively, use reverseIndex(reference, csa)
+  to build index for the reverse reference, and then call the template version. The sequence
+  and the reference may contain character value 0 or character value 1, but not both.
 */
 void relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches);
 
-void relativeLZ(const int_vector<0>& text, const int_vector<0>& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<0>& mismatches);
+/*
+  This version parses the reference using a prebuilt suffix array. The text must not contain
+  character value 0, while the reference must have it as an endmarker. If mismatches == 0,
+  the algorithm does not output them.
+*/
+void relativeLZ(const int_vector<0>& text, const int_vector<0>& reference, const int_vector<0>& sa,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, std::vector<uint64_t>* mismatches);
 
 //------------------------------------------------------------------------------
 
@@ -81,10 +83,6 @@ relativeLZ(const IntVector& text, const CSA& reference,
   }
   mismatches.resize(char_buffer.size());
   for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
-
-#ifdef VERBOSE_STATUS_INFO
-  std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -93,6 +91,7 @@ relativeLZ(const IntVector& text, const CSA& reference,
   If the sequence contains character value 0, it is converted into 1.
   Therefore the sequence should not contain both 0s and 1s.
 */
+
 template<class IntVector, class CSA>
 void
 reverseIndex(const IntVector& sequence, CSA& csa)
@@ -181,6 +180,8 @@ private:
 */
 struct relative_encoder
 {
+  typedef uint64_t size_type;
+
   int_vector<0>           values; // Phrase starts encoded as (ref_pos - text_pos).
   bit_vector              rle;    // rle[i] is set, if phrase i is stored.
   bit_vector::rank_1_type rank;
@@ -197,10 +198,10 @@ struct relative_encoder
     util::clear(this->values); util::clear(this->rle); util::clear(this->rank);
 
     // Check whether run-length encoding can help.
-    uint64_t text_pos = 0, prev = ~(uint64_t)0, rle_max = 0, direct_max = 0, runs = 0;
-    for(uint64_t i = 0; i < ref_pos.size(); i++)
+    size_type text_pos = 0, prev = ~(size_type)0, rle_max = 0, direct_max = 0, runs = 0;
+    for(size_type i = 0; i < ref_pos.size(); i++)
     {
-      uint64_t temp = encode(ref_pos[i], text_pos);
+      size_type temp = encode(ref_pos[i], text_pos);
       if(i == 0 || (temp != prev && lengths[i] > 1))
       {
         rle_max = std::max(rle_max, temp);
@@ -219,7 +220,7 @@ struct relative_encoder
 #endif
       int_vector<0> buffer(ref_pos.size(), 0, bitlength(direct_max));
       text_pos = 0;
-      for(uint64_t i = 0; i < ref_pos.size(); i++)
+      for(size_type i = 0; i < ref_pos.size(); i++)
       {
         buffer[i] = encode(ref_pos[i], text_pos);
         text_pos += lengths[i];
@@ -234,9 +235,9 @@ struct relative_encoder
       int_vector<0> buffer(runs, 0, bitlength(rle_max));
       util::assign(this->rle, bit_vector(ref_pos.size(), 0));
       text_pos = 0; prev = 0; runs = 0;
-      for(uint64_t i = 0; i < ref_pos.size(); i++)
+      for(size_type i = 0; i < ref_pos.size(); i++)
       {
-        uint64_t temp = encode(ref_pos[i], text_pos);
+        size_type temp = encode(ref_pos[i], text_pos);
         if(i == 0 || (temp != prev && lengths[i] > 1))
         {
           buffer[runs] = temp;
@@ -250,20 +251,20 @@ struct relative_encoder
     }
   }
 
-  uint64_t reportSize() const;
+  size_type reportSize() const;
   void load(std::istream& input);
-  uint64_t serialize(std::ostream& output) const;
+  size_type serialize(std::ostream& output, structure_tree_node* v = nullptr, std::string name = "") const;
 
   // Returns a reference position for given text position relative to given phrase.
-  inline uint64_t decode(uint64_t phrase, uint64_t text_pos) const
+  inline size_type decode(size_type phrase, size_type text_pos) const
   {
-    uint64_t temp = (this->rle.size() > 0 ? this->values[this->rank(phrase + 1) - 1] : this->values[phrase]);
+    size_type temp = (this->rle.size() > 0 ? this->values[this->rank(phrase + 1) - 1] : this->values[phrase]);
     if(temp & 1) { return text_pos - (temp + 1) / 2; }
     return text_pos + temp / 2;
   }
 
   // Encodes (ref_pos - text_pos) as unsigned integer.
-  inline static uint64_t encode(uint64_t ref_pos, uint64_t text_pos)
+  inline static size_type encode(size_type ref_pos, size_type text_pos)
   {
     if(ref_pos >= text_pos) { return 2 * (ref_pos - text_pos); }
     return 2 * (text_pos - ref_pos) - 1;

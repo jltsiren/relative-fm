@@ -16,10 +16,6 @@ relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
 {
   if(text.size() == 0) { return; }
 
-#ifdef VERBOSE_STATUS_INFO
-  std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
-#endif
-
   bv_fmi fmi(reference);
   relativeLZSuccinct(text, fmi, starts, lengths, mismatches);
 }
@@ -77,10 +73,6 @@ relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
   }
   mismatches.resize(char_buffer.size());
   for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
-
-#ifdef VERBOSE_STATUS_INFO
-  std::cout << "Parsed the text as " << starts.size() << " phrases." << std::endl;
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -91,28 +83,54 @@ relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
 {
   if(text.size() == 0) { return; }
 
-#ifdef VERBOSE_STATUS_INFO
-  std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
-#endif
-
   csa_wt<> csa;
   reverseIndex(reference, csa);
   relativeLZ(text, csa, starts, lengths, mismatches);
 }
 
 void
-relativeLZ(const int_vector<0>& text, const int_vector<0>& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<0>& mismatches)
+relativeLZ(const int_vector<0>& text, const int_vector<0>& reference, const int_vector<0>& sa,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, std::vector<uint64_t>* mismatches)
 {
   if(text.size() == 0) { return; }
 
-#ifdef VERBOSE_STATUS_INFO
-  std::cout << "RLZ parsing: text length " << text.size() << ", reference length " << reference.size() << "." << std::endl;
-#endif
+  starts.clear(); lengths.clear();
+  if(mismatches != 0) { mismatches->clear(); }
+  uint64_t text_pos = 0;
+  while(text_pos < text.size())
+  {
+    uint64_t sp = 0, ep = sa.size() - 1, matched = 0;
+    while(text_pos + matched < text.size())
+    {
+      uint64_t low = sp, high = ep, next = text[text_pos + matched];
+      while(low < high) // Find the first suffix that matches the next character.
+      {
+        uint64_t mid = low + (high - low) / 2;
+        uint64_t val = reference[sa[mid] + matched];
+        if(val < next) { low = mid + 1; }
+        else if(val > next) { high = mid - 1; }
+        else { high = mid; }
+      }
+      if(reference[sa[low] + matched] != next) { break; }
+      sp = low;
 
-  csa_wt<wm_int<> > csa;
-  reverseIndex(reference, csa);
-  relativeLZ(text, csa, starts, lengths, mismatches);
+      high = ep;
+      while(low < high) // Find the last suffix that matches the next character.
+      {
+        uint64_t mid = low + (high + 1 - low) / 2;
+        uint64_t val = reference[sa[mid] + matched];
+        if(val > next) { high = mid - 1; }
+        else { low = mid; }
+      }
+      ep = high; matched++;
+    }
+
+    starts.push_back(sa[sp]); // FIXME: Find the match closest to text_pos?
+    if(text_pos + matched < text.size()) { matched++; } // Add the mismatch.
+    lengths.push_back(matched);
+    if(mismatches != 0) { mismatches->push_back(text[text_pos + matched - 1]); }
+    text_pos += matched;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -381,7 +399,7 @@ relative_encoder::copy(const relative_encoder& r)
   this->rank = r.rank; this->rank.set_vector(&(this->rle));
 }
 
-uint64_t
+relative_encoder::size_type
 relative_encoder::reportSize() const
 {
   return size_in_bytes(this->values) + size_in_bytes(this->rle) + size_in_bytes(this->rank);
@@ -395,14 +413,16 @@ relative_encoder::load(std::istream& input)
   this->rank.load(input, &(this->rle));
 }
 
-uint64_t
-relative_encoder::serialize(std::ostream& output) const
+relative_encoder::size_type
+relative_encoder::serialize(std::ostream& output, structure_tree_node* v, std::string name) const
 {
-  uint64_t bytes = 0;
-  bytes += this->values.serialize(output);
-  bytes += this->rle.serialize(output);
-  bytes += this->rank.serialize(output);
-  return bytes;
+  structure_tree_node* child = structure_tree::add_child(v, name, util::class_name(*this));
+  size_type written_bytes = 0;
+  written_bytes += this->values.serialize(output, child, "values");
+  written_bytes += this->rle.serialize(output, child, "rle");
+  written_bytes += this->rank.serialize(output, child, "rank");
+  structure_tree::add_size(child, written_bytes);
+  return written_bytes;
 }
 
 //------------------------------------------------------------------------------

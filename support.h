@@ -3,8 +3,6 @@
 
 #include "utils.h"
 
-using namespace sdsl;
-
 namespace relative
 {
 
@@ -330,9 +328,10 @@ public:
     else { return this->large[this->large_rank(i)]; }
   }
 
-  // Semiopen interval [from, to). No sanity checking.
+  // Semiopen interval [from, to). Minimal sanity checking.
   inline int_vector<64> extract(size_type from, size_type to) const
   {
+    to = std::min(to, this->size());
     int_vector<64> result(to - from, 0);
     if(this->largeValues() == 0)
     {
