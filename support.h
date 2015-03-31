@@ -157,7 +157,6 @@ public:
   {
     if(k == 0) { return 0; }
     if(k > this->size()) { k = this->size(); }
-
     return this->select_1(k) - k + 1;
   }
 
@@ -167,7 +166,6 @@ public:
   inline size_type inverse(size_type i) const
   {
     if(i >= this->sum()) { return this->size(); }
-
     return this->select_0(i + 1) - i;
   }
 
@@ -176,6 +174,15 @@ public:
   {
     if(i >= this->sum()) { return false; }
     return this->v[this->select_0(i + 1) + 1];
+  }
+
+  // A combination of the above.
+  inline size_type inverse(size_type i, bool& is_last) const
+  {
+    if(i >= this->sum()) { is_last = false; return this->size(); }
+    uint64_t temp = this->select_0(i + 1);
+    is_last = this->v[temp + 1];
+    return temp - i;
   }
 
 private:
@@ -329,20 +336,21 @@ public:
   }
 
   // Semiopen interval [from, to). Minimal sanity checking.
-  inline int_vector<64> extract(size_type from, size_type to) const
+  // Padding is added to the beginning of the result.
+  inline int_vector<64> extract(size_type from, size_type to, size_type padding = 0) const
   {
     to = std::min(to, this->size());
-    int_vector<64> result(to - from, 0);
+    int_vector<64> result(padding + to - from, 0);
     if(this->largeValues() == 0)
     {
-      for(size_type i = from; i < to; i++) { result[i - from] = this->small[i]; }
+      for(size_type i = from, j = padding; i < to + padding; i++, j++) { result[j] = this->small[i]; }
     }
     else
     {
-      for(size_type i = from, j = this->large_rank(from); i < to; i++)
+      for(size_type i = from, j = padding, k = this->large_rank(from); i < to + padding; i++, j++)
       {
-        if(this->small[i] < LARGE_VALUE) { result[i - from] = this->small[i]; }
-        else { result[i - from] = this->large[j]; j++; }
+        if(this->small[i] < LARGE_VALUE) { result[j] = this->small[i]; }
+        else { result[j] = this->large[k]; k++; }
       }
     }
     return result;

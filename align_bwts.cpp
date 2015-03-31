@@ -121,14 +121,15 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
   std::string ref_name = argv[0];
   SimpleFM<BWTType> ref(ref_name, mode);
   if(mode == mode_ropebwt2) { ref.alpha.assign(ROPEBWT_ALPHABET); }
+  ref.reportSize(true);
   RelativeLCP::lcp_type ref_lcp;
   RelativeLCP::index_type ref_index;
   if(lcp)
   {
     load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
     load_from_file(ref_index, ref_name + DLCP_INDEX_EXTENSION);
+    printSize("LCP array", size_in_bytes(ref_lcp), ref.size()); std::cout << std::endl;
   }
-  ref.reportSize(true);
   std::cout << std::endl;
 
   for(int arg = 1; arg < argc; arg++)

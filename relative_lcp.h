@@ -36,11 +36,25 @@ public:
 
 //------------------------------------------------------------------------------
 
-  // FIXME implement
   inline uint64_t operator[] (uint64_t i) const
   {
-    return i;
+    if(i >= this->size()) { return 0; }
+
+    bool is_last = false; // Last character in the phrase.
+    uint64_t phrase = this->blocks.inverse(i, is_last); // Phrase is 0-based.
+    if(is_last) { return this->samples[phrase + 1]; }
+
+    // Starting position of the phrase in seq and ref.
+    uint64_t seq_pos = this->blocks.sum(phrase);
+    uint64_t ref_pos = this->phrases.decode(phrase, seq_pos);
+
+    uint64_t res = this->samples[phrase];
+    if(ref_pos > 0) { res -= this->reference[ref_pos - 1]; }
+    res += this->reference[ref_pos + i - seq_pos];
+    return res;
   }
+
+  // FIXME implement extracting multiple cells.
 
   // FIXME what these should return?
   // FIXME implement

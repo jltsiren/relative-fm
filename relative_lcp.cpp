@@ -69,6 +69,7 @@ RelativeLCP::reportSize(bool print) const
     printSize("Tree", tree_bytes, this->size());
 #endif
     printSize("Relative LCP", bytes, this->size());
+    std::cout << std::endl;
   }
 
   return bytes;
@@ -143,6 +144,7 @@ RelativeLCP::absoluteSamples(const lcp_type& lcp, const std::vector<uint64_t>& l
     for(uint64_t i = 0; i < buffer.size(); i++) { min_val = std::min(min_val, buffer[i]); }
     tree_buffer[phrase] = min_val;
     sample_buffer[phrase + 1] = buffer[buffer.size() - 1];
+    pos = limit;
   }
 
   uint64_t tree_offset = 0, tree_nodes = lengths.size();
