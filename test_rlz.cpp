@@ -15,7 +15,8 @@ using namespace relative;
 //#define WT_TESTS
 
 // These tests use parameter format "reference seq1 [seq2 ...]".
-#define CST_TESTS
+//#define CST_TESTS
+#define LCP_TESTS
 
 
 // For bitvector RLZ tests.
@@ -46,6 +47,7 @@ void testString(int argc, char** argv);
 void testBV(int argc, char** argv);
 void testWT(int argc, char** argv);
 void testCST(int argc, char** argv);
+void testLCP(int argc, char** argv);
 
 //------------------------------------------------------------------------------
 
@@ -73,6 +75,10 @@ main(int argc, char** argv)
 
 #ifdef CST_TESTS
   testCST(argc, argv);
+#endif
+
+#ifdef LCP_TESTS
+  testLCP(argc, argv);
 #endif
 
   return 0;
@@ -542,6 +548,60 @@ testCST(int argc, char** argv)
   delete sample_fmi; sample_fmi = 0;
   delete tree_fmi; tree_fmi = 0;
   delete lcp_fmi; lcp_fmi = 0;
+}
+
+//------------------------------------------------------------------------------
+
+
+void
+testLCP(int argc, char** argv)
+{
+  std::cout << "LCP compression tests" << std::endl;
+  std::cout << std::endl;
+
+  if(argc < 3)
+  {
+    std::cerr << "testLCP(): Usage: " << argv[0] << " reference_file text_file1 [text_file2 ...]" << std::endl;
+    std::cerr << "Note that the LCP arrays should already have been built." << std::endl;
+    std::cerr << std::endl;
+    return;
+  }
+
+  std::string ref_name = argv[1];
+  std::string ref_file = ref_name + LCP_EXTENSION;
+  std::cout << "Reference: " << ref_name << std::endl;
+
+  SLArray ref_lcp; load_from_file(ref_lcp, ref_file);
+  printSize("LCP array", size_in_bytes(ref_lcp), ref_lcp.size());
+
+  int_vector<0> sa;
+  {
+    double start = readTimer();
+    int_vector<0> buffer(ref_lcp.size() + 1, 0, ref_lcp.large.width() + 1);
+    for(uint64_t i = 0; i < ref_lcp.size(); i++) { buffer[i] = ref_lcp[i] + 1; }
+    qsufsort::construct_sa(sa, buffer); util::bit_compress(sa);
+    double seconds = readTimer() - start;
+    std::cout << "Suffix array built in " << seconds << " seconds" << std::endl;
+    std::cout << std::endl;
+  }
+
+  for(int arg = 2; arg < argc; arg++)
+  {
+    std::string text_name = argv[arg];
+    std::string text_file = text_name + LCP_EXTENSION;
+    std::cout << "Text: " << text_name << std::endl;
+
+    SLArray seq_lcp; load_from_file(seq_lcp, text_file);
+    printSize("LCP array", size_in_bytes(seq_lcp), seq_lcp.size());
+
+    std::vector<uint64_t> starts, lengths;
+    double start = readTimer();
+    relativeLZ<SLArray, false>(seq_lcp, ref_lcp, sa, starts, lengths, 0);
+    double seconds = readTimer() - start;
+    std::cout << "RLZ parsing done in " << seconds << " seconds" << std::endl;
+    std::cout << "Phrases: " << starts.size() << std::endl;
+    std::cout << std::endl;
+  }
 }
 
 //------------------------------------------------------------------------------

@@ -171,8 +171,7 @@ main(int argc, char** argv)
     {
       double start = readTimer();
       construct_lcp_bwt_based(config);
-      int_vector<0> lcp_buffer;
-      load_from_file(lcp_buffer, cache_file_name(conf::KEY_LCP, config));
+      int_vector_buffer<0> lcp_buffer(cache_file_name(conf::KEY_LCP, config));
       SLArray lcp(lcp_buffer);
       double seconds = readTimer() - start;
       std::cout << "LCP array built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;

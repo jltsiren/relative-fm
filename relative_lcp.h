@@ -40,13 +40,12 @@ public:
   {
     if(i >= this->size()) { return 0; }
 
-    bool is_last = false; // Last character in the phrase.
-    uint64_t phrase = this->blocks.inverse(i, is_last); // Phrase is 0-based.
-    if(is_last) { return this->samples[phrase + 1]; }
+    uint64_t phrase = this->blocks.inverse(i); // Phrase is 0-based.
+    if(this->blocks.isLast(i)) { return this->samples[phrase + 1]; }
 
     // Starting position of the phrase in seq and ref.
     uint64_t seq_pos = this->blocks.sum(phrase);
-    uint64_t ref_pos = this->phrases.decode(phrase, seq_pos);
+    uint64_t ref_pos = this->phrases[phrase];
 
     uint64_t res = this->samples[phrase];
     if(ref_pos > 0) { res -= this->reference[ref_pos - 1]; }
@@ -65,32 +64,11 @@ public:
 
 //------------------------------------------------------------------------------
 
-  /*
-    We encode (val - prev) as a positive integer. SA construction does not work with
-    character value 0.
-  */
-  inline static uint64_t encode(uint64_t val, uint64_t prev)
-  {
-    if(val >= prev) { return 2 * (val - prev) + 1; }
-    else            { return 2 * (prev - val); }
-  }
-
-  inline static uint64_t decode(uint64_t code, uint64_t prev)
-  {
-    if(code & 1) { return (code - 1) / 2 + prev; }
-    else         { return prev - code / 2; }
-  }
-
-  // Use endmarker == true, if you are going to build an index for the DLCP array.
-  static void differentialArray(const lcp_type& lcp, dlcp_type& dlcp, bool endmarker);
-
-//------------------------------------------------------------------------------
-
-  const lcp_type&  reference;
-  relative_encoder phrases;
-  CumulativeArray  blocks;
-  SLArray          samples;
-  SLArray          tree;
+  const lcp_type&   reference;
+  int_vector<0>     phrases;
+  CumulativeNZArray blocks;
+  SLArray           samples;
+  SLArray           tree;
 
 //------------------------------------------------------------------------------
 

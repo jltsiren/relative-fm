@@ -208,6 +208,90 @@ CumulativeArray::load(std::istream& in)
 
 //------------------------------------------------------------------------------
 
+CumulativeNZArray::CumulativeNZArray()
+{
+  this->m_size = 0;
+}
+
+CumulativeNZArray::CumulativeNZArray(const CumulativeNZArray& a)
+{
+  this->copy(a);
+}
+
+CumulativeNZArray::CumulativeNZArray(CumulativeNZArray&& a)
+{
+  *this = std::move(a);
+}
+
+CumulativeNZArray::~CumulativeNZArray()
+{
+}
+
+void
+CumulativeNZArray::copy(const CumulativeNZArray& a)
+{
+  this->v = a.v;
+  this->rank = a.rank; this->rank.set_vector(&(this->v));
+  this->select = a.select; this->select.set_vector(&(this->v));
+  this->m_size = a.m_size;
+}
+
+void
+CumulativeNZArray::swap(CumulativeNZArray& a)
+{
+  if(this != &a)
+  {
+    this->v.swap(a.v);
+    util::swap_support(this->rank, a.rank, &(this->v), &(a.v));
+    util::swap_support(this->select, a.select, &(this->v), &(a.v));
+    std::swap(this->m_size, a.m_size);
+  }
+}
+
+CumulativeNZArray&
+CumulativeNZArray::operator=(const CumulativeNZArray& a)
+{
+  if(this != &a) { this->copy(a); }
+  return *this;
+}
+
+CumulativeNZArray&
+CumulativeNZArray::operator=(CumulativeNZArray&& a)
+{
+  if(this != &a)
+  {
+    this->v = std::move(a.v);
+    this->rank = std::move(a.rank); this->rank.set_vector(&(this->v));
+    this->select = std::move(a.select); this->select.set_vector(&(this->v));
+    this->m_size = a.m_size;
+  }
+  return *this;
+}
+
+CumulativeNZArray::size_type
+CumulativeNZArray::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+{
+  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
+  size_type written_bytes = 0;
+  written_bytes += this->v.serialize(out, child, "v");
+  written_bytes += this->rank.serialize(out, child, "rank");
+  written_bytes += this->select.serialize(out, child, "select");
+  written_bytes += write_member(this->m_size, out, child, "size");
+  structure_tree::add_size(child, written_bytes);
+  return written_bytes;
+}
+
+void
+CumulativeNZArray::load(std::istream& in)
+{
+  this->v.load(in);
+  this->rank.load(in, &(this->v));
+  this->select.load(in, &(this->v));
+  read_member(this->m_size, in);
+}
+
+//------------------------------------------------------------------------------
+
 LCS::LCS()
 {
   this->lcs_size = 0;
@@ -408,6 +492,11 @@ SLArray::SLArray(SLArray&& s)
 
 SLArray::~SLArray()
 {
+}
+
+SLArray::SLArray(int_vector_buffer<0>& source)
+{
+  this->buildFrom(source);
 }
 
 void

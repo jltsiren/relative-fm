@@ -103,6 +103,7 @@ public:
 /*
   This class uses an sd_vector to encode the cumulative sum of an array of integers.
   The array contains sum() items in size() elements. The array uses 0-based indexes.
+  Each element is encoded as 'items' 0-bits, followed by an 1-bit.
 */
 
 class CumulativeArray
@@ -117,8 +118,7 @@ public:
 
   /*
     The IntVector has to support operator[] that returns a non-const reference.
-    The input is the original array, which gets overwritten by a cumulative array.
-    This can be reversed by calling CumulativeArray::cumulativeToOriginal().
+    The input is the original array.
   */
   template<class IntVector>
   explicit CumulativeArray(IntVector& sequence)
@@ -127,17 +127,11 @@ public:
 
     for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1] + 1; }
     this->v = sd_vector<>(sequence.begin(), sequence.end());
+    for(size_type i = this->size() - 1; i > 0; i--) { sequence[i] -= sequence[i - 1] + 1; }
 
     util::init_support(this->rank, &(this->v));
     util::init_support(this->select_1, &(this->v));
     util::init_support(this->select_0, &(this->v));
-  }
-
-  template<class IntVector>
-  static void
-  cumulativeToOriginal(IntVector& sequence, size_type size)
-  {
-    for(size_type i = size - 1; i > 0; i--) { sequence[i] -= sequence[i - 1] + 1; }
   }
 
   void swap(CumulativeArray& v);
@@ -194,6 +188,86 @@ private:
 
   void copy(const CumulativeArray& v);
 };  // class CumulativeArray
+
+//------------------------------------------------------------------------------
+
+/*
+  This version does not allow elements with 0 items.
+  The last item in each element is marked with an 1-bit.
+*/
+class CumulativeNZArray
+{
+public:
+  typedef uint64_t size_type;
+
+  CumulativeNZArray();
+  CumulativeNZArray(const CumulativeNZArray& s);
+  CumulativeNZArray(CumulativeNZArray&& s);
+  ~CumulativeNZArray();
+
+  /*
+    The IntVector has to support operator[] that returns a non-const reference.
+    The input is the original array.
+  */
+  template<class IntVector>
+  explicit CumulativeNZArray(IntVector& sequence)
+  {
+    this->m_size = sequence.size();
+
+    sequence[0]--;
+    for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1]; }
+    this->v = sd_vector<>(sequence.begin(), sequence.end());
+    for(size_type i = this->size() - 1; i > 0; i--) { sequence[i] -= sequence[i - 1]; }
+    sequence[0]++;
+
+    util::init_support(this->rank, &(this->v));
+    util::init_support(this->select, &(this->v));
+  }
+
+  void swap(CumulativeNZArray& v);
+  CumulativeNZArray& operator=(const CumulativeNZArray& v);
+  CumulativeNZArray& operator=(CumulativeNZArray&& v);
+
+  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  void load(std::istream& in);
+
+  inline size_type size() const { return this->m_size; }
+
+  // The sum of all elements.
+  inline size_type sum() const { return this->v.size(); }
+
+  // The sum of the first k elements.
+  inline size_type sum(size_type k) const
+  {
+    if(k == 0) { return 0; }
+    if(k > this->size()) { k = this->size(); }
+    return this->select(k) + 1;
+  }
+
+  inline size_type operator[](size_type i) const { return this->sum(i + 1) - this->sum(i); }
+
+  // The inverse of sum(). Returns the element for item i.
+  inline size_type inverse(size_type i) const
+  {
+    if(i >= this->sum()) { return this->size(); }
+    return this->rank(i);
+  }
+
+  // Is item i the last item in its element.
+  inline bool isLast(size_type i) const
+  {
+    if(i >= this->sum()) { return false; }
+    return this->v[i];
+  }
+
+private:
+  sd_vector<>                v;
+  sd_vector<>::rank_1_type   rank;
+  sd_vector<>::select_1_type select;
+  size_type                  m_size;  // Size of the original array.
+
+  void copy(const CumulativeNZArray& v);
+};  // class CumulativeNZArray
 
 //------------------------------------------------------------------------------
 
@@ -284,40 +358,11 @@ public:
   template<class IntVector>
   explicit SLArray(const IntVector& source)
   {
-    util::assign(this->small, int_vector<8>(source.size(), 0));
-
-    size_type  large_values = 0;
-    value_type max_large = 0;
-    for(size_type i = 0; i < this->size(); i++)
-    {
-      if(source[i] < LARGE_VALUE) { this->small[i] = source[i]; }
-      else
-      {
-        this->small[i] = LARGE_VALUE;
-        large_values++; max_large = std::max(max_large, (value_type)(source[i]));
-      }
-    }
-
-    if(large_values > 0)
-    {
-      size_type blocks = (this->size() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-      util::assign(this->large, int_vector<0>(large_values, 0, bitlength(max_large)));
-      util::assign(this->samples, int_vector<0>(blocks, 0, bitlength(large_values)));
-      for(size_type block = 0, pos = 0, large_pos = 0; block < blocks; block++)
-      {
-        this->samples[block] = large_pos;
-        size_type limit = std::min(this->size(), (block + 1) * BLOCK_SIZE);
-        while(pos < limit)
-        {
-          if(source[pos] >= LARGE_VALUE)
-          {
-            this->large[large_pos] = source[pos]; large_pos++;
-          }
-          pos++;
-        }
-      }
-    }
+    this->buildFrom(source);
   }
+
+  // int_vector_buffer cannot be const.
+  explicit SLArray(int_vector_buffer<0>& source);
 
   void swap(SLArray& s);
   SLArray& operator=(const SLArray& s);
@@ -372,6 +417,45 @@ public:
 
 private:
   void copy(const SLArray& s);
+
+  template<class IntVector>
+  void
+  buildFrom(IntVector& source)
+  {
+    util::assign(this->small, int_vector<8>(source.size(), 0));
+
+    size_type  large_values = 0;
+    value_type max_large = 0;
+    for(size_type i = 0; i < this->size(); i++)
+    {
+      if(source[i] < LARGE_VALUE) { this->small[i] = source[i]; }
+      else
+      {
+        this->small[i] = LARGE_VALUE;
+        large_values++; max_large = std::max(max_large, (value_type)(source[i]));
+      }
+    }
+
+    if(large_values > 0)
+    {
+      size_type blocks = (this->size() + BLOCK_SIZE - 1) / BLOCK_SIZE;
+      util::assign(this->large, int_vector<0>(large_values, 0, bitlength(max_large)));
+      util::assign(this->samples, int_vector<0>(blocks, 0, bitlength(large_values)));
+      for(size_type block = 0, pos = 0, large_pos = 0; block < blocks; block++)
+      {
+        this->samples[block] = large_pos;
+        size_type limit = std::min(this->size(), (block + 1) * BLOCK_SIZE);
+        while(pos < limit)
+        {
+          if(source[pos] >= LARGE_VALUE)
+          {
+            this->large[large_pos] = source[pos]; large_pos++;
+          }
+          pos++;
+        }
+      }
+    }
+  }
 };  // class SLArray
 
 //------------------------------------------------------------------------------

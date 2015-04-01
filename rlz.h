@@ -36,13 +36,82 @@ void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
 void relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
   std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches);
 
+//------------------------------------------------------------------------------
+
+template<class IntVector, bool differential>
+struct CharAt
+{
+  inline static uint64_t at(const IntVector& seq, uint64_t i)
+  {
+    if(i >= seq.size()) { return 0; }
+    return seq[i];
+  }
+};
+
+template<class IntVector>
+struct CharAt<IntVector, true>
+{
+  inline static uint64_t at(const IntVector& seq, uint64_t i)
+  {
+    if(i >= seq.size()) { return 0; }
+    uint64_t prev = (i > 0 ? seq[i - 1] : 0), curr = seq[i];
+    return DiffEncoderNZ::encode(curr, prev);
+  }
+};
+
 /*
-  This version parses the reference using a prebuilt suffix array. The text must not contain
-  character value 0, while the reference must have it as an endmarker. If mismatches == 0,
-  the algorithm does not output them.
+  This version is intended for integer sequences. It parses the reference using a prebuilt
+  suffix array. The text must not contain character value 0, while the reference has it only
+  as an implicit endmarker.
+  If mismatches == 0, the algorithm does not output them.
+  If differential == true, the parsing is based on differential values instead of absolute
+  values.
 */
-void relativeLZ(const int_vector<0>& text, const int_vector<0>& reference, const int_vector<0>& sa,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, std::vector<uint64_t>* mismatches);
+template<class IntVector, bool differential>
+void
+relativeLZ(const IntVector& text, const IntVector& reference, const int_vector<0>& sa,
+  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, std::vector<uint64_t>* mismatches)
+{
+  if(text.size() == 0) { return; }
+
+  starts.clear(); lengths.clear();
+  if(mismatches != 0) { mismatches->clear(); }
+  uint64_t text_pos = 0;
+  while(text_pos < text.size())
+  {
+    uint64_t sp = 0, ep = sa.size() - 1, matched = 0;
+    while(text_pos + matched < text.size())
+    {
+      uint64_t low = sp, high = ep, next = CharAt<IntVector, differential>::at(text, text_pos + matched);
+      while(low < high) // Find the first suffix that matches the next character.
+      {
+        uint64_t mid = low + (high - low) / 2;
+        uint64_t val = CharAt<IntVector, differential>::at(reference, sa[mid] + matched);
+        if(val < next) { low = mid + 1; }
+        else if(val > next) { high = mid - 1; }
+        else { high = mid; }
+      }
+      if(CharAt<IntVector, differential>::at(reference, sa[low] + matched) != next) { break; }
+      sp = low;
+
+      high = ep;
+      while(low < high) // Find the last suffix that matches the next character.
+      {
+        uint64_t mid = low + (high + 1 - low) / 2;
+        uint64_t val = CharAt<IntVector, differential>::at(reference, sa[mid] + matched);
+        if(val > next) { high = mid - 1; }
+        else { low = mid; }
+      }
+      ep = high; matched++;
+    }
+
+    starts.push_back(sa[sp]); // FIXME: Find the match closest to text_pos?
+    if(text_pos + matched < text.size()) { matched++; } // Add the mismatch.
+    lengths.push_back(matched);
+    if(mismatches != 0) { mismatches->push_back(text[text_pos + matched - 1]); }
+    text_pos += matched;
+  }
+}
 
 //------------------------------------------------------------------------------
 

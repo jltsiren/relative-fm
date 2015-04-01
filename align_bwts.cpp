@@ -161,6 +161,19 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
       printSize("LCP array", size_in_bytes(seq_lcp), seq.size()); std::cout << std::endl;
       rlcp.writeTo(seq_name);
       rlcp.reportSize(true);
+
+/*      // Verify the correctness of the relative LCP array.
+      start = readTimer();
+      for(uint64_t i = 0; i < seq_lcp.size(); i++)
+      {
+        if(rlcp[i] != seq_lcp[i])
+        {
+          std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", seq_lcp[" << i << "] = " << seq_lcp[i] << std::endl;
+          break;
+        }
+      }
+      seconds = readTimer() - start;
+      std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;*/
     }
 
     std::cout << std::endl;

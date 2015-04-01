@@ -254,7 +254,6 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
   // Initialize phrases and blocks.
   this->phrases.init(phrase_starts, phrase_lengths);
   util::assign(this->blocks, CumulativeArray(phrase_lengths));
-  CumulativeArray::cumulativeToOriginal(phrase_lengths, phrase_lengths.size());
 
   // Initialize ones and zeros, using phrase_starts for ones and phrase_lengths for zeros.
   for(uint64_t i = 0; i < phrase_starts.size(); i++)

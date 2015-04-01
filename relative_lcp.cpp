@@ -12,18 +12,17 @@ RelativeLCP::RelativeLCP(const lcp_type& ref, const lcp_type& seq,
   reference(ref)
 {
   std::vector<uint64_t> starts, lengths;
-  dlcp_type ref_dlcp; differentialArray(ref, ref_dlcp, true);
-  dlcp_type seq_dlcp; differentialArray(seq, seq_dlcp, false);
-  relativeLZ(seq_dlcp, ref_dlcp, ref_sa, starts, lengths, 0);
-  util::clear(ref_dlcp); util::clear(seq_dlcp);
+  relativeLZ<lcp_type, true>(seq, ref, ref_sa, starts, lengths, 0);
   if(print)
   {
     std::cout << "The RLZ parsing of the LCP array consists of " << starts.size() << " phrases" << std::endl;
   }
 
   this->absoluteSamples(seq, lengths);
-  this->phrases.init(starts, lengths); util::clear(starts);
-  util::assign(this->blocks, CumulativeArray(lengths)); util::clear(lengths);
+  util::assign(this->phrases, int_vector<0>(starts.size(), 0, bitlength(ref.size() - 1)));
+  for(uint64_t i = 0; i < starts.size(); i++) { this->phrases[i] = starts[i]; }
+  util::clear(starts);
+  util::assign(this->blocks, CumulativeNZArray(lengths)); util::clear(lengths);
 }
 
 RelativeLCP::RelativeLCP(const lcp_type& ref, const std::string& base_name) :
@@ -107,22 +106,6 @@ RelativeLCP::loadFrom(std::istream& input)
 }
 
 //------------------------------------------------------------------------------
-
-void
-RelativeLCP::differentialArray(const lcp_type& lcp, int_vector<0>& dlcp, bool endmarker)
-{
-  util::assign(dlcp, int_vector<0>(lcp.size() + endmarker, 0, bitlength(2 * lcp.size())));
-  for(uint64_t i = 0, prev = 0; i < lcp.size(); i += MEGABYTE)
-  {
-    int_vector<64> lcp_buffer = lcp.extract(i, i + MEGABYTE);
-    for(uint64_t j = 0; j < lcp_buffer.size(); j++)
-    {
-      dlcp[i + j] = encode(lcp_buffer[j], prev);
-      prev = lcp_buffer[j];
-   }
-  }
-  util::bit_compress(dlcp);
-}
 
 void
 RelativeLCP::absoluteSamples(const lcp_type& lcp, const std::vector<uint64_t>& lengths)

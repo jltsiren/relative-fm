@@ -88,51 +88,6 @@ relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
   relativeLZ(text, csa, starts, lengths, mismatches);
 }
 
-void
-relativeLZ(const int_vector<0>& text, const int_vector<0>& reference, const int_vector<0>& sa,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, std::vector<uint64_t>* mismatches)
-{
-  if(text.size() == 0) { return; }
-
-  starts.clear(); lengths.clear();
-  if(mismatches != 0) { mismatches->clear(); }
-  uint64_t text_pos = 0;
-  while(text_pos < text.size())
-  {
-    uint64_t sp = 0, ep = sa.size() - 1, matched = 0;
-    while(text_pos + matched < text.size())
-    {
-      uint64_t low = sp, high = ep, next = text[text_pos + matched];
-      while(low < high) // Find the first suffix that matches the next character.
-      {
-        uint64_t mid = low + (high - low) / 2;
-        uint64_t val = reference[sa[mid] + matched];
-        if(val < next) { low = mid + 1; }
-        else if(val > next) { high = mid - 1; }
-        else { high = mid; }
-      }
-      if(reference[sa[low] + matched] != next) { break; }
-      sp = low;
-
-      high = ep;
-      while(low < high) // Find the last suffix that matches the next character.
-      {
-        uint64_t mid = low + (high + 1 - low) / 2;
-        uint64_t val = reference[sa[mid] + matched];
-        if(val > next) { high = mid - 1; }
-        else { low = mid; }
-      }
-      ep = high; matched++;
-    }
-
-    starts.push_back(sa[sp]); // FIXME: Find the match closest to text_pos?
-    if(text_pos + matched < text.size()) { matched++; } // Add the mismatch.
-    lengths.push_back(matched);
-    if(mismatches != 0) { mismatches->push_back(text[text_pos + matched - 1]); }
-    text_pos += matched;
-  }
-}
-
 //------------------------------------------------------------------------------
 
 bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_rate)

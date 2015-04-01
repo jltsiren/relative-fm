@@ -36,7 +36,8 @@ main(int argc, char** argv)
     std::cout << "LCP size: " << lcp.size() << std::endl;
     double megabytes = lcp.size() / MEGABYTE_DOUBLE;
 
-    int_vector<0> dlcp; RelativeLCP::differentialArray(lcp, dlcp, true);
+    int_vector<0> dlcp; dlcp.width(lcp.large.width() + 2);
+    differentialArray<SLArray, DiffEncoderNZ>(lcp, dlcp, true);
     util::clear(lcp);
     std::cout << "DLCP width: " << (uint64_t)(dlcp.width()) << std::endl;
 

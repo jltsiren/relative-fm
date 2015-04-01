@@ -363,6 +363,63 @@ countRuns(const VectorType& vec, uint64_t& runs, uint64_t& gap0, uint64_t& gap1,
 
 //------------------------------------------------------------------------------
 
+/*
+  This encodes (val - prev) as a non-negative integer.
+*/
+struct DiffEncoder
+{
+  inline static uint64_t encode(uint64_t val, uint64_t prev)
+  {
+    if(val >= prev) { return 2 * (val - prev); }
+    else            { return 2 * (prev - val) - 1; }
+  }
+
+  inline static uint64_t decode(uint64_t code, uint64_t prev)
+  {
+    if(code & 1) { return prev - (code + 1) / 2; }
+    else         { return code / 2 + prev; }
+  }
+};
+
+/*
+  This encodes (val - prev) as a positive integer. SA construction does not work with
+  character value 0.
+*/
+struct DiffEncoderNZ
+{
+  inline static uint64_t encode(uint64_t val, uint64_t prev)
+  {
+    if(val >= prev) { return 2 * (val - prev) + 1; }
+    else            { return 2 * (prev - val); }
+  }
+
+  inline static uint64_t decode(uint64_t code, uint64_t prev)
+  {
+    if(code & 1) { return (code - 1) / 2 + prev; }
+    else         { return prev - code / 2; }
+  }
+};
+
+/*
+  Use endmarker == true if you want to add an endmarker with value 0. In that case,
+  you should probably use DiffEncoderNZ instead of DiffEncoder. Set target width in
+  advance to save memory.
+*/
+template<class IntVector, class Encoder = DiffEncoder>
+void
+differentialArray(const IntVector& source, int_vector<0>& target, bool endmarker)
+{
+  util::assign(target, int_vector<0>(source.size() + endmarker, 0, target.width()));
+  for(uint64_t i = 0, prev = 0; i < source.size(); i ++)
+  {
+    uint64_t curr = source[i];
+    target[i] = Encoder::encode(curr, prev);
+    prev = curr;
+  }
+}
+
+//------------------------------------------------------------------------------
+
 } // namespace relative
 
 #endif // _RELATIVE_FM_UTILS_H
