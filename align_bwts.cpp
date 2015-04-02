@@ -1,15 +1,28 @@
 #include <cstdlib>
 #include <unistd.h>
 
+#include <sdsl/rmq_support.hpp>
+
 #include "relative_fm.h"
 #include "relative_lcp.h"
 #include "sequence.h"
 
 using namespace relative;
 
+//------------------------------------------------------------------------------
+
+//#define VERIFY_LCP
+//#define VERIFY_RMQ
+
+//------------------------------------------------------------------------------
+
 template<class BWTType>
 void mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mode, bool lcp);
 
+void verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
+void verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
+
+//------------------------------------------------------------------------------
 
 int
 main(int argc, char** argv)
@@ -113,6 +126,7 @@ main(int argc, char** argv)
   return 0;
 }
 
+//------------------------------------------------------------------------------
 
 template<class BWTType>
 void
@@ -162,20 +176,64 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
       rlcp.writeTo(seq_name);
       rlcp.reportSize(true);
 
-/*      // Verify the correctness of the relative LCP array.
-      start = readTimer();
-      for(uint64_t i = 0; i < seq_lcp.size(); i++)
-      {
-        if(rlcp[i] != seq_lcp[i])
-        {
-          std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", seq_lcp[" << i << "] = " << seq_lcp[i] << std::endl;
-          break;
-        }
-      }
-      seconds = readTimer() - start;
-      std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;*/
+#ifdef VERIFY_LCP
+      verifyLCP(seq_lcp, rlcp);
+#endif
+
+#ifdef VERIFY_RMQ
+      verifyRMQ(seq_lcp, rlcp);
+#endif
     }
 
     std::cout << std::endl;
   }
 }
+
+//------------------------------------------------------------------------------
+
+void
+verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
+{
+  double start = readTimer();
+  for(uint64_t i = 0; i < lcp.size(); i++)
+  {
+    if(rlcp[i] != lcp[i])
+    {
+      std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", lcp[" << i << "] = " << lcp[i] << std::endl;
+      break;
+    }
+  }
+  double seconds = readTimer() - start;
+  std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;
+}
+
+void
+verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
+{
+  std::mt19937_64 rng(0xDEADBEEF);
+  std::vector<range_type> ranges(1000000);
+  for(uint64_t i = 0; i < ranges.size(); i++)
+  {
+    ranges[i].first = rng() % rlcp.size();
+    ranges[i].second = std::min(rlcp.size() - 1, ranges[i].first + rng() % 1024);
+  }
+  rmq_succinct_sct<true> rmq(&lcp);
+
+  double start = readTimer();
+  for(uint64_t i = 0; i < ranges.size(); i++)
+  {
+    uint64_t a = rlcp.rmq(ranges[i]);
+    uint64_t b = rmq(ranges[i].first, ranges[i].second);
+    if(a != b)
+    {
+      std::cerr << "Query " << i << ", range " << ranges[i] << std::endl;
+      std::cerr << "  rlcp: " << a << ", value = " << lcp[a] << std::endl;
+      std::cerr << "  rmq:  " << b << ", value = " << lcp[b] << std::endl;
+      break;
+    }
+  }
+  double seconds = readTimer() - start;
+  std::cout << "Verified " << ranges.size() << " RMQ queries in " << seconds << " seconds" << std::endl;
+}
+
+//------------------------------------------------------------------------------
