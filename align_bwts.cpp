@@ -11,8 +11,13 @@ using namespace relative;
 
 //------------------------------------------------------------------------------
 
-//#define VERIFY_LCP
-//#define VERIFY_RMQ
+#define VERIFY_LCP
+#define VERIFY_RMQ
+#define VERIFY_PSV
+//#define VERIFY_NSV
+
+const uint64_t RMQ_QUERIES = 1000000;
+const uint64_t PSV_NSV_QUERIES = 1000000;
 
 //------------------------------------------------------------------------------
 
@@ -21,6 +26,8 @@ void mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMod
 
 void verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 void verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
+void verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
+void verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 
 //------------------------------------------------------------------------------
 
@@ -183,6 +190,14 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
 #ifdef VERIFY_RMQ
       verifyRMQ(seq_lcp, rlcp);
 #endif
+
+#ifdef VERIFY_PSV
+      verifyPSV(seq_lcp, rlcp);
+#endif
+
+#ifdef VERIFY_NSV
+      verifyNSV(seq_lcp, rlcp);
+#endif
     }
 
     std::cout << std::endl;
@@ -191,6 +206,7 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
 
 //------------------------------------------------------------------------------
 
+#ifdef VERIFY_LCP
 void
 verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -206,12 +222,16 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   double seconds = readTimer() - start;
   std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;
 }
+#endif
 
+//------------------------------------------------------------------------------
+
+#ifdef VERIFY_RMQ
 void
 verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
   std::mt19937_64 rng(0xDEADBEEF);
-  std::vector<range_type> ranges(1000000);
+  std::vector<range_type> ranges(RMQ_QUERIES);
   for(uint64_t i = 0; i < ranges.size(); i++)
   {
     ranges[i].first = rng() % rlcp.size();
@@ -235,5 +255,118 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   double seconds = readTimer() - start;
   std::cout << "Verified " << ranges.size() << " RMQ queries in " << seconds << " seconds" << std::endl;
 }
+#endif
+
+//------------------------------------------------------------------------------
+
+void
+printLCP(const RelativeLCP::lcp_type& lcp, uint64_t pos)
+{
+  std::cerr << "  lcp[" << pos << "] = " << lcp[pos] << std::endl;
+}
+
+void
+printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
+  uint64_t error_pos, uint64_t val, bool psv)
+{
+  std::cerr << "Query " << query << ", position " << query_pos << std::endl;
+  printLCP(lcp, query_pos);
+  if(psv) { std::cerr << "  psv("; } else { std::cerr << "  nsv("; }
+  std::cerr << query_pos << ") = ";
+  if(val >= lcp.size()) { std::cerr << "null"; } else { std::cerr << val; }
+  std::cerr << std::endl;
+  printLCP(lcp, error_pos);
+}
+
+#ifdef VERIFY_PSV
+void
+verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
+{
+  std::mt19937_64 rng(0xDEADBEEF);
+  std::vector<uint64_t> queries(PSV_NSV_QUERIES);
+  for(uint64_t i = 0; i < queries.size(); i++) { queries[i] = rng() % rlcp.size(); }
+
+  double start = readTimer();
+  bool ok = true;
+  for(uint64_t i = 0; i < queries.size() && ok; i++)
+  {
+    uint64_t res = rlcp.psv(queries[i]), comp = lcp[queries[i]];
+    if(res >= rlcp.size())
+    {
+      for(uint64_t j = 0; j < queries[i]; j++)
+      {
+        if(lcp[j] < comp)
+        {
+          printError(lcp, i, queries[i], j, res, true);
+          ok = false; break;
+        }
+      }
+    }
+    else
+    {
+      if(lcp[res] >= comp)
+      {
+        printError(lcp, i, queries[i], res, res, true);
+        ok = false; break;
+      }
+      for(uint64_t j = res + 1; j < queries[i]; j++)
+      {
+        if(lcp[j] < comp)
+        {
+          printError(lcp, i, queries[i], j, res, true);
+          ok = false; break;
+        }
+      }
+    }
+  }
+  double seconds = readTimer() - start;
+  std::cout << "Verified " << queries.size() << " PSV queries in " << seconds << " seconds" << std::endl;
+}
+#endif
+
+#ifdef VERIFY_NSV
+verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
+{
+  std::mt19937_64 rng(0xDEADBEEF);
+  std::vector<uint64_t> queries(PSV_NSV_QUERIES);
+  for(uint64_t i = 0; i < queries.size(); i++) { queries[i] = rng() % rlcp.size(); }
+
+  double start = readTimer();
+  bool ok = true;
+  for(uint64_t i = 0; i < queries.size() && ok; i++)
+  {
+    uint64_t res = rlcp.nsv(ranges[i]), comp = lcp[queries[i]];
+    if(res >= rlcp.size())
+    {
+      for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
+      {
+        if(lcp[j] < comp)
+        {
+          printError(lcp, i, queries[i], j, res, false);
+          ok = false; break;
+        }
+      }
+    }
+    else
+    {
+      if(lcp[res] >= comp)
+      {
+        printError(lcp, i, queries[i], res, res, false);
+        ok = false; break;
+      }
+      for(uint64_t j = queries[i] + 1; j < res; j++)
+      {
+        if(lcp[j] < comp)
+        {
+          printError(lcp, i, queries[i], j, res, false);
+          ok = false; break;
+        }
+      }
+    }
+  }
+  double seconds = readTimer() - start;
+  std::cout << "Verified " << ranges.size() << " NSV queries in " << seconds << " seconds" << std::endl;
+}
+#endif
 
 //------------------------------------------------------------------------------

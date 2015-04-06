@@ -36,6 +36,7 @@ public:
 
 //------------------------------------------------------------------------------
 
+  // FIXME implement extracting multiple cells?
   inline uint64_t operator[] (uint64_t i) const
   {
     if(i >= this->size()) { return 0; }
@@ -43,10 +44,7 @@ public:
     uint64_t phrase = this->blocks.inverse(i); // Phrase is 0-based.
     if(this->blocks.isLast(i)) { return this->samples[phrase + 1]; }
 
-    // Starting position of the phrase in seq and ref.
-    uint64_t seq_pos = this->blocks.sum(phrase);
-    uint64_t ref_pos = this->phrases[phrase];
-
+    uint64_t seq_pos = this->seqPos(phrase), ref_pos = this->refPos(phrase);
     uint64_t res = this->samples[phrase];
     if(ref_pos > 0) { res -= this->reference[ref_pos - 1]; }
     res += this->reference[ref_pos + i - seq_pos];
@@ -63,12 +61,11 @@ public:
 
   uint64_t rmq(uint64_t from, uint64_t to) const;
 
-  // FIXME implement extracting multiple cells?
-
-  // FIXME what these should return?
-  // FIXME implement
-  uint64_t previousSmaller(uint64_t i) const;
-  uint64_t nextSmaller(uint64_t i) const;
+  /*
+    Return value >= size means "not found".
+  */
+  uint64_t psv(uint64_t pos) const;
+  uint64_t nsv(uint64_t pos) const;
 
 //------------------------------------------------------------------------------
 
@@ -90,39 +87,21 @@ private:
     from == 0 is interpreted as the beginning of the phrase.
     to >= sample_pos is interpreted as the sampled position (to + 1 should be a valid number).
   */
-  inline range_type rmq(uint64_t phrase, uint64_t from, uint64_t to) const
-  {
-    // Starting position of the phrase in seq and ref.
-    uint64_t seq_pos = this->blocks.sum(phrase);
-    uint64_t ref_pos = this->phrases[phrase];
+  range_type rmq(uint64_t phrase, uint64_t from, uint64_t to) const;
 
-    // Determine the range and handle the special case where the phrase body is not needed.
-    uint64_t sample_pos = this->blocks.sum(phrase + 1) - 1;
-    if(from == 0) { from = seq_pos; }
-    if(from == sample_pos) { return range_type(this->samples[phrase + 1], from); }
-    uint64_t limit = std::min(to + 1, sample_pos);
+  /*
+    PSV in the given phrase. Returns (psv_pos, LCP[pos]) or (psv_pos, val).
+    If pos <= sample_pos, finds the psv_pos < pos with LCP[psv_pos] < LCP[pos].
+    If pos > sample_pos, the entire phrase is considered, and the comparison is based on val.
+    If the PSV does not exist, psv_pos will be >= size.
+  */
+  range_type psv(uint64_t phrase, uint64_t pos, uint64_t val) const;
 
-    // Determine the minimum within the phrase body.
-    uint64_t prev = this->reference[ref_pos + from - seq_pos];
-    uint64_t curr = this->samples[phrase] + prev;
-    if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
-    range_type res(curr, from);
-    for(uint64_t i = from + 1; i < limit; i++)
-    {
-      uint64_t next = this->reference[ref_pos + i - seq_pos];
-      curr = curr + next - prev; prev = next;
-      if(curr < res.first) { res.first = curr; res.second = i; }
-    }
+//------------------------------------------------------------------------------
 
-    // Check the sample if it falls within the range.
-    if(to >= sample_pos)
-    {
-      uint64_t temp = this->samples[phrase + 1];
-      if(temp < res.first) { res.first = temp; res.second = sample_pos; }
-    }
-
-    return res;
-  }
+  inline uint64_t refPos(uint64_t phrase) const { return this->phrases[phrase]; }
+  inline uint64_t seqPos(uint64_t phrase) const { return this->blocks.sum(phrase); }
+  inline uint64_t samplePos(uint64_t phrase) const { return this->blocks.sum(phrase + 1) - 1; }
 
 //------------------------------------------------------------------------------
 
@@ -165,6 +144,8 @@ private:
   {
     return this->lastSibling(this->child(node, level), level - 1);
   }
+
+  inline uint64_t root() const { return this->tree.size() - 1; }
 
 //------------------------------------------------------------------------------
 
