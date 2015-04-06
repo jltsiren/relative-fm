@@ -14,9 +14,11 @@ using namespace relative;
 #define VERIFY_LCP
 #define VERIFY_RMQ
 #define VERIFY_PSV
-//#define VERIFY_NSV
+#define VERIFY_NSV
 
+const uint64_t LCP_QUERIES = 1000000;
 const uint64_t RMQ_QUERIES = 1000000;
+const uint64_t RMQ_QUERY_LENGTH = 1024;
 const uint64_t PSV_NSV_QUERIES = 1000000;
 
 //------------------------------------------------------------------------------
@@ -206,54 +208,135 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
 
 //------------------------------------------------------------------------------
 
+std::vector<uint64_t>
+randomPositions(const RelativeLCP::lcp_type& lcp, uint64_t n)
+{
+  std::mt19937_64 rng(0xDEADBEEF);
+  std::vector<uint64_t> positions(n);
+  for(uint64_t i = 0; i < positions.size(); i++) { positions[i] = rng() % lcp.size(); }
+  return positions;
+}
+
 #ifdef VERIFY_LCP
 void
 verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  double start = readTimer();
-  for(uint64_t i = 0; i < lcp.size(); i++)
+  uint64_t sum = 0;
+
   {
-    if(rlcp[i] != lcp[i])
+    std::vector<uint64_t> positions = randomPositions(lcp, LCP_QUERIES);
+    double start = readTimer();
+    for(uint64_t i = 0; i < positions.size(); i++)
     {
-      std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", lcp[" << i << "] = " << lcp[i] << std::endl;
-      break;
+      sum += lcp[positions[i]];
     }
+    double seconds = readTimer() - start;
+    printTime("LCP (random)", positions.size(), seconds);
   }
-  double seconds = readTimer() - start;
-  std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < lcp.size(); i++)
+    {
+      sum += lcp[i];
+    }
+    double seconds = readTimer() - start;
+    printTime("LCP (seq)", lcp.size(), seconds);
+  }
+
+  {
+    std::vector<uint64_t> positions = randomPositions(lcp, LCP_QUERIES);
+    double start = readTimer();
+    for(uint64_t i = 0; i < positions.size(); i++)
+    {
+      sum += rlcp[positions[i]];
+    }
+    double seconds = readTimer() - start;
+    printTime("RLCP (random)", positions.size(), seconds);
+  }
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < rlcp.size(); i++)
+    {
+      sum += rlcp[i];
+    }
+    double seconds = readTimer() - start;
+    printTime("RLCP (seq)", rlcp.size(), seconds);
+  }
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < rlcp.size(); i++)
+    {
+      if(rlcp[i] != lcp[i])
+      {
+        std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", lcp[" << i << "] = " << lcp[i] << std::endl;
+        break;
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;
+  }
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
 }
 #endif
 
 //------------------------------------------------------------------------------
 
+std::vector<range_type>
+randomRanges(const RelativeLCP::lcp_type& lcp, uint64_t n, uint64_t max_length)
+{
+  std::mt19937_64 rng(0xDEADBEEF);
+  std::vector<range_type> ranges(n);
+  for(uint64_t i = 0; i < ranges.size(); i++)
+  {
+    ranges[i].first = rng() % lcp.size();
+    ranges[i].second = std::min(lcp.size() - 1, ranges[i].first + rng() % max_length);
+  }
+  return ranges;
+}
+
 #ifdef VERIFY_RMQ
 void
 verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::mt19937_64 rng(0xDEADBEEF);
-  std::vector<range_type> ranges(RMQ_QUERIES);
-  for(uint64_t i = 0; i < ranges.size(); i++)
-  {
-    ranges[i].first = rng() % rlcp.size();
-    ranges[i].second = std::min(rlcp.size() - 1, ranges[i].first + rng() % 1024);
-  }
-  rmq_succinct_sct<true> rmq(&lcp);
+  std::vector<range_type> queries = randomRanges(lcp, RMQ_QUERIES, RMQ_QUERY_LENGTH);
+  uint64_t sum = 0;
 
-  double start = readTimer();
-  for(uint64_t i = 0; i < ranges.size(); i++)
   {
-    uint64_t a = rlcp.rmq(ranges[i]);
-    uint64_t b = rmq(ranges[i].first, ranges[i].second);
-    if(a != b)
+    double start = readTimer();
+    for(uint64_t i = 0; i < queries.size(); i++)
     {
-      std::cerr << "Query " << i << ", range " << ranges[i] << std::endl;
-      std::cerr << "  rlcp: " << a << ", value = " << lcp[a] << std::endl;
-      std::cerr << "  rmq:  " << b << ", value = " << lcp[b] << std::endl;
-      break;
+      sum += rlcp.rmq(queries[i]);
     }
+    double seconds = readTimer() - start;
+    printTime("RMQ", queries.size(), seconds);
   }
-  double seconds = readTimer() - start;
-  std::cout << "Verified " << ranges.size() << " RMQ queries in " << seconds << " seconds" << std::endl;
+
+  {
+    rmq_succinct_sct<true> rmq(&lcp);
+    double start = readTimer();
+    for(uint64_t i = 0; i < queries.size(); i++)
+    {
+      uint64_t a = rlcp.rmq(queries[i]);
+      uint64_t b = rmq(queries[i].first, queries[i].second);
+      if(a != b)
+      {
+        std::cerr << "Query " << i << ", range " << queries[i] << std::endl;
+        std::cerr << "  rlcp: " << a << ", value = " << lcp[a] << std::endl;
+        std::cerr << "  rmq:  " << b << ", value = " << lcp[b] << std::endl;
+        break;
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Verified " << queries.size() << " RMQ queries in " << seconds << " seconds" << std::endl;
+  }
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
 }
 #endif
 
@@ -282,90 +365,119 @@ printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
 void
 verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::mt19937_64 rng(0xDEADBEEF);
-  std::vector<uint64_t> queries(PSV_NSV_QUERIES);
-  for(uint64_t i = 0; i < queries.size(); i++) { queries[i] = rng() % rlcp.size(); }
+  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  uint64_t sum = 0;
 
-  double start = readTimer();
-  bool ok = true;
-  for(uint64_t i = 0; i < queries.size() && ok; i++)
   {
-    uint64_t res = rlcp.psv(queries[i]), comp = lcp[queries[i]];
-    if(res >= rlcp.size())
+    double start = readTimer();
+    for(uint64_t i = 0; i < queries.size(); i++)
     {
-      for(uint64_t j = 0; j < queries[i]; j++)
-      {
-        if(lcp[j] < comp)
-        {
-          printError(lcp, i, queries[i], j, res, true);
-          ok = false; break;
-        }
-      }
+      sum += rlcp.psv(queries[i]);
     }
-    else
-    {
-      if(lcp[res] >= comp)
-      {
-        printError(lcp, i, queries[i], res, res, true);
-        ok = false; break;
-      }
-      for(uint64_t j = res + 1; j < queries[i]; j++)
-      {
-        if(lcp[j] < comp)
-        {
-          printError(lcp, i, queries[i], j, res, true);
-          ok = false; break;
-        }
-      }
-    }
+    double seconds = readTimer() - start;
+    printTime("PSV", queries.size(), seconds);
   }
-  double seconds = readTimer() - start;
-  std::cout << "Verified " << queries.size() << " PSV queries in " << seconds << " seconds" << std::endl;
+
+  {
+    double start = readTimer();
+    bool ok = true;
+    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    {
+      uint64_t res = rlcp.psv(queries[i]), comp = lcp[queries[i]];
+      if(res >= rlcp.size())
+      {
+        for(uint64_t j = 0; j < queries[i]; j++)
+        {
+          if(lcp[j] < comp)
+          {
+            printError(lcp, i, queries[i], j, res, true);
+            ok = false; break;
+          }
+        }
+      }
+      else
+      {
+        if(lcp[res] >= comp)
+        {
+          printError(lcp, i, queries[i], res, res, true);
+          ok = false; break;
+        }
+        for(uint64_t j = res + 1; j < queries[i]; j++)
+        {
+          if(lcp[j] < comp)
+          {
+            printError(lcp, i, queries[i], j, res, true);
+            ok = false; break;
+          }
+        }
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Verified " << queries.size() << " PSV queries in " << seconds << " seconds" << std::endl;
+  }
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
 }
 #endif
 
 #ifdef VERIFY_NSV
+void
 verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::mt19937_64 rng(0xDEADBEEF);
-  std::vector<uint64_t> queries(PSV_NSV_QUERIES);
-  for(uint64_t i = 0; i < queries.size(); i++) { queries[i] = rng() % rlcp.size(); }
+  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  uint64_t sum = 0;
 
-  double start = readTimer();
-  bool ok = true;
-  for(uint64_t i = 0; i < queries.size() && ok; i++)
   {
-    uint64_t res = rlcp.nsv(ranges[i]), comp = lcp[queries[i]];
-    if(res >= rlcp.size())
+    double start = readTimer();
+    for(uint64_t i = 0; i < queries.size(); i++)
     {
-      for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
-      {
-        if(lcp[j] < comp)
-        {
-          printError(lcp, i, queries[i], j, res, false);
-          ok = false; break;
-        }
-      }
+      sum += rlcp.nsv(queries[i]);
     }
-    else
-    {
-      if(lcp[res] >= comp)
-      {
-        printError(lcp, i, queries[i], res, res, false);
-        ok = false; break;
-      }
-      for(uint64_t j = queries[i] + 1; j < res; j++)
-      {
-        if(lcp[j] < comp)
-        {
-          printError(lcp, i, queries[i], j, res, false);
-          ok = false; break;
-        }
-      }
-    }
+    double seconds = readTimer() - start;
+    printTime("NSV", queries.size(), seconds);
   }
-  double seconds = readTimer() - start;
-  std::cout << "Verified " << ranges.size() << " NSV queries in " << seconds << " seconds" << std::endl;
+
+  {
+    double start = readTimer();
+    bool ok = true;
+    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    {
+      uint64_t res = rlcp.nsv(queries[i]), comp = lcp[queries[i]];
+      if(res >= rlcp.size())
+      {
+        for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
+        {
+          if(lcp[j] < comp)
+          {
+            printError(lcp, i, queries[i], j, res, false);
+            ok = false; break;
+          }
+        }
+      }
+      else
+      {
+        if(lcp[res] >= comp)
+        {
+          printError(lcp, i, queries[i], res, res, false);
+          ok = false; break;
+        }
+        for(uint64_t j = queries[i] + 1; j < res; j++)
+        {
+          if(lcp[j] < comp)
+          {
+            printError(lcp, i, queries[i], j, res, false);
+            ok = false; break;
+          }
+        }
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Verified " << queries.size() << " NSV queries in " << seconds << " seconds" << std::endl;
+  }
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
 }
 #endif
 

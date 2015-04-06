@@ -97,6 +97,14 @@ private:
   */
   range_type psv(uint64_t phrase, uint64_t pos, uint64_t val) const;
 
+  /*
+    NSV in the given phrase. Returns (nsv_pos, LCP[pos]) or (nsv_pos, val).
+    If pos >= seq_pos, finds the nsv_pos > pos with LCP[nsv_pos] < LCP[pos].
+    If pos < seq_pos, the entire phrase is considered, and the comparison is based on val.
+    If the NSV does not exist, nsv_pos will be >= size.
+  */
+  range_type nsv(uint64_t phrase, uint64_t pos, uint64_t val) const;
+
 //------------------------------------------------------------------------------
 
   inline uint64_t refPos(uint64_t phrase) const { return this->phrases[phrase]; }

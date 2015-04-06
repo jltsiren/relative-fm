@@ -27,7 +27,7 @@ printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_
   std::string padding;
   if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
 
-  std::cout << header << ':' << padding << inMegabytes(bytes) << " MB (" << inBPC(bytes, data_size) << " bpc)" << std::endl;
+  std::cout << header << ":" << padding << inMegabytes(bytes) << " MB (" << inBPC(bytes, data_size) << " bpc)" << std::endl;
 }
 
 void
@@ -36,10 +36,19 @@ printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t 
   std::string padding;
   if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
 
-  std::cout << header << ':' << padding << "Found " << found << " patterns with " << matches << " occ in "
+  std::cout << header << ":" << padding << "Found " << found << " patterns with " << matches << " occ in "
     << seconds << " seconds (";
   if(occs) { std::cout << (matches / seconds) << " occ/s)" << std::endl; }
   else     { std::cout << (inMegabytes(bytes) / seconds) << " MB/s)" << std::endl; }
+}
+
+void
+printTime(const std::string& header, uint64_t queries, double seconds, uint64_t indent)
+{
+  std::string padding;
+  if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
+  std::cout << header << ":" << padding << queries << " queries in " << seconds << " seconds ("
+            << inMicroseconds(seconds / queries) << " µs/query)" << std::endl;
 }
 
 //------------------------------------------------------------------------------

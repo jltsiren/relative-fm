@@ -98,8 +98,15 @@ inBPC(uint64_t bytes, uint64_t size)
   return (8.0 * bytes) / size;
 }
 
+inline double
+inMicroseconds(double seconds)
+{
+  return seconds * 1000000;
+}
+
 void printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_t indent = 18);
 void printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, bool occs, uint64_t indent = 18);
+void printTime(const std::string& header, uint64_t queries, double seconds, uint64_t indent = 18);
 
 //------------------------------------------------------------------------------
 
