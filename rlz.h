@@ -59,6 +59,9 @@ struct CharAt<IntVector, true>
   }
 };
 
+// FIXME Handle this in a more general way.
+const uint64_t MAX_RLZ_PHRASE_LENGTH = 1024;
+
 /*
   This version is intended for integer sequences. It parses the reference using a prebuilt
   suffix array. The text must not contain character value 0, while the reference has it only
@@ -80,7 +83,8 @@ relativeLZ(const IntVector& text, const IntVector& reference, const int_vector<0
   while(text_pos < text.size())
   {
     uint64_t sp = 0, ep = sa.size() - 1, matched = 0;
-    while(text_pos + matched < text.size())
+    uint64_t limit = std::min(text.size() - text_pos, MAX_RLZ_PHRASE_LENGTH);
+    while(matched < limit)
     {
       uint64_t low = sp, high = ep, next = CharAt<IntVector, differential>::at(text, text_pos + matched);
       while(low < high) // Find the first suffix that matches the next character.
