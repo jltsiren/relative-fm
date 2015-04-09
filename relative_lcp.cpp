@@ -222,13 +222,15 @@ RelativeLCP::rmq(uint64_t phrase, uint64_t from, uint64_t to) const
 
   // Determine the minimum within the phrase body.
   // If from is far from seq_pos, it is probably cheaper to access the reference directly.
-  uint64_t prev = this->reference[ref_pos + from - seq_pos];
+  uint64_t rank = this->reference.size(), r_pos = ref_pos + from - seq_pos;
+  uint64_t prev = this->reference.accessForward(r_pos, rank);
   uint64_t curr = this->samples[phrase] + prev;
   if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
   range_type res(curr, from);
   for(uint64_t i = from + 1; i < limit; i++)
   {
-    uint64_t next = this->reference[ref_pos + i - seq_pos];
+    r_pos++;
+    uint64_t next = this->reference.accessForward(r_pos, rank);
     curr = curr + next - prev; prev = next;
     if(curr < res.first) { res.first = curr; res.second = i; }
   }
@@ -308,18 +310,20 @@ RelativeLCP::psv(uint64_t phrase, uint64_t pos, uint64_t val) const
       val = this->samples[phrase] + this->reference[ref_pos + pos - seq_pos];
       if(ref_pos > 0) { val -= this->reference[ref_pos - 1]; }
     }
+    if(val <= this->tree[phrase]) { return range_type(this->size(), val); }
   }
   if(pos <= seq_pos) { return range_type(this->size(), val); }
 
   // Handle the phrase body.
-  uint64_t prev = this->reference[ref_pos + pos - 1 - seq_pos];
+  uint64_t rank = this->reference.size(), r_pos = ref_pos + pos - 1 - seq_pos;
+  uint64_t prev = this->reference.accessBackward(r_pos, rank);
   uint64_t curr = this->samples[phrase] + prev;
   if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
   while(pos > seq_pos)
   {
     pos--;
     if(curr < val) { return range_type(pos, val); }
-    uint64_t temp = (ref_pos + pos - seq_pos > 0 ? this->reference[ref_pos + pos - 1 - seq_pos] : 0);
+    uint64_t temp = (r_pos > 0 ? this->reference.accessBackward(r_pos - 1, rank) : 0); r_pos--;
     curr = curr + temp - prev; prev = temp;
   }
 
@@ -383,25 +387,24 @@ RelativeLCP::nsv(uint64_t phrase, uint64_t pos, uint64_t val) const
   else
   {
     if(pos == sample_pos) { return range_type(this->size(), this->samples[phrase + 1]); }
-    else
-    {
-      val = this->samples[phrase] + this->reference[ref_pos + pos - seq_pos];
-      if(ref_pos > 0) { val -= this->reference[ref_pos - 1]; }
-      pos++;
-    }
+    val = this->samples[phrase] + this->reference[ref_pos + pos - seq_pos];
+    if(ref_pos > 0) { val -= this->reference[ref_pos - 1]; }
+    pos++;
+    if(val <= this->tree[phrase]) { return range_type(this->size(), val); }
   }
 
   // Handle the phrase body.
   if(pos < sample_pos)
   {
-    uint64_t prev = this->reference[ref_pos + pos - seq_pos];
+    uint64_t rank = this->reference.size(), r_pos = ref_pos + pos - seq_pos;
+    uint64_t prev = this->reference.accessForward(r_pos, rank);
     uint64_t curr = this->samples[phrase] + prev;
     if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
     while(pos < sample_pos)
     {
       if(curr < val) { return range_type(pos, val); }
-      pos++;
-      uint64_t temp = this->reference[ref_pos + pos - seq_pos];
+      pos++; r_pos++;
+      uint64_t temp = this->reference.accessForward(r_pos, rank);
       curr = curr + temp - prev; prev = temp;
     }
   }

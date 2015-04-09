@@ -380,26 +380,34 @@ public:
     else { return this->large[this->large_rank(i)]; }
   }
 
-  // Semiopen interval [from, to). Minimal sanity checking.
-  // Padding is added to the beginning of the result.
-  inline int_vector<64> extract(size_type from, size_type to, size_type padding = 0) const
+  /*
+    These versions provide faster sequential access to the array.
+    Initialize with rank >= size and iterate successive positions with the same rank variable.
+  */
+  inline value_type accessForward(size_type i, size_type& rank) const
   {
-    to = std::min(to, this->size());
-    int_vector<64> result(padding + to - from, 0);
-    if(this->largeValues() == 0)
-    {
-      for(size_type i = from, j = padding; i < to + padding; i++, j++) { result[j] = this->small[i]; }
-    }
+    if(this->small[i] < LARGE_VALUE) { return this->small[i]; }
     else
     {
-      for(size_type i = from, j = padding, k = this->large_rank(from); i < to + padding; i++, j++)
-      {
-        if(this->small[i] < LARGE_VALUE) { result[j] = this->small[i]; }
-        else { result[j] = this->large[k]; k++; }
-      }
+      rank = (rank >= this->size() ? this->large_rank(i) : rank + 1);
+      return this->large[rank];
     }
-    return result;
   }
+
+  inline value_type accessBackward(size_type i, size_type& rank) const
+  {
+    if(this->small[i] < LARGE_VALUE) { return this->small[i]; }
+    else
+    {
+      rank = (rank >= this->size() ? this->large_rank(i) : rank - 1);
+      return this->large[rank];
+    }
+  }
+
+  /*
+    Semiopen interval [from, to). Minimal sanity checking.
+  */
+  int_vector<64> extract(size_type from, size_type to) const;
 
   inline size_type large_rank(size_type i) const
   {

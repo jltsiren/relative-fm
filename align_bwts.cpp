@@ -217,7 +217,6 @@ randomPositions(const RelativeLCP::lcp_type& lcp, uint64_t n)
   return positions;
 }
 
-#ifdef VERIFY_LCP
 void
 verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -236,9 +235,10 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 
   {
     double start = readTimer();
+    uint64_t rank = lcp.size();
     for(uint64_t i = 0; i < lcp.size(); i++)
     {
-      sum += lcp[i];
+      sum += lcp.accessForward(i, rank);
     }
     double seconds = readTimer() - start;
     printTime("LCP (seq)", lcp.size(), seconds);
@@ -267,9 +267,10 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 
   {
     double start = readTimer();
+    uint64_t rank = lcp.size();
     for(uint64_t i = 0; i < rlcp.size(); i++)
     {
-      if(rlcp[i] != lcp[i])
+      if(rlcp[i] != lcp.accessForward(i, rank))
       {
         std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", lcp[" << i << "] = " << lcp[i] << std::endl;
         break;
@@ -282,7 +283,6 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
 }
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -299,7 +299,6 @@ randomRanges(const RelativeLCP::lcp_type& lcp, uint64_t n, uint64_t max_length)
   return ranges;
 }
 
-#ifdef VERIFY_RMQ
 void
 verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -338,7 +337,6 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
 }
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -361,7 +359,6 @@ printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
   printLCP(lcp, error_pos);
 }
 
-#ifdef VERIFY_PSV
 void
 verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -419,9 +416,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
 }
-#endif
 
-#ifdef VERIFY_NSV
 void
 verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -479,6 +474,5 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
 }
-#endif
 
 //------------------------------------------------------------------------------
