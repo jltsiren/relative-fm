@@ -222,7 +222,8 @@ RelativeLCP::rmq(uint64_t phrase, uint64_t from, uint64_t to) const
 
   // Determine the minimum within the phrase body.
   // If from is far from seq_pos, it is probably cheaper to access the reference directly.
-  uint64_t rank = this->reference.size(), r_pos = ref_pos + from - seq_pos;
+  uint64_t r_pos = ref_pos + from - seq_pos;
+  uint64_t rank = this->reference.initForward(r_pos);
   uint64_t prev = this->reference.accessForward(r_pos, rank);
   uint64_t curr = this->samples[phrase] + prev;
   if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
@@ -315,7 +316,8 @@ RelativeLCP::psv(uint64_t phrase, uint64_t pos, uint64_t val) const
   if(pos <= seq_pos) { return range_type(this->size(), val); }
 
   // Handle the phrase body.
-  uint64_t rank = this->reference.size(), r_pos = ref_pos + pos - 1 - seq_pos;
+  uint64_t r_pos = ref_pos + pos - 1 - seq_pos;
+  uint64_t rank = this->reference.initBackward(r_pos);
   uint64_t prev = this->reference.accessBackward(r_pos, rank);
   uint64_t curr = this->samples[phrase] + prev;
   if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
@@ -396,7 +398,8 @@ RelativeLCP::nsv(uint64_t phrase, uint64_t pos, uint64_t val) const
   // Handle the phrase body.
   if(pos < sample_pos)
   {
-    uint64_t rank = this->reference.size(), r_pos = ref_pos + pos - seq_pos;
+    uint64_t r_pos = ref_pos + pos - seq_pos;
+    uint64_t rank = this->reference.initForward(r_pos);
     uint64_t prev = this->reference.accessForward(r_pos, rank);
     uint64_t curr = this->samples[phrase] + prev;
     if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }

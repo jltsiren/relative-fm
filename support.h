@@ -374,6 +374,8 @@ public:
   inline size_type size() const { return this->small.size(); }
   inline size_type largeValues() const { return this->large.size(); }
 
+//------------------------------------------------------------------------------
+
   inline value_type operator[] (size_type i) const
   {
     if(this->small[i] < LARGE_VALUE) { return this->small[i]; }
@@ -382,26 +384,21 @@ public:
 
   /*
     These versions provide faster sequential access to the array.
-    Initialize with rank >= size and iterate successive positions with the same rank variable.
+    Initialize rank with initForward/initBackward and iterate over successive
+    positions with the same rank variable.
   */
+
+  inline size_type initForward(size_type i) const { return this->large_rank(i); }
+  inline size_type initBackward(size_type i) const { return this->large_rank(i + 1); }
+
   inline value_type accessForward(size_type i, size_type& rank) const
   {
-    if(this->small[i] < LARGE_VALUE) { return this->small[i]; }
-    else
-    {
-      rank = (rank >= this->size() ? this->large_rank(i) : rank + 1);
-      return this->large[rank];
-    }
+    return (this->small[i] < LARGE_VALUE ? this->small[i] : this->large[rank++]);
   }
 
   inline value_type accessBackward(size_type i, size_type& rank) const
   {
-    if(this->small[i] < LARGE_VALUE) { return this->small[i]; }
-    else
-    {
-      rank = (rank >= this->size() ? this->large_rank(i) : rank - 1);
-      return this->large[rank];
-    }
+    return (this->small[i] < LARGE_VALUE ? this->small[i] : this->large[--rank]);
   }
 
   /*
@@ -422,6 +419,8 @@ public:
   int_vector<8> small;
   int_vector<0> large;
   int_vector<0> samples;
+
+//------------------------------------------------------------------------------
 
 private:
   void copy(const SLArray& s);

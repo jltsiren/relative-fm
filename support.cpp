@@ -570,7 +570,7 @@ SLArray::extract(size_type from, size_type to) const
   }
   else
   {
-    size_type rank = this->size();
+    size_type rank = this->initForward(from);
     for(size_type i = from, j = 0; i < to; i++, j++)
     {
       result[j] = this->accessForward(i, rank);

@@ -54,6 +54,7 @@ main(int argc, char** argv)
   {
     std::string seq_name = argv[arg];
     std::cout << "Target: " << seq_name << std::endl;
+    std::cout << std::endl;
     RelativeLCP::lcp_type seq_lcp;
     load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
     printSize("LCP array", size_in_bytes(seq_lcp), seq_lcp.size()); std::cout << std::endl;
@@ -109,7 +110,7 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 
   {
     double start = readTimer();
-    uint64_t rank = lcp.size();
+    uint64_t rank = lcp.initForward(0);
     for(uint64_t i = 0; i < lcp.size(); i++)
     {
       sum += lcp.accessForward(i, rank);
@@ -141,7 +142,7 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 
   {
     double start = readTimer();
-    uint64_t rank = lcp.size();
+    uint64_t rank = lcp.initForward(0);
     for(uint64_t i = 0; i < rlcp.size(); i++)
     {
       if(rlcp[i] != lcp.accessForward(i, rank))
@@ -254,7 +255,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     bool ok = true;
     for(uint64_t i = 0; i < queries.size() && ok; i++)
     {
-      uint64_t rank = lcp.size();
+      uint64_t rank = lcp.initBackward(queries[i]);
       uint64_t res = rlcp.psv(queries[i]), comp = lcp.accessBackward(queries[i], rank);
       if(res >= rlcp.size())
       {
@@ -269,7 +270,6 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
       }
       else
       {
-        uint64_t rank = lcp.size();
         for(uint64_t j = queries[i] - 1; j > res; j--)
         {
           if(lcp.accessBackward(j, rank) < comp)
@@ -314,7 +314,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     bool ok = true;
     for(uint64_t i = 0; i < queries.size() && ok; i++)
     {
-      uint64_t rank = lcp.size();
+      uint64_t rank = lcp.initForward(queries[i]);
       uint64_t res = rlcp.nsv(queries[i]), comp = lcp.accessForward(queries[i], rank);
       if(res >= rlcp.size())
       {
