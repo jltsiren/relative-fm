@@ -14,10 +14,15 @@ using namespace relative;
 #define VERIFY_PSV
 #define VERIFY_NSV
 
-const uint64_t LCP_QUERIES = MEGABYTE;
-const uint64_t RMQ_QUERIES = MEGABYTE;
-const uint64_t RMQ_QUERY_LENGTH = 1024;
-const uint64_t PSV_NSV_QUERIES = MEGABYTE;
+// Verify the queries or just run the speed tests.
+//#define VERIFY_QUERIES
+
+const uint64_t MILLION = 1000000;
+
+const uint64_t LCP_QUERIES = 100 * MILLION;
+const uint64_t RMQ_QUERIES = 100 * MILLION;
+const uint64_t RMQ_QUERY_LENGTH = 16;
+const uint64_t PSV_NSV_QUERIES = 100 * MILLION;
 
 //------------------------------------------------------------------------------
 
@@ -31,7 +36,6 @@ void verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 int
 main(int argc, char** argv)
 {
-  // FIXME add support for mode_ropebwt
   if(argc < 3)
   {
     std::cerr << "Usage: verify_lcp ref seq1 [seq2 ...]" << std::endl;
@@ -140,6 +144,7 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     printTime("RLCP (seq)", rlcp.size(), seconds);
   }
 
+#ifdef VERIFY_QUERIES
   {
     double start = readTimer();
     uint64_t rank = lcp.initForward(0);
@@ -154,6 +159,7 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double seconds = readTimer() - start;
     std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;
   }
+#endif
 
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
@@ -169,7 +175,9 @@ randomRanges(const RelativeLCP::lcp_type& lcp, uint64_t n, uint64_t max_length)
   for(uint64_t i = 0; i < ranges.size(); i++)
   {
     ranges[i].first = rng() % lcp.size();
-    ranges[i].second = std::min(lcp.size() - 1, ranges[i].first + rng() % max_length);
+    uint64_t len = max_length;
+    while(len < lcp.size() && (rng() & 1)) { len *= max_length; }
+    ranges[i].second = std::min(lcp.size() - 1, ranges[i].first + rng() % len);
   }
   return ranges;
 }
@@ -190,6 +198,7 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     printTime("RMQ", queries.size(), seconds);
   }
 
+#ifdef VERIFY_QUERIES
   {
     rmq_succinct_sct<true> rmq(&lcp);
     double start = readTimer();
@@ -208,6 +217,7 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double seconds = readTimer() - start;
     std::cout << "Verified " << queries.size() << " RMQ queries in " << seconds << " seconds" << std::endl;
   }
+#endif
 
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
@@ -250,6 +260,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     printTime("PSV", queries.size(), seconds);
   }
 
+#ifdef VERIFY_QUERIES
   {
     double start = readTimer();
     bool ok = true;
@@ -288,6 +299,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double seconds = readTimer() - start;
     std::cout << "Verified " << queries.size() << " PSV queries in " << seconds << " seconds" << std::endl;
   }
+#endif
 
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
@@ -309,6 +321,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     printTime("NSV", queries.size(), seconds);
   }
 
+#ifdef VERIFY_QUERIES
   {
     double start = readTimer();
     bool ok = true;
@@ -347,6 +360,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double seconds = readTimer() - start;
     std::cout << "Verified " << queries.size() << " NSV queries in " << seconds << " seconds" << std::endl;
   }
+#endif
 
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;

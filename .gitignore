@@ -8,4 +8,5 @@ test_rlz
 build_rlzfm
 index_dlcp
 verify_lcp
+mutate
 .DS_Store
