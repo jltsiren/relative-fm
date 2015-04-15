@@ -108,21 +108,39 @@ randomPositions(const RelativeLCP::lcp_type& lcp, uint64_t n)
   return positions;
 }
 
+template<class ArrayType>
+uint64_t
+timeQueries(const ArrayType& array, const std::vector<uint64_t>& queries, std::string name)
+{
+  double start = readTimer();
+  uint64_t sum = 0;
+  for(uint64_t i = 0; i < queries.size(); i++) { sum += array[queries[i]]; }
+  double seconds = readTimer() - start;
+  printTime(name, queries.size(), seconds);
+  return sum;
+}
+
+template<class ArrayType>
+uint64_t
+timeQueries(const ArrayType& array, std::string name)
+{
+  double start = readTimer();
+  uint64_t sum = 0;
+  for(uint64_t i = 0; i < array.size(); i++) { sum += array[i]; }
+  double seconds = readTimer() - start;
+  printTime(name, array.size(), seconds);
+  return sum;
+}
+
+//------------------------------------------------------------------------------
+
 void
 verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
   uint64_t sum = 0;
+  std::vector<uint64_t> positions = randomPositions(lcp, LCP_QUERIES);
 
-  {
-    std::vector<uint64_t> positions = randomPositions(lcp, LCP_QUERIES);
-    double start = readTimer();
-    for(uint64_t i = 0; i < positions.size(); i++)
-    {
-      sum += lcp[positions[i]];
-    }
-    double seconds = readTimer() - start;
-    printTime("LCP (random)", positions.size(), seconds);
-  }
+  sum += timeQueries(lcp, positions, "LCP (random)");
 
   {
     double start = readTimer();
@@ -135,26 +153,9 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     printTime("LCP (seq)", lcp.size(), seconds);
   }
 
-  {
-    std::vector<uint64_t> positions = randomPositions(lcp, LCP_QUERIES);
-    double start = readTimer();
-    for(uint64_t i = 0; i < positions.size(); i++)
-    {
-      sum += rlcp[positions[i]];
-    }
-    double seconds = readTimer() - start;
-    printTime("RLCP (random)", positions.size(), seconds);
-  }
+  sum += timeQueries(rlcp, positions, "RLCP (random)");
 
-  {
-    double start = readTimer();
-    for(uint64_t i = 0; i < rlcp.size(); i++)
-    {
-      sum += rlcp[i];
-    }
-    double seconds = readTimer() - start;
-    printTime("RLCP (seq)", rlcp.size(), seconds);
-  }
+  sum += timeQueries(rlcp, "RLCP (seq)");
 
 #ifdef VERIFY_QUERIES
   {
