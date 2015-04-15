@@ -17,7 +17,7 @@ using namespace relative;
 #define VERIFY_NSEV
 
 // Verify the queries or just run the speed tests.
-#define VERIFY_QUERIES
+//#define VERIFY_QUERIES
 
 const uint64_t MILLION = 1000000;
 
