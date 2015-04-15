@@ -12,10 +12,12 @@ using namespace relative;
 #define VERIFY_LCP
 #define VERIFY_RMQ
 #define VERIFY_PSV
+#define VERIFY_PSEV
 #define VERIFY_NSV
+#define VERIFY_NSEV
 
 // Verify the queries or just run the speed tests.
-//#define VERIFY_QUERIES
+#define VERIFY_QUERIES
 
 const uint64_t MILLION = 1000000;
 
@@ -29,7 +31,9 @@ const uint64_t PSV_NSV_QUERIES = 100 * MILLION;
 void verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 void verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 void verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
+void verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 void verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
+void verifyNSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 
 //------------------------------------------------------------------------------
 
@@ -77,8 +81,16 @@ main(int argc, char** argv)
     verifyPSV(seq_lcp, rlcp);
 #endif
 
+#ifdef VERIFY_PSEV
+    verifyPSEV(seq_lcp, rlcp);
+#endif
+
 #ifdef VERIFY_NSV
     verifyNSV(seq_lcp, rlcp);
+#endif
+
+#ifdef VERIFY_NSEV
+    verifyNSEV(seq_lcp, rlcp);
 #endif
   }
 
@@ -192,7 +204,7 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double start = readTimer();
     for(uint64_t i = 0; i < queries.size(); i++)
     {
-      sum += rlcp.rmq(queries[i]);
+      sum += rlcp.rmq(queries[i]).first;
     }
     double seconds = readTimer() - start;
     printTime("RMQ", queries.size(), seconds);
@@ -204,12 +216,12 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double start = readTimer();
     for(uint64_t i = 0; i < queries.size(); i++)
     {
-      uint64_t a = rlcp.rmq(queries[i]);
+      range_type a = rlcp.rmq(queries[i]);
       uint64_t b = rmq(queries[i].first, queries[i].second);
-      if(a != b)
+      if(a.first != b)
       {
         std::cerr << "Query " << i << ", range " << queries[i] << std::endl;
-        std::cerr << "  rlcp: " << a << ", value = " << lcp[a] << std::endl;
+        std::cerr << "  rlcp: " << a.first << ", value = " << a.second << std::endl;
         std::cerr << "  rmq:  " << b << ", value = " << lcp[b] << std::endl;
         break;
       }
@@ -244,6 +256,8 @@ printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
   printLCP(lcp, error_pos);
 }
 
+//------------------------------------------------------------------------------
+
 void
 verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -254,7 +268,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double start = readTimer();
     for(uint64_t i = 0; i < queries.size(); i++)
     {
-      sum += rlcp.psv(queries[i]);
+      sum += rlcp.psv(queries[i]).first;
     }
     double seconds = readTimer() - start;
     printTime("PSV", queries.size(), seconds);
@@ -267,7 +281,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     for(uint64_t i = 0; i < queries.size() && ok; i++)
     {
       uint64_t rank = lcp.initBackward(queries[i]);
-      uint64_t res = rlcp.psv(queries[i]), comp = lcp.accessBackward(queries[i], rank);
+      uint64_t res = rlcp.psv(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
       if(res >= rlcp.size())
       {
         for(uint64_t j = queries[i]; j > 0; j--)
@@ -305,6 +319,71 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   std::cout << std::endl;
 }
 
+//------------------------------------------------------------------------------
+
+void
+verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
+{
+  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  uint64_t sum = 0;
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < queries.size(); i++)
+    {
+      sum += rlcp.psev(queries[i]).first;
+    }
+    double seconds = readTimer() - start;
+    printTime("PSEV", queries.size(), seconds);
+  }
+
+#ifdef VERIFY_QUERIES
+  {
+    double start = readTimer();
+    bool ok = true;
+    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    {
+      uint64_t rank = lcp.initBackward(queries[i]);
+      uint64_t res = rlcp.psev(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
+      if(res >= rlcp.size())
+      {
+        for(uint64_t j = queries[i]; j > 0; j--)
+        {
+          if(lcp.accessBackward(j - 1, rank) <= comp)
+          {
+            printError(lcp, i, queries[i], j - 1, res, true);
+            ok = false; break;
+          }
+        }
+      }
+      else
+      {
+        for(uint64_t j = queries[i] - 1; j > res; j--)
+        {
+          if(lcp.accessBackward(j, rank) <= comp)
+          {
+            printError(lcp, i, queries[i], j, res, true);
+            ok = false; break;
+          }
+        }
+        if(lcp.accessBackward(res, rank) > comp)
+        {
+          printError(lcp, i, queries[i], res, res, true);
+          ok = false; break;
+        }
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Verified " << queries.size() << " PSEV queries in " << seconds << " seconds" << std::endl;
+  }
+#endif
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
 void
 verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
@@ -315,7 +394,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     double start = readTimer();
     for(uint64_t i = 0; i < queries.size(); i++)
     {
-      sum += rlcp.nsv(queries[i]);
+      sum += rlcp.nsv(queries[i]).first;
     }
     double seconds = readTimer() - start;
     printTime("NSV", queries.size(), seconds);
@@ -328,7 +407,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     for(uint64_t i = 0; i < queries.size() && ok; i++)
     {
       uint64_t rank = lcp.initForward(queries[i]);
-      uint64_t res = rlcp.nsv(queries[i]), comp = lcp.accessForward(queries[i], rank);
+      uint64_t res = rlcp.nsv(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
       if(res >= rlcp.size())
       {
         for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
@@ -359,6 +438,69 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
     }
     double seconds = readTimer() - start;
     std::cout << "Verified " << queries.size() << " NSV queries in " << seconds << " seconds" << std::endl;
+  }
+#endif
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+void
+verifyNSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
+{
+  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  uint64_t sum = 0;
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < queries.size(); i++)
+    {
+      sum += rlcp.nsev(queries[i]).first;
+    }
+    double seconds = readTimer() - start;
+    printTime("NSEV", queries.size(), seconds);
+  }
+
+#ifdef VERIFY_QUERIES
+  {
+    double start = readTimer();
+    bool ok = true;
+    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    {
+      uint64_t rank = lcp.initForward(queries[i]);
+      uint64_t res = rlcp.nsev(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
+      if(res >= rlcp.size())
+      {
+        for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
+        {
+          if(lcp.accessForward(j, rank) <= comp)
+          {
+            printError(lcp, i, queries[i], j, res, false);
+            ok = false; break;
+          }
+        }
+      }
+      else
+      {
+        if(lcp[res] > comp)
+        {
+          printError(lcp, i, queries[i], res, res, false);
+          ok = false; break;
+        }
+        for(uint64_t j = queries[i] + 1; j < res; j++)
+        {
+          if(lcp.accessForward(j, rank) <= comp)
+          {
+            printError(lcp, i, queries[i], j, res, false);
+            ok = false; break;
+          }
+        }
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Verified " << queries.size() << " NSEV queries in " << seconds << " seconds" << std::endl;
   }
 #endif
 

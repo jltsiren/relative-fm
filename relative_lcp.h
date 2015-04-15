@@ -53,19 +53,22 @@ public:
 
   /*
     Range minimum queries always return the leftmost position with minimum value.
+    The return value is (pos, LCP[pos]).
   */
-  inline uint64_t rmq(range_type range) const
+  inline range_type rmq(range_type range) const
   {
     return this->rmq(range.first, range.second);
   }
 
-  uint64_t rmq(uint64_t from, uint64_t to) const;
+  range_type rmq(uint64_t from, uint64_t to) const;
 
   /*
-    Return value >= size means "not found".
+    The return value is (res, LCP[res]). If res >= size, no value was found.
   */
-  uint64_t psv(uint64_t pos) const;
-  uint64_t nsv(uint64_t pos) const;
+  range_type psv(uint64_t pos) const;
+  range_type psev(uint64_t pos) const;
+  range_type nsv(uint64_t pos) const;
+  range_type nsev(uint64_t pos) const;
 
 //------------------------------------------------------------------------------
 
@@ -75,35 +78,6 @@ public:
   SLArray           samples;
   SLArray           tree;
   int_vector<64>    offsets;  // Offsets for each layer of the tree.
-
-//------------------------------------------------------------------------------
-
-private:
-  void loadFrom(std::istream& input);
-  void absoluteSamples(const lcp_type& lcp, const std::vector<uint64_t>& lengths);
-
-  /*
-    RMQ in [from, to] within the given phrase. Returns (lcp[i], i).
-    from == 0 is interpreted as the beginning of the phrase.
-    to >= sample_pos is interpreted as the sampled position (to + 1 should be a valid number).
-  */
-  range_type rmq(uint64_t phrase, uint64_t from, uint64_t to) const;
-
-  /*
-    PSV in the given phrase. Returns (psv_pos, LCP[pos]) or (psv_pos, val).
-    If pos <= sample_pos, finds the psv_pos < pos with LCP[psv_pos] < LCP[pos].
-    If pos > sample_pos, the entire phrase is considered, and the comparison is based on val.
-    If the PSV does not exist, psv_pos will be >= size.
-  */
-  range_type psv(uint64_t phrase, uint64_t pos, uint64_t val) const;
-
-  /*
-    NSV in the given phrase. Returns (nsv_pos, LCP[pos]) or (nsv_pos, val).
-    If pos >= seq_pos, finds the nsv_pos > pos with LCP[nsv_pos] < LCP[pos].
-    If pos < seq_pos, the entire phrase is considered, and the comparison is based on val.
-    If the NSV does not exist, nsv_pos will be >= size.
-  */
-  range_type nsv(uint64_t phrase, uint64_t pos, uint64_t val) const;
 
 //------------------------------------------------------------------------------
 
@@ -145,7 +119,7 @@ private:
 
   inline uint64_t firstSibling(uint64_t last_child, uint64_t level) const
   {
-    return std::max(this->offset(level), last_child - (BRANCHING_FACTOR - 1));
+    return last_child - (last_child - this->offset(level)) % BRANCHING_FACTOR;
   }
 
   inline uint64_t lastChild(uint64_t node, uint64_t level) const
@@ -154,6 +128,19 @@ private:
   }
 
   inline uint64_t root() const { return this->tree.size() - 1; }
+
+//------------------------------------------------------------------------------
+
+private:
+  void loadFrom(std::istream& input);
+  void absoluteSamples(const lcp_type& lcp, const std::vector<uint64_t>& lengths);
+
+  /*
+    RMQ in [from, to] within the given phrase. Returns (i, lcp[i]).
+    from == 0 is interpreted as the beginning of the phrase.
+    to >= sample_pos is interpreted as the sampled position (to + 1 should be a valid number).
+  */
+  range_type rmq(uint64_t phrase, uint64_t from, uint64_t to) const;
 
 //------------------------------------------------------------------------------
 

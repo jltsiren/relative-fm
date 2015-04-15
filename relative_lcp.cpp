@@ -1,3 +1,4 @@
+#include <functional>
 #include <stack>
 
 #include "relative_lcp.h"
@@ -115,14 +116,14 @@ inline void
 updateRes(const RelativeLCP& lcp, range_type& res, uint64_t i)
 {
   uint64_t temp = lcp.tree[i];
-  if(temp < res.first) { res.first = temp; res.second = i; }
+  if(temp < res.second) { res.first = i; res.second = temp; }
 }
 
-uint64_t
+range_type
 RelativeLCP::rmq(uint64_t from, uint64_t to) const
 {
   to = std::min(to, this->size() - 1);
-  if(from > to) { return this->size(); }
+  if(from > to) { return range_type(this->size(), 0); }
 
   uint64_t phrase_from = this->blocks.inverse(from), phrase_to = this->blocks.inverse(to);
   range_type res(this->size(), this->size());
@@ -165,7 +166,7 @@ RelativeLCP::rmq(uint64_t from, uint64_t to) const
         if(right != right_child)
         {
           uint64_t first_child = this->firstSibling(right_child, level);
-          for(uint64_t i = right; i >= first_child; i--) { tail.push(range_type(this->tree[i], i)); }
+          for(uint64_t i = right; i >= first_child; i--) { tail.push(range_type(i, this->tree[i])); }
           right_par--;
         }
         if(left_par >= right_par)
@@ -181,31 +182,31 @@ RelativeLCP::rmq(uint64_t from, uint64_t to) const
     while(!(tail.empty()))
     {
       range_type temp = tail.top(); tail.pop();
-      if(temp.first < res.first) { res = temp; }
+      if(temp.second < res.second) { res = temp; }
     }
-    level = this->findLevel(res.second);
+    level = this->findLevel(res.first);
     while(level > 0)
     {
-      res.second = this->child(res.second, level);
-      while(this->tree[res.second] != res.first) { res.second++; }
+      res.first = this->child(res.first, level);
+      while(this->tree[res.first] != res.second) { res.first++; }
       level--;
     }
-    res = this->rmq(res.second, 0, this->size());
+    res = this->rmq(res.first, 0, this->size());
   }
 
   // Process the partial blocks.
-  if(this->tree[phrase_from] <= res.first)
+  if(this->tree[phrase_from] <= res.second)
   {
     range_type temp = this->rmq(phrase_from, from, to);
-    if(temp.first <= res.first) { res = temp; }
+    if(temp.second <= res.second) { res = temp; }
   }
-  if(phrase_from < phrase_to && this->tree[phrase_to] < res.first)
+  if(phrase_from < phrase_to && this->tree[phrase_to] < res.second)
   {
     range_type temp = this->rmq(phrase_to, 0, to);
-    if(temp.first < res.first) { res = temp; }
+    if(temp.second < res.second) { res = temp; }
   }
 
-  return res.second;
+  return res;
 }
 
 range_type
@@ -217,7 +218,7 @@ RelativeLCP::rmq(uint64_t phrase, uint64_t from, uint64_t to) const
 
   // Determine the range and handle the special case where the phrase body is not needed.
   if(from == 0) { from = seq_pos; }
-  if(from == sample_pos) { return range_type(this->samples[phrase + 1], from); }
+  if(from == sample_pos) { return range_type(from, this->samples[phrase + 1]); }
   uint64_t limit = std::min(to + 1, sample_pos);
 
   // Determine the minimum within the phrase body.
@@ -227,20 +228,20 @@ RelativeLCP::rmq(uint64_t phrase, uint64_t from, uint64_t to) const
   uint64_t prev = this->reference.accessForward(r_pos, rank);
   uint64_t curr = this->samples[phrase] + prev;
   if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
-  range_type res(curr, from);
+  range_type res(from, curr);
   for(uint64_t i = from + 1; i < limit; i++)
   {
     r_pos++;
     uint64_t next = this->reference.accessForward(r_pos, rank);
     curr = curr + next - prev; prev = next;
-    if(curr < res.first) { res.first = curr; res.second = i; }
+    if(curr < res.second) { res.first = i; res.second = curr; }
   }
 
   // Check the sample if it falls within the range.
   if(to >= sample_pos)
   {
     uint64_t temp = this->samples[phrase + 1];
-    if(temp < res.first) { res.first = temp; res.second = sample_pos; }
+    if(temp < res.second) { res.first = sample_pos; res.second = temp; }
   }
 
   return res;
@@ -248,17 +249,71 @@ RelativeLCP::rmq(uint64_t phrase, uint64_t from, uint64_t to) const
 
 //------------------------------------------------------------------------------
 
-uint64_t
-RelativeLCP::psv(uint64_t pos) const
+/*
+  PSV in the given phrase. Returns (psv_pos, LCP[psv_pos]).
+  Updates val, if it has not been specified.
+  If pos <= sample_pos, finds the psv_pos < pos with comp(LCP[psv_pos], LCP[pos]).
+  If pos > sample_pos, the entire phrase is considered, and the comparison is based on val.
+  If the PSV does not exist, psv_pos will be >= size.
+*/
+template<class Comp>
+range_type
+psv(const RelativeLCP& lcp, uint64_t phrase, uint64_t pos, uint64_t& val, const Comp& comp)
 {
-  if(pos == 0 || pos >= this->size()) { return this->size(); }
+  uint64_t seq_pos = lcp.seqPos(phrase);
+  uint64_t ref_pos = lcp.refPos(phrase);
+  uint64_t sample_pos = lcp.samplePos(phrase);
 
-  uint64_t phrase = this->blocks.inverse(pos);
-  range_type res = this->psv(phrase, pos, 0);
-  if(res.first < this->size() || phrase == 0) { return res.first; } // psv in the same phrase or does not exist.
-  if(this->tree[phrase - 1] < res.second) // psv is in the previous phrase.
+  // Set val to the actual LCP we are comparing against and pos to the upper bound
+  // of considered positions. Also handle the special cases.
+  if(pos > sample_pos)
   {
-    return this->psv(phrase - 1, this->size(), res.second).first;
+    uint64_t temp = lcp.samples[phrase + 1];
+    if(comp(temp, val)) { return range_type(sample_pos, temp); }
+    pos = sample_pos;
+  }
+  else
+  {
+    if(pos == sample_pos) { val = lcp.samples[phrase + 1]; }
+    else
+    {
+      val = lcp.samples[phrase] + lcp.reference[ref_pos + pos - seq_pos];
+      if(ref_pos > 0) { val -= lcp.reference[ref_pos - 1]; }
+    }
+    if(!comp(lcp.tree[phrase], val)) { return range_type(lcp.size(), 0); }
+  }
+  if(pos <= seq_pos) { return range_type(lcp.size(), 0); }
+
+  // Handle the phrase body.
+  uint64_t r_pos = ref_pos + pos - 1 - seq_pos;
+  uint64_t rank = lcp.reference.initBackward(r_pos);
+  uint64_t prev = lcp.reference.accessBackward(r_pos, rank);
+  uint64_t curr = lcp.samples[phrase] + prev;
+  if(ref_pos > 0) { curr -= lcp.reference[ref_pos - 1]; }
+  while(pos > seq_pos)
+  {
+    pos--;
+    if(comp(curr, val)) { return range_type(pos, curr); }
+    uint64_t temp = (r_pos > 0 ? lcp.reference.accessBackward(r_pos - 1, rank) : 0); r_pos--;
+    curr = curr + temp - prev; prev = temp;
+  }
+
+  return range_type(lcp.size(), 0);
+}
+
+template<class Comp>
+range_type
+psv(const RelativeLCP& lcp, uint64_t pos, Comp comp)
+{
+  if(pos == 0 || pos >= lcp.size()) { return range_type(lcp.size(), 0); }
+
+  uint64_t phrase = lcp.blocks.inverse(pos);
+  uint64_t val = 0; // lcp[pos]
+  range_type res = psv(lcp, phrase, pos, val, comp);
+  if(res.first < lcp.size() || phrase == 0) { return res; } // psv in the same phrase or does not exist.
+  if(comp(lcp.tree[phrase - 1], val)) // psv is in the previous phrase.
+  {
+    return psv(lcp, phrase - 1, lcp.size(), val, comp);
   }
 
   // Go upward until psv is in the current subtree.
@@ -266,15 +321,15 @@ RelativeLCP::psv(uint64_t pos) const
   bool found = false;
   while(!found)
   {
-    if(tree_node == this->root()) { return this->size(); }
-    uint64_t parent_node = this->parent(tree_node, level); level++;
-    if(this->tree[parent_node] < res.second)
+    if(tree_node == lcp.root()) { return range_type(lcp.size(), 0); }
+    uint64_t parent_node = lcp.parent(tree_node, level); level++;
+    if(comp(lcp.tree[parent_node], val))
     {
       // The smaller value may come from a subtree after leaf 'phrase'.
-      uint64_t first_child = this->child(parent_node, level);
+      uint64_t first_child = lcp.child(parent_node, level);
       for(uint64_t i = tree_node; i > first_child && !found; i--)
       {
-        if(this->tree[i - 1] < res.second) { tree_node = i - 1; level--; found = true; }
+        if(comp(lcp.tree[i - 1], val)) { tree_node = i - 1; level--; found = true; }
       }
     }
     if(!found) { tree_node = parent_node; }
@@ -283,69 +338,91 @@ RelativeLCP::psv(uint64_t pos) const
   // Find the leaf where the psv is and then locate it.
   while(level > 0)
   {
-    tree_node = this->lastChild(tree_node, level); level--;
-    while(this->tree[tree_node] >= res.second) { tree_node--; }
+    tree_node = lcp.lastChild(tree_node, level); level--;
+    while(!comp(lcp.tree[tree_node], val)) { tree_node--; }
   }
-  return this->psv(tree_node, this->size(), res.second).first;
+  return psv(lcp, tree_node, lcp.size(), val, comp);
 }
 
 range_type
-RelativeLCP::psv(uint64_t phrase, uint64_t pos, uint64_t val) const
+RelativeLCP::psv(uint64_t pos) const
 {
-  uint64_t seq_pos = this->seqPos(phrase);
-  uint64_t ref_pos = this->refPos(phrase);
-  uint64_t sample_pos = this->samplePos(phrase);
+  return relative::psv(*this, pos, std::less<uint64_t>());
+}
 
-  // Set val to the actual LCP we are comparing against and pos to the upper bound
-  // of considered positions. Also handle the special cases.
-  if(pos > sample_pos)
-  {
-    if(this->samples[phrase + 1] < val) { return range_type(sample_pos, val); }
-    pos = sample_pos;
-  }
-  else
-  {
-    if(pos == sample_pos) { val = this->samples[phrase + 1]; }
-    else
-    {
-      val = this->samples[phrase] + this->reference[ref_pos + pos - seq_pos];
-      if(ref_pos > 0) { val -= this->reference[ref_pos - 1]; }
-    }
-    if(val <= this->tree[phrase]) { return range_type(this->size(), val); }
-  }
-  if(pos <= seq_pos) { return range_type(this->size(), val); }
-
-  // Handle the phrase body.
-  uint64_t r_pos = ref_pos + pos - 1 - seq_pos;
-  uint64_t rank = this->reference.initBackward(r_pos);
-  uint64_t prev = this->reference.accessBackward(r_pos, rank);
-  uint64_t curr = this->samples[phrase] + prev;
-  if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
-  while(pos > seq_pos)
-  {
-    pos--;
-    if(curr < val) { return range_type(pos, val); }
-    uint64_t temp = (r_pos > 0 ? this->reference.accessBackward(r_pos - 1, rank) : 0); r_pos--;
-    curr = curr + temp - prev; prev = temp;
-  }
-
-  return range_type(this->size(), val);
+range_type
+RelativeLCP::psev(uint64_t pos) const
+{
+  return relative::psv(*this, pos, std::less_equal<uint64_t>());
 }
 
 //------------------------------------------------------------------------------
 
-uint64_t
-RelativeLCP::nsv(uint64_t pos) const
+/*
+  NSV in the given phrase. Returns (nsv_pos, LCP[nsv_pos]).
+  Updates val, if it has not been specified.
+  If pos >= seq_pos, finds the nsv_pos > pos with comp(LCP[nsv_pos], LCP[pos]).
+  If pos < seq_pos, the entire phrase is considered, and the comparison is based on val.
+  If the NSV does not exist, nsv_pos will be >= size.
+*/
+template<class Comp>
+range_type
+nsv(const RelativeLCP& lcp, uint64_t phrase, uint64_t pos, uint64_t& val, const Comp& comp)
 {
-  if(pos + 1 >= this->size()) { return this->size(); }
+  uint64_t seq_pos = lcp.seqPos(phrase);
+  uint64_t ref_pos = lcp.refPos(phrase);
+  uint64_t sample_pos = lcp.samplePos(phrase);
 
-  uint64_t phrase = this->blocks.inverse(pos);
-  range_type res = this->nsv(phrase, pos, 0);
-  // nsv in the same phrase or does not exist.
-  if(res.first < this->size() || phrase + 1 >= this->phrases.size()) { return res.first; }
-  if(this->tree[phrase + 1] < res.second) // nsv is in the next phrase.
+  // Set val to the actual LCP we are comparing against and pos to the lower bound
+  // of considered positions. Also handle the special cases.
+  if(pos < seq_pos) { pos = seq_pos; }
+  else
   {
-    return this->nsv(phrase + 1, 0, res.second).first;
+    if(pos == sample_pos) { val = lcp.samples[phrase + 1]; return range_type(lcp.size(), 0); }
+    val = lcp.samples[phrase] + lcp.reference[ref_pos + pos - seq_pos];
+    if(ref_pos > 0) { val -= lcp.reference[ref_pos - 1]; }
+    pos++;
+    if(!comp(lcp.tree[phrase], val)) { return range_type(lcp.size(), 0); }
+  }
+
+  // Handle the phrase body.
+  if(pos < sample_pos)
+  {
+    uint64_t r_pos = ref_pos + pos - seq_pos;
+    uint64_t rank = lcp.reference.initForward(r_pos);
+    uint64_t prev = lcp.reference.accessForward(r_pos, rank);
+    uint64_t curr = lcp.samples[phrase] + prev;
+    if(ref_pos > 0) { curr -= lcp.reference[ref_pos - 1]; }
+    while(pos < sample_pos)
+    {
+      if(comp(curr, val)) { return range_type(pos, curr); }
+      pos++; r_pos++;
+      uint64_t temp = lcp.reference.accessForward(r_pos, rank);
+      curr = curr + temp - prev; prev = temp;
+    }
+  }
+
+  // Look at the sample.
+  uint64_t temp = lcp.samples[phrase + 1];
+  if(comp(temp, val)) { return range_type(sample_pos, temp); }
+
+  return range_type(lcp.size(), 0);
+}
+
+template<class Comp>
+range_type
+nsv(const RelativeLCP& lcp, uint64_t pos, Comp comp)
+{
+  if(pos + 1 >= lcp.size()) { return range_type(lcp.size(), 0); }
+
+  uint64_t phrase = lcp.blocks.inverse(pos);
+  uint64_t val = 0; // lcp[pos]
+  range_type res = nsv(lcp, phrase, pos, val, comp);
+  // nsv in the same phrase or does not exist.
+  if(res.first < lcp.size() || phrase + 1 >= lcp.phrases.size()) { return res; }
+  if(comp(lcp.tree[phrase + 1], val)) // nsv is in the next phrase.
+  {
+    return nsv(lcp, phrase + 1, 0, val, comp);
   }
 
   // Go upward until nsv is in the current subtree.
@@ -353,69 +430,39 @@ RelativeLCP::nsv(uint64_t pos) const
   bool found = false;
   while(!found)
   {
-    if(tree_node == this->root()) { return this->size(); }
-    uint64_t parent_node = this->parent(tree_node, level); level++;
-    if(this->tree[parent_node] < res.second)
+    if(tree_node == lcp.root()) { return range_type(lcp.size(), 0); }
+    uint64_t parent_node = lcp.parent(tree_node, level); level++;
+    if(comp(lcp.tree[parent_node], val))
     {
       // The smaller value may come from a subtree before leaf 'phrase'.
-      uint64_t last_child = this->lastChild(parent_node, level);
+      uint64_t last_child = lcp.lastChild(parent_node, level);
       for(uint64_t i = tree_node + 1; i <= last_child && !found; i++)
       {
-        if(this->tree[i] < res.second) { tree_node = i; level--; found = true; }
+        if(comp(lcp.tree[i], val)) { tree_node = i; level--; found = true; }
       }
     }
     if(!found) { tree_node = parent_node; }
   }
 
-  // Find the leaf where the psv is and then locate it.
+  // Find the leaf where the nsv is and then locate it.
   while(level > 0)
   {
-    tree_node = this->child(tree_node, level); level--;
-    while(this->tree[tree_node] >= res.second) { tree_node++; }
+    tree_node = lcp.child(tree_node, level); level--;
+    while(!comp(lcp.tree[tree_node], val)) { tree_node++; }
   }
-  return this->nsv(tree_node, 0, res.second).first;
+  return nsv(lcp, tree_node, 0, val, comp);
 }
 
 range_type
-RelativeLCP::nsv(uint64_t phrase, uint64_t pos, uint64_t val) const
+RelativeLCP::nsv(uint64_t pos) const
 {
-  uint64_t seq_pos = this->seqPos(phrase);
-  uint64_t ref_pos = this->refPos(phrase);
-  uint64_t sample_pos = this->samplePos(phrase);
+  return relative::nsv(*this, pos, std::less<uint64_t>());
+}
 
-  // Set val to the actual LCP we are comparing against and pos to the lower bound
-  // of considered positions. Also handle the special cases.
-  if(pos < seq_pos) { pos = seq_pos; }
-  else
-  {
-    if(pos == sample_pos) { return range_type(this->size(), this->samples[phrase + 1]); }
-    val = this->samples[phrase] + this->reference[ref_pos + pos - seq_pos];
-    if(ref_pos > 0) { val -= this->reference[ref_pos - 1]; }
-    pos++;
-    if(val <= this->tree[phrase]) { return range_type(this->size(), val); }
-  }
-
-  // Handle the phrase body.
-  if(pos < sample_pos)
-  {
-    uint64_t r_pos = ref_pos + pos - seq_pos;
-    uint64_t rank = this->reference.initForward(r_pos);
-    uint64_t prev = this->reference.accessForward(r_pos, rank);
-    uint64_t curr = this->samples[phrase] + prev;
-    if(ref_pos > 0) { curr -= this->reference[ref_pos - 1]; }
-    while(pos < sample_pos)
-    {
-      if(curr < val) { return range_type(pos, val); }
-      pos++; r_pos++;
-      uint64_t temp = this->reference.accessForward(r_pos, rank);
-      curr = curr + temp - prev; prev = temp;
-    }
-  }
-
-  // Look at the sample.
-  if(this->samples[phrase + 1] < val) { return range_type(sample_pos, val); }
-
-  return range_type(this->size(), val);
+range_type
+RelativeLCP::nsev(uint64_t pos) const
+{
+  return relative::nsv(*this, pos, std::less_equal<uint64_t>());
 }
 
 //------------------------------------------------------------------------------
