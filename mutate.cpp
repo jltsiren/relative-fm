@@ -85,7 +85,7 @@ main(int argc, char** argv)
   uint64_t substitutions = 0, insertions = 0, insertion_total = 0, deletions = 0, deletion_total = 0;
   for(uint64_t i = 0; i < source.size(); i++)
   {
-    if(source[i] == 'N') { target.push_back(source[i]); continue; } // No mutations at N's.
+    bool at_n = (source[i] == 'N'), after_n = (i > 0 && source[i - 1] == 'N');
     double mutation = probability(rng);
     if(mutation < rate)
     {
@@ -95,7 +95,14 @@ main(int argc, char** argv)
         insertions++;
         uint64_t len = indelLength(rng);
         insertion_total += len;
-        for(uint64_t j = 0; j < len; j++) { target.push_back(randomChar(rng)); }
+        if(at_n && after_n) // Insert N's inside a runs of N's.
+        {
+          for(uint64_t j = 0; j < len; j++) { target.push_back('N'); }
+        }
+        else
+        {
+          for(uint64_t j = 0; j < len; j++) { target.push_back(randomChar(rng)); }
+        }
         target.push_back(source[i]);
       }
       else if(mutation < INDEL_RATE) // Deletion
@@ -108,8 +115,15 @@ main(int argc, char** argv)
       }
       else  // Substitution
       {
-        substitutions++;
-        target.push_back(substitute(rng, source[i]));
+        if(at_n)  // N's cannot be substituted with other characters.
+        {
+          target.push_back(source[i]);
+        }
+        else
+        {
+          substitutions++;
+          target.push_back(substitute(rng, source[i]));
+        }
       }
     }
     else { target.push_back(source[i]); }
