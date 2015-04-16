@@ -9,4 +9,5 @@ build_rlzfm
 index_dlcp
 verify_lcp
 mutate
+cst_traverse
 .DS_Store

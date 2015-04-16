@@ -55,7 +55,7 @@ main(int argc, char** argv)
 {
   if(argc < 4)
   {
-    std::cerr << "Usage: mutate source target rate" << std::endl;
+    std::cerr << "Usage: mutate source target rate [seed]" << std::endl;
     std::cerr << std::endl;
     return 1;
   }
@@ -64,6 +64,7 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   int_vector_buffer<8> source, target;
+  uint64_t seed = 0xDEADBEEF;
   double rate = 0.0;
   {
     std::string source_name = argv[1];
@@ -77,11 +78,15 @@ main(int argc, char** argv)
 
     rate = std::stod(argv[3]);
     std::cout << "Mutation rate: " << rate << std::endl;
+
+    if(argc > 4) { seed = fnv1a_hash((uint64_t)std::stoul(argv[4]), seed); }
+    std::cout << "Seed: " << seed << std::endl;
+
     std::cout << std::endl;
   }
 
 
-  std::mt19937_64 rng(0xDEADBEEF);
+  std::mt19937_64 rng(seed);
   uint64_t substitutions = 0, insertions = 0, insertion_total = 0, deletions = 0, deletion_total = 0;
   for(uint64_t i = 0; i < source.size(); i++)
   {

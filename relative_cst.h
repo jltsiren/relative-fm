@@ -16,9 +16,21 @@ struct rcst_node
   uint64_t sp, ep;
   uint64_t left_lcp, right_lcp; // lcp[sp], lcp[ep + 1]
 
+  rcst_node() : sp(0), ep(0), left_lcp(0), right_lcp(0) {}
+
   rcst_node(uint64_t _sp, uint64_t _ep, uint64_t left, uint64_t right) :
     sp(_sp), ep(_ep), left_lcp(left), right_lcp(right)
   {
+  }
+
+  inline bool operator== (const rcst_node& node) const
+  {
+    return (this->sp == node.sp && this->ep == node.ep);
+  }
+
+  inline bool operator!= (const rcst_node& node) const
+  {
+    return (this->sp != node.sp || this->ep != node.ep);
   }
 };
 
@@ -98,21 +110,21 @@ public:
 
   node_type first_child(const node_type& v) const
   {
-    if(this->is_leaf(v) { return this->root(); }
+    if(this->is_leaf(v)) { return this->root(); }
 
-    range_type right = this->rmq(v.sp + 1, v.ep);
+    range_type right = this->lcp.rmq(v.sp + 1, v.ep);
 
     return node_type(v.sp, right.first - 1, v.left_lcp, right.second);
   }
 
   node_type sibling(const node_type& v) const
   {
-    if(v == this->root()) { return this->root(); }
+    if(v.ep + 1 >= this->size()) { return this->root(); }
     if(v.left_lcp > v.right_lcp) { return this->root(); } // v is the last child of its parent.
 
-    range_type right = this->nsev(v.ep + 1);
+    range_type right = this->lcp.nsev(v.ep + 1);
 
-    return node_type(v.sp + 1, right.first - 1, v.right_lcp, right.second);
+    return node_type(v.ep + 1, right.first - 1, v.right_lcp, right.second);
   }
 
   const_iterator begin() const
