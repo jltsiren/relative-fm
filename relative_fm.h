@@ -260,6 +260,24 @@ public:
     return this->LF(i, lcs_bits, ref_pos, ref_c, seq_c, lcs_pos);
   }
 
+  uint64_t psi(uint64_t i) const
+  {
+    if(i < this->sequences() || i >= this->size()) { return this->size(); }
+
+    uint64_t c = relative::findChar(this->alpha, i);
+    uint64_t low = 0, high = this->size() - 1;
+    while(low < high) // psi(i) is the last position j with LF(j, c) = i.
+    {
+      uint64_t mid = low + (high + 1 - low) / 2;
+      uint64_t candidate = cumulative(this->alpha, c) + this->rank(mid, c);
+      if(candidate < i) { low = mid + 1; }
+      else if(candidate == i) { low = mid; }
+      else { high = mid - 1; }
+    }
+
+    return low;
+  }
+
   bool supportsLocate(bool print = false) const
   {
     if(this->text_lcs.size() == 0 && this->sa_sample_rate == 0)

@@ -167,6 +167,13 @@ public:
     return range_type(temp.first + this->alpha.C[temp.second], temp.second);
   }
 
+  uint64_t psi(uint64_t i) const
+  {
+    if(i < this->sequences() || i >= this->size()) { return this->size(); }
+    uint64_t comp = relative::findComp(this->alpha, i);
+    return this->bwt.select(i + 1 - this->alpha.C[comp], comp);
+  }
+
   template<class Iter> range_type find(Iter begin, Iter end) const
   {
     range_type res(0, this->size() - 1);

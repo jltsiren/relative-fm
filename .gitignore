@@ -10,4 +10,5 @@ index_dlcp
 verify_lcp
 mutate
 cst_traverse
+cst_compare
 .DS_Store

@@ -42,6 +42,7 @@ class RelativeCST
 public:
   typedef rcst_node node_type;
   typedef uint64_t  size_type;
+  typedef uint8_t   char_type;
 
   typedef cst_dfs_const_forward_iterator<RelativeCST> const_iterator;
 
@@ -53,7 +54,7 @@ public:
 
   ~RelativeCST() {}
 
-  inline uint64_t size() const { return this->index.size(); }
+  inline size_type size() const { return this->index.size(); }
 
   uint64_t reportSize(bool print = false) const
   {
@@ -78,7 +79,7 @@ public:
 //------------------------------------------------------------------------------
 
   /*
-    SDSL-compatible CST operations. Not the full set yet, just enough for const_iterator.
+    SDSL-compatible CST operations. Not the full set yet.
 
     Tree operations from Fischer2009a pages 7-8 with fixes/optimizations from Canovas2010 pages 8-9.
   */
@@ -90,7 +91,7 @@ public:
   {
     if(v == this->root()) { return this->root(); }
 
-    uint64_t k = (v.left_lcp > v.right_lcp ? v.sp : v.ep + 1);
+    size_type k = (v.left_lcp > v.right_lcp ? v.sp : v.ep + 1);
     range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
     if(left.first >= this->size()) { left.first = 0; }  // No psv found.
 
@@ -103,7 +104,7 @@ public:
     if(this->is_leaf(v) || i == 0) { return this->root(); }
 
     node_type res = this->first_child(v);
-    for(uint64_t j = 1; j < i && res != this->root(); j++) { res = this->sibling(res); }
+    for(size_type j = 1; j < i && res != this->root(); j++) { res = this->sibling(res); }
 
     return res;
   }
@@ -126,6 +127,53 @@ public:
 
     return node_type(v.ep + 1, right.first - 1, v.right_lcp, right.second);
   }
+
+  node_type child(const node_type& v, const char_type c) const
+  {
+    if(!hasChar(this->index.alpha, c)) { return this->root(); }
+    c = this->index.alpha.char2comp[c];
+
+    uint64_t comp = 0;  // The next comp value to check.
+    for(node_type curr = this->first_child(v); curr != this->root(); curr = this->sibling(curr))
+    {
+      size_type d = std::max(curr.left_lcp, curr.right_lcp);
+      size_type text_pos = this->index.locate(curr.sp) + d;
+      if(text_pos >= this->size()) { continue; }
+      size_type bwt_pos = this->index.inverse(text_pos);
+
+      while(this->index.alpha.C[comp + 1] <= bwt_pos) { comp++; }
+      if(comp == c) { return curr; }
+      else if(comp > c) { break; }
+    }
+
+    return this->root();
+  }
+
+  // i is 1-based; no sanity checking.
+  node_type select_leaf(size_type i)
+  {
+    i--;
+    return node_type(i, i, this->lcp[i], this->lcp[i + 1]);
+  }
+
+  // Suffix link.
+  node_type sl(const node_type& v) const
+  {
+    if(v == this->root()) { return this->root(); }
+    if(this->is_leaf(v))
+    {
+      if(v.sp < this->index.sequence()) { return this->root(); }  // v was an empty suffix.
+      else { return this->select_leaf(this->index.psi(v.sp) + 1); }
+    }
+
+    size_type sp = this->index.psi(v.sp), ep = this->index.psi(v.ep);
+    size_type k = this->lcp.rmq(sp + 1, ep);
+    range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
+
+    return node_type(left.first, right.first - 1, left.second, right.second);
+  }
+
+//------------------------------------------------------------------------------
 
   const_iterator begin() const
   {

@@ -224,6 +224,25 @@ LF(const RankStructure& bwt, const AlphabetType& alpha, range_type rng, uint8_t 
 }
 
 /*
+  The comp value or the character value of T[SA[i]]. No sanity checking.
+*/
+template<class AlphabetType>
+uint8_t
+findComp(const AlphabetType& alpha, uint64_t bwt_pos)
+{
+  uint64_t comp = 0;
+  while(alpha.C[comp + 1] <= bwt_pos) { comp++; }
+  return comp;
+}
+
+template<class AlphabetType>
+uint8_t
+findChar(const AlphabetType& alpha, uint64_t bwt_pos)
+{
+  return alpha.comp2char[findComp(alpha, bwt_pos)];
+}
+
+/*
   Returns SA[i]. Call index.supportsLocate() first.
 */
 template<class Index>
@@ -253,8 +272,8 @@ extract(const Index& index, range_type range)
   if(range.second >= index.size()) { range.second = index.size() - 1; }
   if(isEmpty(range)) { return std::string(); }
 
-  uint64_t bwt_pos = index.inverse(range.second), text_pos = range.second, c = 0;
-  while(index.alpha.C[c + 1] <= bwt_pos) { c++; }
+  uint64_t bwt_pos = index.inverse(range.second), text_pos = range.second;
+  uint64_t c = findComp(index.alpha, bwt_pos);
 
   // Extract the sequence.
   std::string result(length(range), 0);
