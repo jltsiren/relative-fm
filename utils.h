@@ -342,6 +342,23 @@ directConstruct(Type& structure, const int_vector<8>& data)
   ram_fs::remove(ramfile);
 }
 
+/*
+  Extracts the given range from source, overwriting target.
+*/
+template<class VectorType>
+void
+extractBits(const VectorType& source, range_type range, bit_vector& target)
+{
+  if(isEmpty(range) || range.second >= source.size()) { return; }
+
+  util::assign(target, bit_vector(length(range), 0));
+  for(uint64_t i = 0; i < target.size(); i += 64)
+  {
+    uint64_t len = std::min((uint64_t)64, target.size() - i);
+    target.set_int(i, source.get_int(range.first + i, len), len);
+  }
+}
+
 //------------------------------------------------------------------------------
 
 /*

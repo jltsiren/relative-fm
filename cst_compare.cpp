@@ -15,6 +15,9 @@ void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 template<class CST>
 void maximalMatches(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent = 18);
 
+template<class RFM>
+void verifyPsi(RFM& rfm);
+
 //------------------------------------------------------------------------------
 
 int
@@ -60,18 +63,14 @@ main(int argc, char** argv)
   }
   std::cout << std::endl;
 
-/*  {
-    RelativeFM<> rfm(ref_fm, seq_name);
-    RelativeLCP rlcp(ref_lcp, seq_name);
+  {
+    RelativeFM<> rfm(ref_fm, target_name);
+    RelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
     printSize("Relative CST", rcst.reportSize(), rcst.size());
-#ifdef USE_HASH
-    traverseHash(rcst, "Relative CST");
-#else
-    traverse(rcst, "Relative CST");
-#endif
+    verifyPsi(rfm);
     std::cout << std::endl;
-  }*/
+  }
 
 /*    {
       std::string name = "cst_sct3_dac";
@@ -95,7 +94,7 @@ main(int argc, char** argv)
       traverse(cst, name);
 #endif
       std::cout << std::endl;
-    }*/
+    }
 
   {
     std::string name = "cst_sada";
@@ -103,7 +102,7 @@ main(int argc, char** argv)
     buildCST(cst, target_name, name);
     maximalMatches(cst, seq, name);
     std::cout << std::endl;
-  }
+  }*/
 
   std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
   std::cout << std::endl;
@@ -141,6 +140,7 @@ buildCST(CST& cst, const std::string& base_name, const std::string& type)
 
 //------------------------------------------------------------------------------
 
+// FIXME reimplement
 template<class CST>
 void
 maximalMatches(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent)
@@ -167,6 +167,39 @@ maximalMatches(const CST& cst, const int_vector<8>& seq, const std::string& name
   if(name.length() + 1 < indent) { padding = std::string(indent - 1 - name.length(), ' '); }
   std::cout << name << ":" << padding << "Average maximal match: " << (total_length / (double)(cst.size()))
                     << " (" << seconds << " seconds)" << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+template<class RFM>
+void
+verifyPsi(RFM& rfm)
+{
+  {
+    double start = readTimer();
+    for(uint64_t i = 1; i < rfm.size(); i++)
+    {
+      uint64_t next_pos = rfm.Psi(i);
+      uint64_t prev_pos = rfm.LF(next_pos).first;
+      if(prev_pos != i)
+      {
+        std::cerr << "Psi(" << i << ") = " << next_pos << ", LF(Psi(" << i << ")) = " << prev_pos << std::endl;
+        break;
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Psi verified in " << seconds << " seconds" << std::endl;
+  }
+
+  {
+    double start = readTimer();
+    rfm.buildSelect();
+    double seconds = readTimer() - start;
+    uint64_t select_size = size_in_bytes(rfm.sorted_lcs) + size_in_bytes(rfm.ref_lcs_C)
+      + size_in_bytes(rfm.seq_lcs_C);
+    std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+    printSize("Relative select", select_size, rfm.size());
+  }
 }
 
 //------------------------------------------------------------------------------

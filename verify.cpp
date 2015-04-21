@@ -3,23 +3,30 @@
 
 #include <sdsl/rmq_support.hpp>
 
+#include "relative_fm.h"
 #include "relative_lcp.h"
 
 using namespace relative;
 
 //------------------------------------------------------------------------------
 
-#define VERIFY_LCP
-#define VERIFY_RMQ
-#define VERIFY_PSV
-#define VERIFY_PSEV
-#define VERIFY_NSV
-#define VERIFY_NSEV
+#define VERIFY_LF
+#define VERIFY_PSI
+
+//#define VERIFY_LCP
+//#define VERIFY_RMQ
+//#define VERIFY_PSV
+//#define VERIFY_PSEV
+//#define VERIFY_NSV
+//#define VERIFY_NSEV
 
 // Verify the queries or just run the speed tests.
 //#define VERIFY_QUERIES
 
 const uint64_t MILLION = 1000000;
+
+const uint64_t LF_QUERIES = MILLION;
+const uint64_t PSI_QUERIES = MILLION;
 
 const uint64_t LCP_QUERIES = 100 * MILLION;
 const uint64_t RMQ_QUERIES = 100 * MILLION;
@@ -27,6 +34,10 @@ const uint64_t RMQ_QUERY_LENGTH = 16;
 const uint64_t PSV_NSV_QUERIES = 100 * MILLION;
 
 //------------------------------------------------------------------------------
+
+void verifyLF(const RelativeFM<>& rfm);
+void verifyPsi(const RelativeFM<>& rfm, const std::string& type);
+void buildSelect(RelativeFM<>& fm);
 
 void verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 void verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
@@ -42,20 +53,25 @@ main(int argc, char** argv)
 {
   if(argc < 3)
   {
-    std::cerr << "Usage: verify_lcp ref seq1 [seq2 ...]" << std::endl;
+    std::cerr << "Usage: verify ref seq1 [seq2 ...]" << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
-  std::cout << "RLCP verifier" << std::endl;
+  std::cout << "RFM and RLCP verifier" << std::endl;
   std::cout << std::endl;
 
   std::string ref_name = argv[1];
   std::cout << "Reference: " << ref_name << std::endl;
   std::cout << std::endl;
+
+  SimpleFM<> ref_fm(ref_name);
+  printSize("FM-index", ref_fm.reportSize(), ref_fm.size()); std::cout << std::endl;
+
   RelativeLCP::lcp_type ref_lcp;
   load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
   printSize("LCP array", size_in_bytes(ref_lcp), ref_lcp.size()); std::cout << std::endl;
+
   std::cout << std::endl;
 
   for(int arg = 2; arg < argc; arg++)
@@ -63,11 +79,26 @@ main(int argc, char** argv)
     std::string seq_name = argv[arg];
     std::cout << "Target: " << seq_name << std::endl;
     std::cout << std::endl;
+
+    RelativeFM<> rfm(ref_fm, seq_name);
+    rfm.reportSize(true);
+
     RelativeLCP::lcp_type seq_lcp;
     load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
     printSize("LCP array", size_in_bytes(seq_lcp), seq_lcp.size()); std::cout << std::endl;
+
     RelativeLCP rlcp(ref_lcp, seq_name);
     rlcp.reportSize(true);
+
+#ifdef VERIFY_LF
+    verifyLF(rfm);
+#endif
+
+#ifdef VERIFY_PSI
+    verifyPsi(rfm, "Psi (slow)");
+    buildSelect(rfm);
+    verifyPsi(rfm, "Psi (fast)");
+#endif
 
 #ifdef VERIFY_LCP
     verifyLCP(seq_lcp, rlcp);
@@ -100,11 +131,11 @@ main(int argc, char** argv)
 //------------------------------------------------------------------------------
 
 std::vector<uint64_t>
-randomPositions(const RelativeLCP::lcp_type& lcp, uint64_t n)
+randomPositions(uint64_t n, uint64_t size)
 {
   std::mt19937_64 rng(0xDEADBEEF);
   std::vector<uint64_t> positions(n);
-  for(uint64_t i = 0; i < positions.size(); i++) { positions[i] = rng() % lcp.size(); }
+  for(uint64_t i = 0; i < positions.size(); i++) { positions[i] = rng() % size; }
   return positions;
 }
 
@@ -135,10 +166,88 @@ timeQueries(const ArrayType& array, std::string name)
 //------------------------------------------------------------------------------
 
 void
+verifyLF(const RelativeFM<>& rfm)
+{
+  uint64_t sum = 0;
+  std::vector<uint64_t> positions = randomPositions(LF_QUERIES, rfm.size());
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < positions.size(); i++)
+    {
+      sum += rfm.LF(positions[i]).first;
+    }
+    double seconds = readTimer() - start;
+    printTime("LF", positions.size(), seconds);
+  }
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+void
+verifyPsi(const RelativeFM<>& rfm, const std::string& type)
+{
+  uint64_t sum = 0;
+  std::vector<uint64_t> positions = randomPositions(PSI_QUERIES, rfm.size());
+
+  {
+    double start = readTimer();
+    for(uint64_t i = 0; i < positions.size(); i++)
+    {
+      sum += rfm.Psi(positions[i]);
+    }
+    double seconds = readTimer() - start;
+    printTime(type, positions.size(), seconds);
+  }
+
+#ifdef VERIFY_QUERIES
+  {
+    double start = readTimer();
+    for(uint64_t i = rfm.sequences(); i < rfm.size(); i++)
+    {
+      uint64_t next_pos = rfm.Psi(i);
+      uint64_t prev_pos = rfm.LF(next_pos).first;
+      if(prev_pos != i)
+      {
+        std::cerr << "verify: Psi(" << i << ") = " << next_pos
+                  << ", LF(Psi(" << i << ")) = " << prev_pos << std::endl;
+        std::cerr << "verify: SA[" << i << "] = " << rfm.locate(i)
+                  << ", SA[" << (next_pos - 1) << "] = " << rfm.locate(next_pos - 1)
+                  << ", SA[" << next_pos << "] = " << rfm.locate(next_pos)
+                  << ", SA[" << (next_pos + 1) << "] = " << rfm.locate(next_pos + 1) << std::endl;
+        break;
+      }
+    }
+    double seconds = readTimer() - start;
+    std::cout << "Psi verified in " << seconds << " seconds" << std::endl;
+  }
+#endif
+
+  if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
+  std::cout << std::endl;
+}
+
+void
+buildSelect(RelativeFM<>& rfm)
+{
+  double start = readTimer();
+  rfm.buildSelect();
+  double seconds = readTimer() - start;
+  std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+  printSize("Relative select", rfm.selectSize(), rfm.size());
+  std::cout << std::endl;
+}
+
+//------------------------------------------------------------------------------
+
+void
 verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
   uint64_t sum = 0;
-  std::vector<uint64_t> positions = randomPositions(lcp, LCP_QUERIES);
+  std::vector<uint64_t> positions = randomPositions(LCP_QUERIES, lcp.size());
 
   sum += timeQueries(lcp, positions, "LCP (random)");
 
@@ -262,7 +371,7 @@ printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
 void
 verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
   uint64_t sum = 0;
 
   {
@@ -325,7 +434,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 void
 verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
   uint64_t sum = 0;
 
   {
@@ -388,7 +497,7 @@ verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 void
 verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
   uint64_t sum = 0;
 
   {
@@ -451,7 +560,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 void
 verifyNSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(lcp, PSV_NSV_QUERIES);
+  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
   uint64_t sum = 0;
 
   {

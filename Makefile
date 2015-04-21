@@ -28,7 +28,7 @@ SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
 LIBS=-L$(LIB_DIR) -lsdsl -ldivsufsort -ldivsufsort64
-PROGRAMS=align_bwts build_bwt query_test test_rlz build_rlzfm index_dlcp verify_lcp mutate cst_traverse cst_compare
+PROGRAMS=align_bwts build_bwt query_test test_rlz build_rlzfm index_dlcp verify mutate cst_traverse cst_compare
 EXTRA=lcs
 
 all: $(PROGRAMS)
@@ -54,7 +54,7 @@ build_rlzfm:build_rlzfm.o $(LIBOBJS)
 index_dlcp:index_dlcp.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
-verify_lcp:verify_lcp.o $(LIBOBJS)
+verify:verify.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
 mutate:mutate.o $(LIBOBJS)

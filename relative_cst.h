@@ -163,10 +163,10 @@ public:
     if(this->is_leaf(v))
     {
       if(v.sp < this->index.sequence()) { return this->root(); }  // v was an empty suffix.
-      else { return this->select_leaf(this->index.psi(v.sp) + 1); }
+      else { return this->select_leaf(this->index.Psi(v.sp) + 1); }
     }
 
-    size_type sp = this->index.psi(v.sp), ep = this->index.psi(v.ep);
+    size_type sp = this->index.Psi(v.sp), ep = this->index.Psi(v.ep);
     size_type k = this->lcp.rmq(sp + 1, ep);
     range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
 

@@ -7,7 +7,7 @@ bwt_benchmark
 test_rlz
 build_rlzfm
 index_dlcp
-verify_lcp
+verify
 mutate
 cst_traverse
 cst_compare
