@@ -63,6 +63,7 @@ void getSortedLCS(const IndexType& index, const VectorType& lcs, bit_vector& sor
 //------------------------------------------------------------------------------
 
 const std::string RELATIVE_FM_EXTENSION = ".rfm";
+const std::string RELATIVE_SELECT_EXTENSION = ".select";
 
 /*
   The two indexes must have identical or sorted alphabets.
@@ -448,6 +449,44 @@ public:
     util::clear(this->complement_select);
     util::clear(this->ref_lcs_C);
     util::clear(this->seq_lcs_C);
+  }
+
+  /*
+    Returns true if successful.
+  */
+  bool loadSelect(const std::string& base_name)
+  {
+    std::string filename = base_name + RELATIVE_SELECT_EXTENSION;
+    std::ifstream in(filename.c_str(), std::ios_base::binary);
+    if(!in) { return false; }
+
+    this->sorted_lcs.load(in);
+    this->complement_select.load(in, &(this->bwt_lcs.seq));
+    this->ref_lcs_C.load(in);
+    this->seq_lcs_C.load(in);
+    in.close();
+    return true;
+  }
+
+  void writeSelect(const std::string& base_name) const
+  {
+    std::string filename = base_name + RELATIVE_SELECT_EXTENSION;
+    std::ofstream out(filename.c_str(), std::ios_base::binary);
+    if(!out)
+    {
+      std::cerr << "RelativeFM::writeSelect(): Cannot open output file " << filename << std::endl;
+      return;
+    }
+    this->writeSelect(out);
+    out.close();
+  }
+
+  void writeSelect(std::ofstream& out) const
+  {
+    this->sorted_lcs.serialize(out);
+    this->complement_select.serialize(out);
+    this->ref_lcs_C.serialize(out);
+    this->seq_lcs_C.serialize(out);
   }
 
 //------------------------------------------------------------------------------

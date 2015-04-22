@@ -35,9 +35,13 @@ const uint64_t PSV_NSV_QUERIES = 100 * MILLION;
 
 //------------------------------------------------------------------------------
 
-void verifyLF(const RelativeFM<>& rfm);
-void verifyPsi(const RelativeFM<>& rfm, const std::string& type);
-void buildSelect(RelativeFM<>& fm);
+template<class Index>
+void verifyLF(const Index& index, const std::string& type);
+
+template<class Index>
+void verifyPsi(const Index& index, const std::string& type);
+
+void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
 void verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
 void verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp);
@@ -80,6 +84,9 @@ main(int argc, char** argv)
     std::cout << "Target: " << seq_name << std::endl;
     std::cout << std::endl;
 
+    SimpleFM<> seq_fm(seq_name);
+    seq_fm.reportSize(true);
+
     RelativeFM<> rfm(ref_fm, seq_name);
     rfm.reportSize(true);
 
@@ -91,13 +98,15 @@ main(int argc, char** argv)
     rlcp.reportSize(true);
 
 #ifdef VERIFY_LF
-    verifyLF(rfm);
+    verifyLF(seq_fm, "LF (FM)");
+    verifyLF(rfm, "LF (RFM)");
 #endif
 
 #ifdef VERIFY_PSI
-    verifyPsi(rfm, "Psi (slow)");
-    buildSelect(rfm);
-    verifyPsi(rfm, "Psi (fast)");
+    verifyPsi(seq_fm, "Psi (FM)");
+    verifyPsi(rfm, "Psi (RFM, slow)");
+    buildSelect(rfm, seq_name);
+    verifyPsi(rfm, "Psi (RFM, fast)");
 #endif
 
 #ifdef VERIFY_LCP
@@ -123,8 +132,12 @@ main(int argc, char** argv)
 #ifdef VERIFY_NSEV
     verifyNSEV(seq_lcp, rlcp);
 #endif
+
+    std::cout << std::endl;
   }
 
+  std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
+  std::cout << std::endl;
   return 0;
 }
 
@@ -165,20 +178,21 @@ timeQueries(const ArrayType& array, std::string name)
 
 //------------------------------------------------------------------------------
 
+template<class Index>
 void
-verifyLF(const RelativeFM<>& rfm)
+verifyLF(const Index& index, const std::string& type)
 {
   uint64_t sum = 0;
-  std::vector<uint64_t> positions = randomPositions(LF_QUERIES, rfm.size());
+  std::vector<uint64_t> positions = randomPositions(LF_QUERIES, index.size());
 
   {
     double start = readTimer();
     for(uint64_t i = 0; i < positions.size(); i++)
     {
-      sum += rfm.LF(positions[i]).first;
+      sum += index.LF(positions[i]).first;
     }
     double seconds = readTimer() - start;
-    printTime("LF", positions.size(), seconds);
+    printTime(type, positions.size(), seconds);
   }
 
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
@@ -187,17 +201,18 @@ verifyLF(const RelativeFM<>& rfm)
 
 //------------------------------------------------------------------------------
 
+template<class Index>
 void
-verifyPsi(const RelativeFM<>& rfm, const std::string& type)
+verifyPsi(const Index& index, const std::string& type)
 {
   uint64_t sum = 0;
-  std::vector<uint64_t> positions = randomPositions(PSI_QUERIES, rfm.size());
+  std::vector<uint64_t> positions = randomPositions(PSI_QUERIES, index.size());
 
   {
     double start = readTimer();
     for(uint64_t i = 0; i < positions.size(); i++)
     {
-      sum += rfm.Psi(positions[i]);
+      sum += index.Psi(positions[i]);
     }
     double seconds = readTimer() - start;
     printTime(type, positions.size(), seconds);
@@ -206,18 +221,18 @@ verifyPsi(const RelativeFM<>& rfm, const std::string& type)
 #ifdef VERIFY_QUERIES
   {
     double start = readTimer();
-    for(uint64_t i = rfm.sequences(); i < rfm.size(); i++)
+    for(uint64_t i = index.sequences(); i < index.size(); i++)
     {
-      uint64_t next_pos = rfm.Psi(i);
-      uint64_t prev_pos = rfm.LF(next_pos).first;
+      uint64_t next_pos = index.Psi(i);
+      uint64_t prev_pos = index.LF(next_pos).first;
       if(prev_pos != i)
       {
         std::cerr << "verify: Psi(" << i << ") = " << next_pos
                   << ", LF(Psi(" << i << ")) = " << prev_pos << std::endl;
-        std::cerr << "verify: SA[" << i << "] = " << rfm.locate(i)
-                  << ", SA[" << (next_pos - 1) << "] = " << rfm.locate(next_pos - 1)
-                  << ", SA[" << next_pos << "] = " << rfm.locate(next_pos)
-                  << ", SA[" << (next_pos + 1) << "] = " << rfm.locate(next_pos + 1) << std::endl;
+        std::cerr << "verify: SA[" << i << "] = " << index.locate(i)
+                  << ", SA[" << (next_pos - 1) << "] = " << index.locate(next_pos - 1)
+                  << ", SA[" << next_pos << "] = " << index.locate(next_pos)
+                  << ", SA[" << (next_pos + 1) << "] = " << index.locate(next_pos + 1) << std::endl;
         break;
       }
     }
@@ -231,12 +246,16 @@ verifyPsi(const RelativeFM<>& rfm, const std::string& type)
 }
 
 void
-buildSelect(RelativeFM<>& rfm)
+buildSelect(RelativeFM<>& rfm, const std::string& base_name)
 {
-  double start = readTimer();
-  rfm.buildSelect();
-  double seconds = readTimer() - start;
-  std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+  if(!(rfm.loadSelect(base_name)))
+  {
+    double start = readTimer();
+    rfm.buildSelect();
+    double seconds = readTimer() - start;
+    std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+    rfm.writeSelect(base_name);
+  }
   printSize("Relative select", rfm.selectSize(), rfm.size());
   std::cout << std::endl;
 }
