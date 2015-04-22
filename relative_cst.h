@@ -173,6 +173,13 @@ public:
     return node_type(left.first, right.first - 1, left.second, right.second);
   }
 
+  size_type depth(const node_type& v) const
+  {
+    if(this->is_leaf(v)) { return this->size() - this->index.locate(v.sp) - 1; }
+    else if(v == this->root()) { return 0; }
+    else { return this->lcp.rmq(v.sp + 1, v.ep).second; }
+  }
+
 //------------------------------------------------------------------------------
 
   const_iterator begin() const
