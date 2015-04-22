@@ -459,13 +459,17 @@ public:
     std::string filename = base_name + RELATIVE_SELECT_EXTENSION;
     std::ifstream in(filename.c_str(), std::ios_base::binary);
     if(!in) { return false; }
+    this->loadSelect(in);
+    in.close();
+    return true;
+  }
 
+  void loadSelect(std::ifstream& in)
+  {
     this->sorted_lcs.load(in);
     this->complement_select.load(in, &(this->bwt_lcs.seq));
     this->ref_lcs_C.load(in);
     this->seq_lcs_C.load(in);
-    in.close();
-    return true;
   }
 
   void writeSelect(const std::string& base_name) const

@@ -25,8 +25,8 @@ using namespace relative;
 
 const uint64_t MILLION = 1000000;
 
-const uint64_t LF_QUERIES = MILLION;
-const uint64_t PSI_QUERIES = MILLION;
+const uint64_t LF_QUERIES = 10 * MILLION;
+const uint64_t PSI_QUERIES = 10 * MILLION;
 
 const uint64_t LCP_QUERIES = 100 * MILLION;
 const uint64_t RMQ_QUERIES = 100 * MILLION;
