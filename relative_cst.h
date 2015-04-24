@@ -1,7 +1,7 @@
 #ifndef _RELATIVE_FM_RELATIVE_CST_H
 #define _RELATIVE_FM_RELATIVE_CST_H
 
-#include <sdsl/cst_iterators.hpp>
+#include <sdsl/suffix_trees.hpp>
 
 #include "relative_fm.h"
 #include "relative_lcp.h"
@@ -33,6 +33,12 @@ struct rcst_node
     return (this->sp != node.sp || this->ep != node.ep);
   }
 };
+
+std::ostream&
+operator<<(std::ostream& stream, const rcst_node& node)
+{
+  return stream << range_type(node.sp, node.ep);
+}
 
 //------------------------------------------------------------------------------
 
@@ -75,6 +81,41 @@ public:
 
   const IndexType&   index;
   const RelativeLCP& lcp;
+
+//------------------------------------------------------------------------------
+
+  /*
+    This uses forward searching, which is slower than backward searching using index.find().
+  */
+  template<class Iter>
+  range_type find(Iter from, Iter to) const
+  {
+    node_type next = this->root();
+    size_type depth = 0, next_depth = 0;
+    size_type bwt_pos = this->size();
+
+    while(from != to)
+    {
+      char_type c = *from, comp = this->index.alpha.char2comp[*from]; ++from;
+      if(depth >= next_depth) // Next node reached, follow a new edge.
+      {
+        next = this->child(next, c, bwt_pos);
+        if(next == this->root()) { return range_type(1, 0); }
+        next_depth = this->depth(next);
+      }
+      else  // Continue in the edge.
+      {
+        bwt_pos = this->index.Psi(bwt_pos);
+        if(bwt_pos < this->index.alpha.C[comp] || bwt_pos >= this->index.alpha.C[comp + 1])
+        {
+          return range_type(1, 0);
+        }
+      }
+      depth++;
+    }
+
+    return range_type(next.sp, next.ep);
+  }
 
 //------------------------------------------------------------------------------
 
@@ -128,7 +169,7 @@ public:
     return node_type(v.ep + 1, right.first - 1, v.right_lcp, right.second);
   }
 
-  node_type child(const node_type& v, const char_type c) const
+  node_type child(const node_type& v, char_type c, size_type& bwt_pos) const
   {
     if(!hasChar(this->index.alpha, c)) { return this->root(); }
     c = this->index.alpha.char2comp[c];
@@ -139,7 +180,7 @@ public:
       size_type d = std::max(curr.left_lcp, curr.right_lcp);
       size_type text_pos = this->index.locate(curr.sp) + d;
       if(text_pos >= this->size()) { continue; }
-      size_type bwt_pos = this->index.inverse(text_pos);
+      bwt_pos = this->index.inverse(text_pos);
 
       while(this->index.alpha.C[comp + 1] <= bwt_pos) { comp++; }
       if(comp == c) { return curr; }
@@ -147,6 +188,12 @@ public:
     }
 
     return this->root();
+  }
+
+  inline node_type child(const node_type& v, char_type c) const
+  {
+    size_type bwt_pos;
+    return this->child(v, c, bwt_pos);
   }
 
   // i is 1-based; no sanity checking.

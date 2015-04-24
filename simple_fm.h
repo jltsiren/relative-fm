@@ -174,14 +174,15 @@ public:
     return this->bwt.select(i + 1 - this->alpha.C[comp], comp);
   }
 
-  template<class Iter> range_type find(Iter begin, Iter end) const
+  template<class Iter>
+  range_type find(Iter begin, Iter end) const
   {
     range_type res(0, this->size() - 1);
     while(begin != end)
     {
       --end;
       res = this->LF(res, *end);
-      if(length(res) == 0) { return range_type(1, 0); } // isEmpty() does not work with (0, -1).
+      if(isEmpty(res)) { return range_type(1, 0); }
     }
     return res;
   }

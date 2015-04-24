@@ -54,11 +54,11 @@ length(range_type range)
 }
 
 // An empty range is usually encoded as (x, y), where x > y.
-// Use length for checking the emptiness of ranges of type (0, (uint64_t)-1).
+// The function works now for (0, -1) as well.
 inline bool
 isEmpty(range_type range)
 {
-  return (range.first > range.second);
+  return (range.first + 1 > range.second + 1);
 }
 
 inline uint64_t

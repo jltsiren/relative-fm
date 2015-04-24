@@ -3,15 +3,17 @@
 
 #include <sdsl/rmq_support.hpp>
 
-#include "relative_fm.h"
-#include "relative_lcp.h"
+#include "relative_cst.h"
 
 using namespace relative;
 
 //------------------------------------------------------------------------------
 
-#define VERIFY_LF
-#define VERIFY_PSI
+// This reads patterns from file 'patterns'.
+#define VERIFY_FORWARD_SEARCH
+
+//#define VERIFY_LF
+//#define VERIFY_PSI
 
 //#define VERIFY_LCP
 //#define VERIFY_RMQ
@@ -34,6 +36,8 @@ const uint64_t RMQ_QUERY_LENGTH = 16;
 const uint64_t PSV_NSV_QUERIES = 100 * MILLION;
 
 //------------------------------------------------------------------------------
+
+void verifyForwardSearch(const SimpleFM<>& fm, const RelativeFM<>& rfm, const RelativeLCP& lcp);
 
 template<class Index>
 void verifyLF(const Index& index, const std::string& type);
@@ -97,6 +101,10 @@ main(int argc, char** argv)
     RelativeLCP rlcp(ref_lcp, seq_name);
     rlcp.reportSize(true);
 
+#ifdef VERIFY_FORWARD_SEARCH
+    verifyForwardSearch(seq_fm, rfm, rlcp);
+#endif
+
 #ifdef VERIFY_LF
     verifyLF(seq_fm, "LF (FM)");
     verifyLF(rfm, "LF (RFM)");
@@ -139,6 +147,54 @@ main(int argc, char** argv)
   std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
   std::cout << std::endl;
   return 0;
+}
+
+//------------------------------------------------------------------------------
+
+template<class Index>
+void
+findQueries(const Index& index, const std::string& type,
+  const std::vector<std::string>& patterns, std::vector<range_type>& results)
+{
+  double start = readTimer();
+  for(uint64_t i = 0; i < patterns.size(); i++)
+  {
+    results[i] = index.find(patterns[i].begin(), patterns[i].end());
+  }
+  double seconds = readTimer() - start;
+  printTime(type, patterns.size(), seconds);
+}
+
+void
+verifyForwardSearch(const SimpleFM<>& fm, const RelativeFM<>& rfm, const RelativeLCP& lcp)
+{
+  std::vector<std::string> patterns;
+  uint64_t total_length = readRows("patterns", patterns, true);
+  std::cout << "Read " << patterns.size() << " patterns of total length " << total_length << std::endl;
+
+  std::vector<range_type> fm_results(patterns.size());
+  findQueries(fm, "SimpleFM", patterns, fm_results);
+
+  std::vector<range_type> cst_results(patterns.size());
+  RelativeCST<> rcst(rfm, lcp);
+  findQueries(rcst, "Relative CST", patterns, cst_results);
+
+  {
+    bool ok = true;
+    for(uint64_t i = 0; i < patterns.size(); i++)
+    {
+      if(fm_results[i] != cst_results[i])
+      {
+        std::cerr << "verify: Query " << i << ", pattern " << patterns[i] << std::endl;
+        std::cerr << "  SimpleFM: " << fm_results[i] << std::endl;
+        std::cerr << "  Relative CST: " << cst_results[i] << std::endl;
+        ok = false; break;
+      }
+    }
+    if(ok) { std::cout << "Results successfully verified" << std::endl; }
+  }
+
+  std::cout << std::endl;
 }
 
 //------------------------------------------------------------------------------
