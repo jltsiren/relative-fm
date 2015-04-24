@@ -102,6 +102,7 @@ main(int argc, char** argv)
     rlcp.reportSize(true);
 
 #ifdef VERIFY_FORWARD_SEARCH
+    buildSelect(rfm, seq_name);
     verifyForwardSearch(seq_fm, rfm, rlcp);
 #endif
 
@@ -304,6 +305,7 @@ verifyPsi(const Index& index, const std::string& type)
 void
 buildSelect(RelativeFM<>& rfm, const std::string& base_name)
 {
+  if(rfm.fastSelect()) { return; }
   if(!(rfm.loadSelect(base_name)))
   {
     double start = readTimer();

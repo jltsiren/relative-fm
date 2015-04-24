@@ -64,7 +64,7 @@ main(int argc, char** argv)
     std::cerr << "  1    Load SimpleFMs in ropebwt format (default: off)" << std::endl;
     std::cerr << "  2    Load SimpleFMs in ropebwt2 format (default: off)" << std::endl;
     std::cerr << "  L    Execute locate() queries (default: off)" << std::endl;
-    std::cerr << "  V    Verify the results of locate() using extract() (default:off)" << std::endl;
+    std::cerr << "  V    Verify the results of locate() using extract() (default: off)" << std::endl;
     // FIXME Add an option to write the built index?
     std::cerr << std::endl;
     std::cerr << "Sequence representations:" << std::endl;
