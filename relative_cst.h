@@ -122,7 +122,7 @@ public:
   /*
     SDSL-compatible CST operations. Not the full set yet.
 
-    Tree operations from Fischer2009a pages 7-8 with fixes/optimizations from Canovas2010 pages 8-9.
+    Tree operations from Fischer2009a pages 7-8 with fixes/optimizations from Abeliuk2013 pages 14-15.
   */
 
   inline node_type root() const { return node_type(0, this->size() - 1, 0, 0); }
