@@ -1,4 +1,9 @@
 *.o
+*.aux
+*.bak
+*.bbl
+*.blg
+*.log
 align_bwts
 build_bwt
 lcs
