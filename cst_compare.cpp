@@ -36,11 +36,11 @@ using namespace relative;
 template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
-template<class CST>
-void maximalMatches(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent = 18);
+void
+buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
-template<class RFM>
-void verifyPsi(RFM& rfm);
+template<class CST>
+void matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent = 18);
 
 //------------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ main(int argc, char** argv)
     return 1;
   }
 
-  std::cout << "Finding maximal matches with a CST" << std::endl;
+  std::cout << "Finding the matching statistics with a CST" << std::endl;
   std::cout << std::endl;
 
   std::string ref_name = argv[1];
@@ -88,11 +88,13 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   {
+    std::string name = "Relative CST";
     RelativeFM<> rfm(ref_fm, target_name);
+    buildSelect(rfm, target_name);
     RelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
     printSize("Relative CST", rcst.reportSize(), rcst.size());
-    verifyPsi(rfm);
+    matchingStatistics(rcst, seq, name);
     std::cout << std::endl;
   }
 
@@ -162,28 +164,73 @@ buildCST(CST& cst, const std::string& base_name, const std::string& type)
   printSize(type, size_in_bytes(cst), cst.size());
 }
 
+void
+buildSelect(RelativeFM<>& rfm, const std::string& base_name)
+{
+  if(rfm.fastSelect()) { return; }
+  if(!(rfm.loadSelect(base_name)))
+  {
+    double start = readTimer();
+    rfm.buildSelect();
+    double seconds = readTimer() - start;
+    std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+    rfm.writeSelect(base_name);
+  }
+  printSize("Relative select", rfm.selectSize(), rfm.size());
+  std::cout << std::endl;
+}
+
 //------------------------------------------------------------------------------
 
-// FIXME reimplement
 template<class CST>
 void
-maximalMatches(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent)
+maximalMatch(const CST& cst, const int_vector<8>& seq,
+  typename CST::node_type& prev, typename CST::node_type& next,
+  uint64_t start_offset, typename CST::size_type& depth)
+{
+  typename CST::node_type old_next = next;
+  typename CST::size_type next_depth = cst.depth(next);
+  typename CST::size_type bwt_pos = cst.index.Psi(next.sp, depth);
+
+  while(start_offset + depth < seq.size() &&
+    cst.Psi(next, next_depth, depth, seq[start_offset + depth], bwt_pos))
+  {
+    depth++;
+    if(next != old_next) { prev = old_next; }
+  }
+}
+
+template<class CST>
+void
+matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent)
 {
   double start = readTimer();
-  uint64_t depth = 0, total_length = 0;
-  typename CST::size_type char_pos = 0;
-  typename CST::node_type curr = cst.root(), old;
-  for(uint64_t i = 0; i < seq.size(); i++)
+  typename CST::node_type prev = cst.root(), next = cst.root();
+  typename CST::size_type depth = 0;
+
+  maximalMatch(cst, seq, prev, next, 0, depth);
+  uint64_t total_length = depth;
+  for(uint64_t i = 1; i < seq.size(); i++)
   {
-    old = curr;
-    while(forward_search(cst, curr, depth, seq[i], char_pos) == 0 && depth > 0)
+    if(depth == 0)
     {
-      std::cout << "Match at depth " << depth << std::endl;
-      total_length += depth; depth--;
-      // FIXME how to update char_pos after following suffix link?
-      curr = old = cst.sl(old); char_pos = get_char_pos(curr.i, depth, cst);
+      maximalMatch(cst, seq, prev, next, i, depth);
     }
-    if(curr != cst.root()) { depth++; }
+    else
+    {
+      next = cst.sl(prev); depth--;
+      typename CST::size_type next_depth = cst.depth(next);
+      while(next_depth < depth)
+      {
+        typename CST::size_type bwt_pos;
+        next = cst.child(next, seq[i + next_depth], bwt_pos);
+        next_depth = cst.depth(next);
+        if(next_depth <= depth) { prev = next; }
+      }
+      maximalMatch(cst, seq, prev, next, i, depth);
+    }
+    total_length += depth;
+    std::cout << range_type(i, depth) << std::endl;
   }
   double seconds = readTimer() - start;
 
@@ -191,39 +238,6 @@ maximalMatches(const CST& cst, const int_vector<8>& seq, const std::string& name
   if(name.length() + 1 < indent) { padding = std::string(indent - 1 - name.length(), ' '); }
   std::cout << name << ":" << padding << "Average maximal match: " << (total_length / (double)(cst.size()))
                     << " (" << seconds << " seconds)" << std::endl;
-}
-
-//------------------------------------------------------------------------------
-
-template<class RFM>
-void
-verifyPsi(RFM& rfm)
-{
-  {
-    double start = readTimer();
-    for(uint64_t i = 1; i < rfm.size(); i++)
-    {
-      uint64_t next_pos = rfm.Psi(i);
-      uint64_t prev_pos = rfm.LF(next_pos).first;
-      if(prev_pos != i)
-      {
-        std::cerr << "Psi(" << i << ") = " << next_pos << ", LF(Psi(" << i << ")) = " << prev_pos << std::endl;
-        break;
-      }
-    }
-    double seconds = readTimer() - start;
-    std::cout << "Psi verified in " << seconds << " seconds" << std::endl;
-  }
-
-  {
-    double start = readTimer();
-    rfm.buildSelect();
-    double seconds = readTimer() - start;
-    uint64_t select_size = size_in_bytes(rfm.sorted_lcs) + size_in_bytes(rfm.ref_lcs_C)
-      + size_in_bytes(rfm.seq_lcs_C);
-    std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
-    printSize("Relative select", select_size, rfm.size());
-  }
 }
 
 //------------------------------------------------------------------------------

@@ -32,8 +32,6 @@
 
 #include "support.h"
 
-using namespace sdsl;
-
 namespace relative
 {
 

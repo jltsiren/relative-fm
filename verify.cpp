@@ -34,10 +34,10 @@ using namespace relative;
 //------------------------------------------------------------------------------
 
 // This reads patterns from file 'patterns'.
-#define VERIFY_FORWARD_SEARCH
+//#define VERIFY_FORWARD_SEARCH
 
-//#define VERIFY_LF
-//#define VERIFY_PSI
+#define VERIFY_LF
+#define VERIFY_PSI
 
 //#define VERIFY_LCP
 //#define VERIFY_RMQ

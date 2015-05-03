@@ -253,21 +253,6 @@ public:
 
 //------------------------------------------------------------------------------
 
-  template<class Iter> range_type find(Iter begin, Iter end) const
-  {
-    range_type res(0, this->size() - 1);
-    while(begin != end)
-    {
-      --end;
-      if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
-      uint64_t begin = cumulative(this->alpha, *end);
-      res.first = begin + this->rank(res.first, *end);
-      res.second = begin + this->rank(res.second + 1, *end) - 1;
-      if(length(res) == 0) { return range_type(1, 0); }
-    }
-    return res;
-  }
-
   inline range_type LF(uint64_t i) const
   {
     uint64_t lcs_bits = this->bwt_lcs.seq_rank(i + 1);  // Up to position i in seq.
@@ -294,6 +279,37 @@ public:
     if(i >= this->size()) { return this->size(); }
     uint64_t c = relative::findChar(this->alpha, i);
     return this->select(i + 1 - cumulative(this->alpha, c), c);
+  }
+
+  /*
+    Iterate Psi k times; returns size() if SA[i]+k >= size().
+    Use force = true if the index does not support locate() and extract().
+    NOTE: The divisor of the threshold has been selected by experimenting with different values.
+  */
+  uint64_t Psi(uint64_t i, uint64_t k, bool force = false) const
+  {
+    if(force) { return relative::Psi(*this, i, k, ~(uint64_t)0); }
+    else
+    {
+      return relative::Psi(*this, i, k, (this->reference.sa_sample_rate + this->reference.isa_sample_rate) / 3);
+    }
+  }
+
+//------------------------------------------------------------------------------
+
+  template<class Iter> range_type find(Iter begin, Iter end) const
+  {
+    range_type res(0, this->size() - 1);
+    while(begin != end)
+    {
+      --end;
+      if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
+      uint64_t begin = cumulative(this->alpha, *end);
+      res.first = begin + this->rank(res.first, *end);
+      res.second = begin + this->rank(res.second + 1, *end) - 1;
+      if(length(res) == 0) { return range_type(1, 0); }
+    }
+    return res;
   }
 
   bool supportsLocate(bool print = false) const
@@ -378,6 +394,8 @@ public:
   // Returns ISA[i]. Call supportsExtract() first.
   inline uint64_t inverse(uint64_t i) const
   {
+    if(i >= this->size()) { return this->size(); }
+
     uint64_t bwt_pos = 0, text_pos = this->size() - 1;  // The end of seq.
     if(this->isa_sample_rate > 0) // Is there an ISA sample before the end?
     {
@@ -455,8 +473,12 @@ public:
     if(this->fastSelect()) { this->clearSelect(); }
 
     bit_vector ref_lcs, seq_lcs;
-    getSortedLCS(this->reference, this->bwt_lcs.ref, ref_lcs, this->ref_lcs_C);
-    getSortedLCS(*this, this->bwt_lcs.seq, seq_lcs, this->seq_lcs_C);
+    #pragma omp parallel for schedule(static)
+    for(uint64_t i = 0; i < 2; i++)
+    {
+      if(i == 0) { getSortedLCS(this->reference, this->bwt_lcs.ref, ref_lcs, this->ref_lcs_C); }
+      else       { getSortedLCS(*this, this->bwt_lcs.seq, seq_lcs, this->seq_lcs_C); }
+    }
 
     util::assign(this->sorted_lcs, LCS(ref_lcs, seq_lcs, this->bwt_lcs.size()));
     util::init_support(this->complement_select, &(this->bwt_lcs.seq));

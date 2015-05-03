@@ -41,10 +41,10 @@
 */
 #include <omp.h>
 
-using namespace sdsl;
-
 namespace relative
 {
+
+using namespace sdsl;
 
 //------------------------------------------------------------------------------
 
@@ -274,7 +274,7 @@ template<class Index>
 uint64_t
 locate(const Index& index, uint64_t i)
 {
-  if(i >= index.size()) { return 0; }
+  if(i >= index.size()) { return index.size(); }
 
   uint64_t steps = 0;
   while(i % index.sa_sample_rate != 0)
@@ -311,6 +311,22 @@ extract(const Index& index, range_type range)
   result[0] = index.alpha.comp2char[c];
 
   return result;
+}
+
+/*
+  Iterates index.Psi() k times. Uses inverse() and locate() if 2 * k >= threshold.
+  Return index.size() if i >= index.size() or SA[i]+k >= index.size().
+*/
+template<class Index>
+uint64_t
+Psi(const Index& index, uint64_t i, uint64_t k, uint64_t threshold)
+{
+  if(2 * k >= threshold) { return index.inverse(index.locate(i) + k); }
+  else
+  {
+    for(uint64_t j = 0; j < k; j++) { i = index.Psi(i); }
+    return i;
+  }
 }
 
 //------------------------------------------------------------------------------

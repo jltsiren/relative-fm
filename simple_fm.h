@@ -178,7 +178,6 @@ public:
 
 //------------------------------------------------------------------------------
 
-  // Use length(res) == 0 to check whether the range is empty.
   inline range_type LF(range_type range, uint8_t c) const
   {
     if(!hasChar(this->alpha, c)) { return range_type(1, 0); }
@@ -198,6 +197,18 @@ public:
     uint64_t comp = relative::findComp(this->alpha, i);
     return this->bwt.select(i + 1 - this->alpha.C[comp], comp);
   }
+
+  /*
+    Iterate Psi k times; returns size() if SA[i]+k >= size().
+    Use force = true if the index does not support locate() and extract().
+  */
+  uint64_t Psi(uint64_t i, uint64_t k, bool force = false) const
+  {
+    if(force) { return relative::Psi(*this, i, k, ~(uint64_t)0); }
+    else      { return relative::Psi(*this, i, k, this->sample_rate + this->isa_sample_rate); }
+  }
+
+//------------------------------------------------------------------------------
 
   template<class Iter>
   range_type find(Iter begin, Iter end) const
@@ -293,6 +304,8 @@ public:
   // Returns ISA[i]. Call supportsExtract() first.
   inline uint64_t inverse(uint64_t i) const
   {
+    if(i >= this->size()) { return this->size(); }
+
     uint64_t bwt_pos = 0, text_pos =
       ((i + this->isa_sample_rate - 1) / this->isa_sample_rate) * this->isa_sample_rate;
     if(text_pos >= this->size()) { text_pos = this->size() - 1; }

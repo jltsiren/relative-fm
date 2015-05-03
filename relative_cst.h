@@ -120,25 +120,36 @@ public:
 
     while(from != to)
     {
-      char_type c = *from, comp = this->index.alpha.char2comp[*from]; ++from;
-      if(depth >= next_depth) // Next node reached, follow a new edge.
-      {
-        next = this->child(next, c, bwt_pos);
-        if(next == this->root()) { return range_type(1, 0); }
-        next_depth = this->depth(next);
-      }
-      else  // Continue in the edge.
-      {
-        bwt_pos = this->index.Psi(bwt_pos);
-        if(bwt_pos < this->index.alpha.C[comp] || bwt_pos >= this->index.alpha.C[comp + 1])
-        {
-          return range_type(1, 0);
-        }
-      }
-      depth++;
+      if(!(this->Psi(next, next_depth, depth, *from, bwt_pos))) { return range_type(1, 0); }
+      ++from; depth++;
     }
 
     return range_type(next.sp, next.ep);
+  }
+
+  /*
+    One step of forward searching. Returns false if not found. To start from the root, set
+    next = root(), next_depth = 0, and bwt_pos = size().
+  */
+  bool
+  Psi(node_type& next, size_type& next_depth, size_type depth, char_type c, size_type& bwt_pos) const
+  {
+    char_type comp = this->index.alpha.char2comp[c];
+    if(depth >= next_depth) // Next node reached, follow a new edge.
+    {
+      next = this->child(next, c, bwt_pos);
+      if(next == this->root()) { return false; }
+      next_depth = this->depth(next);
+    }
+    else  // Continue in the edge.
+    {
+      bwt_pos = this->index.Psi(bwt_pos);
+      if(bwt_pos < this->index.alpha.C[comp] || bwt_pos >= this->index.alpha.C[comp + 1])
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
 //------------------------------------------------------------------------------
@@ -202,9 +213,8 @@ public:
     for(node_type curr = this->first_child(v); curr != this->root(); curr = this->sibling(curr))
     {
       size_type d = std::max(curr.left_lcp, curr.right_lcp);
-      size_type text_pos = this->index.locate(curr.sp) + d;
-      if(text_pos >= this->size()) { continue; }
-      bwt_pos = this->index.inverse(text_pos);
+      bwt_pos = this->index.Psi(curr.sp, d);
+      if(bwt_pos >= this->size()) { continue; }
 
       while(this->index.alpha.C[comp + 1] <= bwt_pos) { comp++; }
       if(comp == c) { return curr; }
@@ -221,7 +231,7 @@ public:
   }
 
   // i is 1-based; no sanity checking.
-  node_type select_leaf(size_type i)
+  node_type select_leaf(size_type i) const
   {
     i--;
     return node_type(i, i, this->lcp[i], this->lcp[i + 1]);
@@ -233,12 +243,12 @@ public:
     if(v == this->root()) { return this->root(); }
     if(this->is_leaf(v))
     {
-      if(v.sp < this->index.sequence()) { return this->root(); }  // v was an empty suffix.
+      if(v.sp < this->index.sequences()) { return this->root(); }  // v was an empty suffix.
       else { return this->select_leaf(this->index.Psi(v.sp) + 1); }
     }
 
     size_type sp = this->index.Psi(v.sp), ep = this->index.Psi(v.ep);
-    size_type k = this->lcp.rmq(sp + 1, ep);
+    size_type k = this->lcp.rmq(sp + 1, ep).first;
     range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
 
     return node_type(left.first, right.first - 1, left.second, right.second);
