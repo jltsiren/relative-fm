@@ -137,9 +137,9 @@ public:
     char_type comp = this->index.alpha.char2comp[c];
     if(depth >= next_depth) // Next node reached, follow a new edge.
     {
-      next = this->child(next, c, bwt_pos);
-      if(next == this->root()) { return false; }
-      next_depth = this->depth(next);
+      node_type temp = this->child(next, c, bwt_pos);
+      if(temp == this->root()) { return false; }
+      next = temp; next_depth = this->depth(next);
     }
     else  // Continue in the edge.
     {

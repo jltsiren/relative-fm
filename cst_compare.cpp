@@ -31,8 +31,6 @@ using namespace relative;
 
 //------------------------------------------------------------------------------
 
-//#define USE_HASH
-
 template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
@@ -186,17 +184,16 @@ template<class CST>
 void
 maximalMatch(const CST& cst, const int_vector<8>& seq,
   typename CST::node_type& prev, typename CST::node_type& next,
-  uint64_t start_offset, typename CST::size_type& depth)
+  uint64_t start_offset, typename CST::size_type& depth,
+  typename CST::size_type& next_depth)
 {
-  typename CST::node_type old_next = next;
-  typename CST::size_type next_depth = cst.depth(next);
-  typename CST::size_type bwt_pos = cst.index.Psi(next.sp, depth);
+  typename CST::size_type bwt_pos = (depth >= next_depth ? cst.size() : cst.index.Psi(next.sp, depth - 1));
 
   while(start_offset + depth < seq.size() &&
     cst.Psi(next, next_depth, depth, seq[start_offset + depth], bwt_pos))
   {
     depth++;
-    if(next != old_next) { prev = old_next; }
+    if(depth >= next_depth) { prev = next; }
   }
 }
 
@@ -204,22 +201,24 @@ template<class CST>
 void
 matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent)
 {
+  // prev is the last node we have fully matched.
+  // If next != prev, we are in the edge from prev to next.
   double start = readTimer();
   typename CST::node_type prev = cst.root(), next = cst.root();
-  typename CST::size_type depth = 0;
+  typename CST::size_type depth = 0, next_depth = 0;
 
-  maximalMatch(cst, seq, prev, next, 0, depth);
+  maximalMatch(cst, seq, prev, next, 0, depth, next_depth);
   uint64_t total_length = depth;
   for(uint64_t i = 1; i < seq.size(); i++)
   {
     if(depth == 0)
     {
-      maximalMatch(cst, seq, prev, next, i, depth);
+      maximalMatch(cst, seq, prev, next, i, depth, next_depth);
     }
     else
     {
-      next = cst.sl(prev); depth--;
-      typename CST::size_type next_depth = cst.depth(next);
+      next = prev = cst.sl(prev); depth--;
+      next_depth = cst.depth(prev);
       while(next_depth < depth)
       {
         typename CST::size_type bwt_pos;
@@ -227,10 +226,9 @@ matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& 
         next_depth = cst.depth(next);
         if(next_depth <= depth) { prev = next; }
       }
-      maximalMatch(cst, seq, prev, next, i, depth);
+      maximalMatch(cst, seq, prev, next, i, depth, next_depth);
     }
     total_length += depth;
-    std::cout << range_type(i, depth) << std::endl;
   }
   double seconds = readTimer() - start;
 
