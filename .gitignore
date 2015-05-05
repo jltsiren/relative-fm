@@ -4,6 +4,7 @@
 *.bbl
 *.blg
 *.log
+
 align_bwts
 build_bwt
 lcs
@@ -16,4 +17,8 @@ verify
 mutate
 cst_traverse
 cst_compare
+
+col2vector
+fasta2seq
+
 .DS_Store
