@@ -31,14 +31,17 @@ using namespace relative;
 
 //------------------------------------------------------------------------------
 
+//#define VERIFY_RESULTS
+
 template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
-void
-buildSelect(RelativeFM<>& fm, const std::string& base_name);
+void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
 template<class CST>
-void matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent = 18);
+void matchingStatistics(const CST& cst, const int_vector<8>& seq,
+  std::vector<range_type>& ranges, std::vector<uint64_t>& depths,
+  const std::string& name, uint64_t indent = 18);
 
 //------------------------------------------------------------------------------
 
@@ -71,7 +74,6 @@ main(int argc, char** argv)
   std::string target_name = argv[2];
   std::cout << "Target: " << target_name << std::endl;
   std::string seq_name = argv[3];
-  std::cout << "Sequence: " << seq_name << std::endl;
   int_vector<8> seq;
   {
     std::ifstream in(seq_name.c_str(), std::ios_base::binary);
@@ -83,50 +85,60 @@ main(int argc, char** argv)
     uint64_t size = util::file_size(seq_name); seq.resize(size);
     in.read((char*)(seq.data()), size); in.close();
   }
+  std::cout << "Sequence: " << seq_name << " (" << seq.size() << " bytes)" << std::endl;
   std::cout << std::endl;
 
+  std::vector<range_type> rcst_ranges;
+  std::vector<uint64_t>   rcst_depths;
   {
     std::string name = "Relative CST";
     RelativeFM<> rfm(ref_fm, target_name);
     buildSelect(rfm, target_name);
     RelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
-    printSize("Relative CST", rcst.reportSize(), rcst.size());
-    matchingStatistics(rcst, seq, name);
+    printSize(name, rcst.reportSize(), rcst.size());
+    matchingStatistics(rcst, seq, rcst_ranges, rcst_depths, name);
     std::cout << std::endl;
   }
 
-/*    {
-      std::string name = "cst_sct3_dac";
-      cst_sct3<> cst;
-      buildCST(cst, seq_name, name);
-#ifdef USE_HASH
-      traverseHash(cst, name);
-#else
-      traverse(cst, name);
-#endif
-      std::cout << std::endl;
-    }
+  std::vector<range_type> cst_ranges;
+  std::vector<uint64_t>   cst_depths;
+  {
+    std::string name = "cst_sct3_dac";
+    cst_sct3<> cst;
+    buildCST(cst, target_name, name);
+    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    std::cout << std::endl;
+  }
 
-    {
-      std::string name = "cst_sct3_plcp";
-      cst_sct3<csa_wt<>, lcp_support_sada<>> cst;
-      buildCST(cst, seq_name, name);
-#ifdef USE_HASH
-      traverseHash(cst, name);
-#else
-      traverse(cst, name);
-#endif
-      std::cout << std::endl;
-    }
+  {
+    std::string name = "cst_sct3_plcp";
+    cst_sct3<csa_wt<>, lcp_support_sada<>> cst;
+    buildCST(cst, target_name, name);
+    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    std::cout << std::endl;
+  }
 
   {
     std::string name = "cst_sada";
     cst_sada<> cst;
     buildCST(cst, target_name, name);
-    maximalMatches(cst, seq, name);
+    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
-  }*/
+  }
+
+#ifdef VERIFY_RESULTS
+  for(uint64_t i = 0; i < seq.size(); i++)
+  {
+    if(rcst_ranges[i] != cst_ranges[i] || rcst_depths[i] != cst_depths[i])
+    {
+      std::cerr << "cst_compare: Matching statistics for " << seq_name << "[" << i << "]:" << std::endl;
+      std::cerr << "  Relative CST: range " << rcst_ranges[i] << ", depth " << rcst_depths[i] << std::endl;
+      std::cerr << "  CST:          range " << cst_ranges[i] << ", depth " << cst_depths[i] << std::endl;
+      break;
+    }
+  }
+#endif
 
   std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
   std::cout << std::endl;
@@ -172,10 +184,9 @@ buildSelect(RelativeFM<>& rfm, const std::string& base_name)
     rfm.buildSelect();
     double seconds = readTimer() - start;
     std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+    std::cout << std::endl;
     rfm.writeSelect(base_name);
   }
-  printSize("Relative select", rfm.selectSize(), rfm.size());
-  std::cout << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -187,10 +198,42 @@ maximalMatch(const CST& cst, const int_vector<8>& seq,
   uint64_t start_offset, typename CST::size_type& depth,
   typename CST::size_type& next_depth)
 {
-  typename CST::size_type bwt_pos = (depth >= next_depth ? cst.size() : cst.index.Psi(next.sp, depth - 1));
+  typename CST::size_type bwt_pos =
+    (depth >= next_depth ? 0 : get_char_pos(cst.lb(next), depth - 1, cst.csa));
+
+  while(start_offset + depth < seq.size())
+  {
+    auto comp = cst.csa.char2comp[seq[start_offset + depth]];
+    if(comp == 0 && seq[start_offset + depth] != 0) { break; }
+    if(depth >= next_depth) // Next node reached, follow a new edge.
+    {
+      typename CST::node_type temp = cst.child(next, seq[start_offset + depth], bwt_pos);
+      if(temp == cst.root()) { break; }
+      next = temp; next_depth = cst.depth(next);
+    }
+    else  // Continue in the edge.
+    {
+      bwt_pos = cst.csa.psi[bwt_pos];
+      if(bwt_pos < cst.csa.C[comp] || bwt_pos >= cst.csa.C[comp + 1]) { break; }
+    }
+
+    depth++;
+    if(depth >= next_depth) { prev = next; }
+  }
+}
+
+template<>
+void
+maximalMatch(const RelativeCST<>& cst, const int_vector<8>& seq,
+  RelativeCST<>::node_type& prev, RelativeCST<>::node_type& next,
+  uint64_t start_offset, RelativeCST<>::size_type& depth,
+  RelativeCST<>::size_type& next_depth)
+{
+  RelativeCST<>::size_type bwt_pos =
+    (depth >= next_depth ? cst.size() : cst.index.Psi(cst.lb(next), depth - 1));
 
   while(start_offset + depth < seq.size() &&
-    cst.Psi(next, next_depth, depth, seq[start_offset + depth], bwt_pos))
+    cst.forward_search(next, next_depth, depth, seq[start_offset + depth], bwt_pos))
   {
     depth++;
     if(depth >= next_depth) { prev = next; }
@@ -199,15 +242,20 @@ maximalMatch(const CST& cst, const int_vector<8>& seq,
 
 template<class CST>
 void
-matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& name, uint64_t indent)
+matchingStatistics(const CST& cst, const int_vector<8>& seq,
+  std::vector<range_type>& ranges, std::vector<uint64_t>& depths,
+  const std::string& name, uint64_t indent)
 {
+  util::clear(ranges); util::clear(depths);
+
   // prev is the last node we have fully matched.
   // If next != prev, we are in the edge from prev to next.
   double start = readTimer();
   typename CST::node_type prev = cst.root(), next = cst.root();
   typename CST::size_type depth = 0, next_depth = 0;
-
   maximalMatch(cst, seq, prev, next, 0, depth, next_depth);
+  ranges.push_back(range_type(cst.lb(next), cst.rb(next)));
+  depths.push_back(depth);
   uint64_t total_length = depth;
   for(uint64_t i = 1; i < seq.size(); i++)
   {
@@ -228,6 +276,8 @@ matchingStatistics(const CST& cst, const int_vector<8>& seq, const std::string& 
       }
       maximalMatch(cst, seq, prev, next, i, depth, next_depth);
     }
+    ranges.push_back(range_type(cst.lb(next), cst.rb(next)));
+    depths.push_back(depth);
     total_length += depth;
   }
   double seconds = readTimer() - start;

@@ -120,7 +120,7 @@ public:
 
     while(from != to)
     {
-      if(!(this->Psi(next, next_depth, depth, *from, bwt_pos))) { return range_type(1, 0); }
+      if(!(this->forward_search(next, next_depth, depth, *from, bwt_pos))) { return range_type(1, 0); }
       ++from; depth++;
     }
 
@@ -132,7 +132,7 @@ public:
     next = root(), next_depth = 0, and bwt_pos = size().
   */
   bool
-  Psi(node_type& next, size_type& next_depth, size_type depth, char_type c, size_type& bwt_pos) const
+  forward_search(node_type& next, size_type& next_depth, size_type depth, char_type c, size_type& bwt_pos) const
   {
     char_type comp = this->index.alpha.char2comp[c];
     if(depth >= next_depth) // Next node reached, follow a new edge.
@@ -260,6 +260,9 @@ public:
     else if(v == this->root()) { return 0; }
     else { return this->lcp.rmq(v.sp + 1, v.ep).second; }
   }
+
+  inline size_type lb(const node_type& v) const { return v.sp; }
+  inline size_type rb(const node_type& v) const { return v.ep; }
 
 //------------------------------------------------------------------------------
 
