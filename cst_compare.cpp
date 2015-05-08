@@ -138,6 +138,8 @@ main(int argc, char** argv)
       break;
     }
   }
+  std::cout << "Matching statistics verified." << std::endl;
+  std::cout << std::endl;
 #endif
 
   std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
