@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#include <unistd.h>
+
 
 uint64_t fileSize(std::ifstream& file);
 
@@ -15,13 +17,26 @@ main(int argc, char** argv)
 {
   if(argc < 2)
   {
-    std::cerr << "Usage: fasta2seq base_name" << std::endl;
+    std::cerr << "Usage: fasta2seq [-n] base_name" << std::endl;
+    std::cerr << "  -n  Truncate runs of Ns into single Ns" << std::endl;
     return 1;
   }
 
-  std::string base_name = argv[1];
+  bool truncate_Ns = false;
+  int c = 0;
+  while((c = getopt(argc, argv, "n")) != -1)
+  {
+    if(c == 'n') { truncate_Ns = true; }
+    else { return 2; }
+  }
+
+  std::string base_name = argv[optind];
   std::string fasta_name = base_name + ".fa";
   std::cout << "Extracting sequences from FASTA file " << fasta_name << std::endl;
+  if(truncate_Ns)
+  {
+    std::cout << "Truncating runs of Ns" << std::endl;
+  }
 
   std::ifstream fasta_file(fasta_name.c_str(), std::ios_base::binary);
   if(!fasta_file)
@@ -46,7 +61,7 @@ main(int argc, char** argv)
   char* write_buffer = new char[1048576];
   uint64_t sequences = 0, size = 0;
   std::vector<uint64_t> counts(256, 0);
-  bool header_line = false;
+  bool header_line = false, in_run = false;
   for(uint64_t i = 0; i < bytes; i++)
   {
     if(header_line)
@@ -57,6 +72,15 @@ main(int argc, char** argv)
     if(buffer[i] == '>') { header_line = true; sequences++; continue; }
     if(buffer[i] == '\n') { continue; }
     unsigned char temp = toupper(buffer[i]);
+    if(truncate_Ns)
+    {
+      if(temp == 'N')
+      {
+        if(in_run) { continue; }
+        in_run = true;
+      }
+      else { in_run = false; }
+    }
     counts[temp]++;
     write_buffer[size % MEGABYTE] = temp;
     size++;
