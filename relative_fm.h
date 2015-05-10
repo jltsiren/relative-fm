@@ -288,11 +288,13 @@ public:
   */
   uint64_t Psi(uint64_t i, uint64_t k, bool force = false) const
   {
-    if(force) { return relative::Psi(*this, i, k, ~(uint64_t)0); }
-    else
+    uint64_t threshold = ~(uint64_t)0;
+    if(!force)
     {
-      return relative::Psi(*this, i, k, (this->reference.sa_sample_rate + this->reference.isa_sample_rate) / 3);
+      threshold = this->reference.sa_sample_rate + this->reference.isa_sample_rate;
+      threshold /= (this->fastSelect() ? 3 : 20);
     }
+    return relative::Psi(*this, i, k, threshold);
   }
 
 //------------------------------------------------------------------------------

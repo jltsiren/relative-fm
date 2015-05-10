@@ -204,8 +204,8 @@ public:
   */
   uint64_t Psi(uint64_t i, uint64_t k, bool force = false) const
   {
-    if(force) { return relative::Psi(*this, i, k, ~(uint64_t)0); }
-    else      { return relative::Psi(*this, i, k, this->sample_rate + this->isa_sample_rate); }
+    uint64_t threshold = (force ? ~(uint64_t)0 : this->sample_rate + this->isa_sample_rate);
+    return relative::Psi(*this, i, k, threshold);
   }
 
 //------------------------------------------------------------------------------

@@ -91,11 +91,16 @@ main(int argc, char** argv)
   std::vector<range_type> rcst_ranges;
   std::vector<uint64_t>   rcst_depths;
   {
-    std::string name = "Relative CST";
+    std::string name = "Relative (slow)";
     RelativeFM<> rfm(ref_fm, target_name);
-    buildSelect(rfm, target_name);
     RelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
+    printSize(name, rcst.reportSize(), rcst.size());
+    matchingStatistics(rcst, seq, rcst_ranges, rcst_depths, name);
+    std::cout << std::endl;
+
+    name = "Relative (fast)";
+    buildSelect(rfm, target_name);
     printSize(name, rcst.reportSize(), rcst.size());
     matchingStatistics(rcst, seq, rcst_ranges, rcst_depths, name);
     std::cout << std::endl;
