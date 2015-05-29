@@ -153,6 +153,7 @@ Jouni Sir\'en\inst{3} %\fnmsep
 \maketitle
 
 \begin{abstract}
+\iffalse
 This work investigates the use of mutual information between data structures for similar
 datasets to represent the structures in less space. If two data structures are similar to each
 other, one of them can probably be represented by its differences to the other, while still
@@ -169,10 +170,12 @@ Our work clearly has links to persistent data structures and can be thought of a
 special case where only the initial state and the final state are preserved, the final
 state being the net result of potentially many individual modifications, all of which would
 be represented by a persistent data structure.
+\fi
 \end{abstract}
 
 \section{Introduction}
 
+\iffalse
 The main topic of the paper will be the relative CST, but we also have the RLZ bitvector and the relative FM-index for read collections. The RLZ bitvector is a nice idea that works well in practice, if we can just find applications for it. Sorting suffixes in lexicographic order amplifies the differences between the sequences, so it's probably going to be something unrelated to suffix trees and suffix arrays.
 
 Relative data compression is a well-established topic. Version control systems store
@@ -198,11 +201,14 @@ that preserves only the initial and the final state, with more emphasis on space
 Also, while research on persistent data structures concentrates on structures that can be
 dynamically updated, my emphasis is on static data structures that are smaller and faster
 to use.
+\fi
 
 \begin{itemize}
 \item motivation for indexing, suffix trees
+\item CSAs, CSTs
 \item repetitive data
-\item related work
+\item relative data structures
+\item this paper: relative CST
 \end{itemize}
 
 
@@ -339,7 +345,7 @@ To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the 
 \section{Relative compressed suffix tree}
 
 \begin{itemize}
-\item CST operations
+\item overview
 \item RLZ compression of the DLCP array
 \item supporting RMQ/PSV/NSV (Abeliuk2013)
 \end{itemize}
