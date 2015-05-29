@@ -4,6 +4,7 @@
 *.bbl
 *.blg
 *.log
+*.pdf
 
 align_bwts
 build_bwt
