@@ -243,7 +243,7 @@ $$
 \mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
 $$
 
-We support \locate{} queries by \emph{sampling} some suffix array pointers. If we want to determine $\mSA[i]$ that has not been sampled, we can compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer found by iterating \LF{} $k$ times, starting from $i$. The samples can be chosen in \emph{suffix order}, sampling $\mSA[i]$ at regular intervals, or in \emph{text order}, sampling $T[i]$ at regular intervals and marking the sampled \SA{} positions in a bitvector. Suffix order sampling requires less space, often resulting in better time/space trade-offs, while text order sampling guarantees better worst-case performance. \extract{} queries are supported by sampling some \ISA{} pointers. To extract $T[i,j]$, we find the nearest samples pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with function \LF.
+We support \locate{} queries by \emph{sampling} some suffix array pointers. If we want to determine $\mSA[i]$ that has not been sampled, we can compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer found by iterating \LF{} $k$ times, starting from $i$. The samples can be chosen in \emph{suffix order}, sampling $\mSA[i]$ at regular intervals, or in \emph{text order}, sampling $T[i]$ at regular intervals and marking the sampled \SA{} positions in a bitvector. Suffix order sampling requires less space, often resulting in better time/space trade-offs, while text order sampling guarantees better worst-case performance. \extract{} queries are supported by sampling some \ISA{} pointers. To extract $T[i,j]$, we find the nearest sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with function \LF.
 
 \begin{table}
 \centering{}
@@ -319,7 +319,7 @@ The \emph{relative FM-index} (\RFM) \cite{Belazzougui2014} is compressed suffix 
 
 Assume that we have found a long common subsequence of sequences $X$ and $Y$. We call positions $X[i]$ and $Y[j]$ \emph{lcs-positions}, if they are in the common subsequence. If we mark the lcs-positions with \onebit{}s in bitvectors $B_{X}$ and $B_{Y}$, we can map between the corresponding lcs-positions in the two sequences with \rank{} and \select{} operations. If $X[i]$ is an lcs-position, the corresponding position in sequence $Y$ is $Y[\mselect_{1}(B_{Y}, \mrank_{1}(B_{X}, i))]$. We denote this pair of \emph{lcs-bitvectors} $\mLCS(X,Y)$.
 
-In its most basic form, relative FM-index $\mRFM(S \mid R)$ only supports \find{} queries by simulating \rank{} queries on $\mBWT(S)$. It does this by storing $\mLCS(\BWT(S),\BWT(R))$ and the \emph{complementary subsequences} $\mCS(S)$ and $\mCS(R)$ that consist of the characters of $\mBWT(S)$ and $\mBWT(R)$ not in the common subsequence. The lcs-bitvectors are compressed using \emph{entropy-based compression} \cite{Raman2007}, while the complementary subsequences are stored in similar structures as $\mBWT(R)$.
+In its most basic form, relative FM-index $\mRFM(S \mid R)$ only supports \find{} queries by simulating \rank{} queries on $\mBWT(S)$. It does this by storing $\mLCS(\BWT(R),\BWT(S))$ and the \emph{complementary subsequences} $\mCS(R)$ and $\mCS(S)$ that consist of the characters of $\mBWT(R)$ and $\mBWT(S)$ not in the common subsequence. The lcs-bitvectors are compressed using \emph{entropy-based compression} \cite{Raman2007}, while the complementary subsequences are stored in similar structures as $\mBWT(R)$.
 
 To compute $\mrank_{c}(\mBWT(S), i)$, we start by determining the number of lcs-positions in $\mBWT(S)$ up to position $S[i]$ as $k = \mrank_{1}(B_{\mBWT(S)}, i)$. Then we find the lcs-position $k$ in $\mBWT(R)$ as $j = \mselect_{1}(B_{\mBWT(R)}, k)$. With these positions, we can compute
 $$
@@ -330,15 +330,31 @@ $$
 
 We can implement the entire functionality of a compressed suffix array with \rank{} queries on the \BWT. However, if we use the \CSA{} in a compressed suffix tree, we also need \select{} queries to support \emph{forward searching} with $\mathsf{\mPsi}$ and $\mChild$ queries. We can always implement \select{} queries by binary searching with \rank{} queries, but the result will be much slower than \rank{} queries.
 
-The faster alternative to support \select{} queries in the relative FM-index is to build a \emph{relative select} structure \cite{Boucher2015}. Let $\mF = \mF(X)$ be a sequence consisting of the characters of sequence $X$ in sorted order. Alternatively, $\mF$ is a sequence such that $\mF[i] = \mBWT[\mPsi(i)]$. The relative select structure consists of bitvectors $\mLCS(\mF(S), \mF(R))$, where $B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$ and $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$, as well as the \C{} array $\mC(\mLCS)$ for the common subsequence.
+The faster alternative to support \select{} queries in the relative FM-index is to build a \emph{relative select} structure \cite{Boucher2015}. Let $\mF = \mF(X)$ be a sequence consisting of the characters of sequence $X$ in sorted order. Alternatively, $\mF$ is a sequence such that $\mF[i] = \mBWT[\mPsi(i)]$. The relative select structure consists of bitvectors $\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and $B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array $\mC(\mLCS)$ for the common subsequence.
 
-To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the first $i$ occurrences of character $c$ are lcs-positions as $k = \mrank_{1}(B_{\mF(S)}, \mC(\mBWT(S))[c] + i) - \mC(\mLCS)[c]$. Then we check from bit $B_{\mF(S)}[\mC(\mBWT(S))[c] + i]$ whether the occurrence we are looking for is an lcs-position or not. If the occurrence is an lcs-position, we find it in $\mBWT(R)$ as $j = \mselect_{c}(\mBWT(R), \mselect_{1}(B_{\mF(R)}, \mC(\mLCS)[c] + k))$, and then map $j$ to $\mselect_{c}(\mBWT(S), i)$ by using $\mLCS(\mBWT(S), \mBWT(R))$. Otherwise we find the occurrence in $\mCS(S)$ as $j = \mselect_{c}(\mCS(S), i-k)$, and then return $\mselect_{c}(\mBWT(S), i) = \mselect_{0}(B_{\mBWT(S)}, j)$.
+To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the first $i$ occurrences of character $c$ are lcs-positions as $k = \mrank_{1}(B_{\mF(S)}, \mC(\mBWT(S))[c] + i) - \mC(\mLCS)[c]$. Then we check from bit $B_{\mF(S)}[\mC(\mBWT(S))[c] + i]$ whether the occurrence we are looking for is an lcs-position or not. If the occurrence is an lcs-position, we find it in $\mBWT(R)$ as $j = \mselect_{c}(\mBWT(R), \mselect_{1}(B_{\mF(R)}, \mC(\mLCS)[c] + k))$, and then map $j$ to $\mselect_{c}(\mBWT(S), i)$ by using $\mLCS(\mBWT(R), \mBWT(S))$. Otherwise we find the occurrence in $\mCS(S)$ as $j = \mselect_{c}(\mCS(S), i-k)$, and then return $\mselect_{c}(\mBWT(S), i) = \mselect_{0}(B_{\mBWT(S)}, j)$.
 
 \subsection{Full functionality}
 
+If we want the relative FM-index to support \locate{} and \extract{} queries, we cannot build it from any common subsequence of $\mBWT(R)$ and $\mBWT(S)$. We need a \emph{bwt-invariant subsequence} \cite{Belazzougui2014}, where the relative order of the characters in the same in both the original sequences and their Burrows-Wheeler transforms.
+
+\begin{definition}
+Let $X$ be a common subsequence of $\mBWT(R)$ and $\mBWT(S)$, and let $\mBWT(R)[i_{R}]$ and $\mBWT(S)[i_{S}]$ be the lcs-positions corresponding to $X[i]$. Subsequence X is bwt-invariant, if
+$$
+\mSA(R)[i_{R}] < \mSA(R)[j_{R}] \iff \mSA(S)[i_{S}] < \mSA(S)[j_{S}]
+$$
+for all positions $i, j \in \set{1, \dotsc, \abs{X}}$.
+\end{definition}
+
+In addition to the structures already mentioned, the full relative FM-index has another set of lcs-bitvectors, $\mLCS(R,S)$, which marks the bwt-invariant subsequence in the original sequences. If $\mBWT(R)[i_{R}]$ and $\mBWT(S)[i_{S}]$ are lcs-positions, we set $B_{R}[\mSA(R)[i_{R}]-1] = 1$ and $B_{S}[\mSA(S)[i_{S}]-1] = 1$.\footnote{For simplicity, we assume that the endmarker is not a part of the bwt-invariant subsequence. Hence $\mSA[i] > 1$ for all lcs-positions $\mBWT[i]$.} If the target sequence contains long \emph{insertions} not present in the reference, we may also want to include some \SA{} and \ISA{} samples for querying those regions.
+
+To compute the answer to a $\mlocate(i)$ query, we start by iterating $\mBWT(S)$ backwards with \LF{} queries, until we find an lcs-position $\mBWT(S)[i']$ after $k$ steps. Then we map position $i'$ into the corresponding position $j'$ in $\mBWT(R)$ by using $\mLCS(\mBWT(R),\mBWT(S))$. Finally we determine $\mSA(R)[j']$ with a \locate{} query in the reference index, and map the result to $\mSA(S)[i']$ by using $\mLCS(R,S)$.\footnote{If $\mBWT(S)[i']$ and $\mBWT(R)[j']$ are lcs-positions, the corresponding lcs-positions in the original sequences are $S[\mSA(S)[i']-1]$ and $R[\mSA(R)[j']-1]$.} The result of the $\mlocate(i)$ query is $\mSA(S)[i']+k$.
+
+The $\mISA(S)[i]$ access required for \extract{} queries is supported in a similar way. We find the lcs-position $S[i+k]$ for the smallest $k \ge 0$, and map it to the corresponding position $R[j]$ by using $\mLCS(R,S)$. Then we determine $\mISA(R)[j+1]$ by using the reference index, and map it back to $\mISA(S)[i+k+1]$ with $\mLCS(\mBWT(R),\mBWT(S))$. Finally we iterate $\mBWT(S)$ backwards $k+1$ steps with \LF{} queries to find $\mISA(S)[i]$.
+
 \begin{itemize}
-\item BWT-invariant subsequence, locate/extract
 \item finding a BWT-invariant subsequence
+\item substring moves are expensive in the full RFM but not in the RFM supporting only counting queries
 \end{itemize}
 
 
@@ -359,7 +375,7 @@ To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the 
 \item construction time, space (inexact)
 \item component sizes; comparison to the old RFM
 \item basic queries: LF, Psi, RMQ/PSV/NSV
-\item locate() performance
+\item locate() performance; note on sample rates with suffix order sampling
 \item RCST size vs. mutation rate
 \item RCST vs. CST for repetitive collections
 \item CST traversal
