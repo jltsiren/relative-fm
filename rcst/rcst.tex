@@ -1,6 +1,7 @@
 \documentclass[a4paper,11pt]{llncs}
 \usepackage{fullpage}
 %\documentclass[10pt]{llncs}
+
 \usepackage{graphicx}
 \usepackage{url}
 
@@ -13,7 +14,7 @@
 % Mathematics
 \newcommand{\set}[1]{\ensuremath{\{ #1 \}}}
 \newcommand{\abs}[1]{\ensuremath{\lvert #1 \rvert}}
-\newcommand{\avg}[1]{\ensuremath{\overline{ #1 }}}
+\renewcommand{\complement}[1]{\ensuremath{\overline{ #1 }}}
 
 % Suffix trees
 \newcommand{\ST}{\textsf{ST}}
@@ -59,7 +60,9 @@
 \newcommand{\sdarray}{\textsf{sdarray}}
 \newcommand{\LCS}{\textsf{LCS}}
 \newcommand{\mLCS}{\ensuremath{\mathsf{LCS}}}
-\newcommand{\mCS}{\ensuremath{\mathsf{CS}}}
+\newcommand{\mCS}{\ensuremath{\complement{\mathsf{LCS}}}}
+\newcommand{\mleft}{\ensuremath{\mathsf{left}}}
+\newcommand{\mright}{\ensuremath{\mathsf{right}}}
 
 % Queries
 \newcommand{\LF}{\textsf{LF}}
@@ -214,7 +217,9 @@ to use.
 
 \section{Background}
 
-A \emph{string} $S[1,n] = s_{1} \dotso s_{n}$ is a sequence of \emph{characters} over an \emph{alphabet} $\Sigma = \set{1, \dotsc, \sigma}$. \emph{Binary} sequences are sequences over alphabet $\set{0,1}$. For indexing purposes, we often consider \emph{text} strings $T[1,n]$ that are terminated by an \emph{endmarker} $T[n] = \$ = 0$ not occurring elsewhere in the text. For any subset $A \subseteq [1,n]$, we define the \emph{subsequence} $S_{A}$ of string $S$ as the concatenation of characters $\set{s_{i} \mid i \in A}$ in the same order as in the original string. Contiguous subsequences $S[i,j]$ are called \emph{substrings}. Substrings of type $S[1,j]$ and $S[i,n]$ are called \emph{prefixes} and \emph{suffixes}, respectively. We define the \emph{lexicographic order} among strings in the usual way.
+A \emph{string} $S[1,n] = s_{1} \dotso s_{n}$ is a sequence of \emph{characters} over an \emph{alphabet} $\Sigma = \set{1, \dotsc, \sigma}$. For indexing purposes, we often consider \emph{text} strings $T[1,n]$ that are terminated by an \emph{endmarker} $T[n] = \$ = 0$ not occurring elsewhere in the text. \emph{Binary} sequences are sequences over alphabet $\set{0,1}$. If $B[1,n]$ is a binary sequence, its \emph{complement} is binary sequence $\complement{B}[1,n]$, with $\complement{B}[i] = 1 - B[i]$.
+
+For any binary sequence $B[1,n]$, we define the \emph{subsequence} $S[B]$ of string $S[1,n]$ as the concatenation of characters $s_{i}$ with $B[i] = 1$. The complement of subsequence of $S[B]$ is the subsequence $S[\complement{B}]$. Mirroring the set notation, we will often write $S[\alpha \mid \beta]$ to denote the subsequence of characters at positions determined by expression $\alpha$ under condition $\beta$. Contiguous subsequences $S[i,j]$ are called \emph{substrings}. Substrings of type $S[1,j]$ and $S[i,n]$ are called \emph{prefixes} and \emph{suffixes}, respectively. We define the \emph{lexicographic order} among strings in the usual way.
 
 \subsection{Full-text indexes}
 
@@ -232,7 +237,7 @@ Sequences supporting \rank{} and \select{} queries are the main building block o
 
 The \emph{Burrows-Wheeler transform} (\BWT) \cite{Burrows1994} is a reversible permutation $\mBWT[1,n]$ of text $T$. It is defined as $\mBWT[i] = T[\mSA[i] - 1]$ (with $\mBWT[i] = T[n]$, if $\SA[i] = 1$). Originally intended for data compression, the Burrows-Wheeler transform has been widely used in space-efficient text indexes, because it shares the combinatorial structure of the suffix tree and the suffix array.
 
-Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with $\mSA[\mLF(i)] = n$, if $\mSA[i] = 1$). We can compute $\mLF$ as $\mLF(i) = \mC[\mBWT[i]] + \mrank_{\mBWT[i]}(\mBWT, i)$, where $\mC[c]$ is the number of occurrences of characters with lexicographical values smaller than $c$ in \BWT. The inverse function of \LF{} is $\mPsi$, with $\mPsi(i) = \mselect_{c}(\mBWT, i - \mC[c])$, where $c$ is the largest character value with $\mC[c] < i$. With functions \LF{} and $\mPsi$, we can move forward and backward in the text, while maintaining the lexicographic rank of the current suffix.
+Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with $\mSA[\mLF(i)] = n$, if $\mSA[i] = 1$). We can compute $\mLF$ as $\mLF(i) = \mC[\mBWT[i]] + \mrank_{\mBWT[i]}(\mBWT, i)$, where $\mC[c]$ is the number of occurrences of characters with lexicographical values smaller than $c$ in \BWT. The inverse function of \LF{} is $\mPsi$, with $\mPsi(i) = \mselect_{c}(\mBWT, i - \mC[c])$, where $c$ is the largest character value with $\mC[c] < i$. With functions \LF{} and $\mPsi$, we can move forward and backward in the text, while maintaining the lexicographic rank of the current suffix. If sequence $S$ is not evident from the context, we write $\mLF_{S}$ and $\mPsi_{S}$.
 
 \emph{Compressed suffix arrays} (\CSA) \cite{Ferragina2005a,Grossi2005} are text indexes supporting similar functionality as the suffix array. This includes the following queries: i) $\mfind(P) = [sp,ep]$ finds the lexicographic range of suffixes starting with \emph{pattern} $P[1,\ell]$; ii) $\mlocate(sp,ep) = \mSA[sp,ep]$ locates these suffixes in the text; and iii) $\mextract(i,j) = T[i,j]$ extracts substrings of the text. In practice, the \find{} performance of compressed suffix arrays can be competitive with suffix arrays, while \locate{} queries are orders of magnitude slower \cite{Ferragina2009a}. Typical index sizes are less than the size of the uncompressed text.
 
@@ -243,7 +248,7 @@ $$
 \mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
 $$
 
-We support \locate{} queries by \emph{sampling} some suffix array pointers. If we want to determine $\mSA[i]$ that has not been sampled, we can compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer found by iterating \LF{} $k$ times, starting from $i$. The samples can be chosen in \emph{suffix order}, sampling $\mSA[i]$ at regular intervals, or in \emph{text order}, sampling $T[i]$ at regular intervals and marking the sampled \SA{} positions in a bitvector. Suffix order sampling requires less space, often resulting in better time/space trade-offs, while text order sampling guarantees better worst-case performance. \extract{} queries are supported by sampling some \ISA{} pointers. To extract $T[i,j]$, we find the nearest sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with function \LF.
+We support \locate{} queries by \emph{sampling} some suffix array pointers. If we want to determine $\mSA[i]$ that has not been sampled, we can compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer found by iterating \LF{} $k$ times, starting from $i$. Given \emph{sample interval} $d$, the samples can be chosen in \emph{suffix order}, sampling $\mSA[i]$ at positions divisible by $d$, or in \emph{text order}, sampling $T[i]$ at positions divisible by $d$ and marking the sampled \SA{} positions in a bitvector. Suffix order sampling requires less space, often resulting in better time/space trade-offs, while text order sampling guarantees better worst-case performance. \extract{} queries are supported by sampling some \ISA{} pointers. To extract $T[i,j]$, we find the nearest sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with function \LF.
 
 \begin{table}
 \centering{}
@@ -317,11 +322,11 @@ The \emph{relative FM-index} (\RFM) \cite{Belazzougui2014} is compressed suffix 
 
 \subsection{Basic index}
 
-Assume that we have found a long common subsequence of sequences $X$ and $Y$. We call positions $X[i]$ and $Y[j]$ \emph{lcs-positions}, if they are in the common subsequence. If we mark the lcs-positions with \onebit{}s in bitvectors $B_{X}$ and $B_{Y}$, we can map between the corresponding lcs-positions in the two sequences with \rank{} and \select{} operations. If $X[i]$ is an lcs-position, the corresponding position in sequence $Y$ is $Y[\mselect_{1}(B_{Y}, \mrank_{1}(B_{X}, i))]$. We denote this pair of \emph{lcs-bitvectors} $\mLCS(X,Y)$.
+Assume that we have found a long common subsequence of sequences $X$ and $Y$. We call positions $X[i]$ and $Y[j]$ \emph{lcs-positions}, if they are in the common subsequence. If $B_{X}$ and $B_{Y}$ are the binary sequences marking the common subsequence ($X[B_{X}] = Y[B_{Y}]$), we can map between the corresponding lcs-positions in the two sequences with \rank{} and \select{} operations. If $X[i]$ is an lcs-position, the corresponding position in sequence $Y$ is $Y[\mselect_{1}(B_{Y}, \mrank_{1}(B_{X}, i))]$. We denote this pair of \emph{lcs-bitvectors} $\mLCS(X,Y)$.
 
-In its most basic form, relative FM-index $\mRFM(S \mid R)$ only supports \find{} queries by simulating \rank{} queries on $\mBWT(S)$. It does this by storing $\mLCS(\BWT(R),\BWT(S))$ and the \emph{complementary subsequences} $\mCS(R)$ and $\mCS(S)$ that consist of the characters of $\mBWT(R)$ and $\mBWT(S)$ not in the common subsequence. The lcs-bitvectors are compressed using \emph{entropy-based compression} \cite{Raman2007}, while the complementary subsequences are stored in similar structures as $\mBWT(R)$.
+In its most basic form, relative FM-index $\mRFM(S \mid R)$ only supports \find{} queries by simulating \rank{} queries on $\mBWT(S)$. It does this by storing $\mLCS(\BWT(R),\BWT(S))$ and the complements $\mCS(R)$ and $\mCS(S)$ of the common subsequence. The lcs-bitvectors are compressed using \emph{entropy-based compression} \cite{Raman2007}, while the complements are stored in similar structures as the reference $\mBWT(R)$.
 
-To compute $\mrank_{c}(\mBWT(S), i)$, we start by determining the number of lcs-positions in $\mBWT(S)$ up to position $S[i]$ as $k = \mrank_{1}(B_{\mBWT(S)}, i)$. Then we find the lcs-position $k$ in $\mBWT(R)$ as $j = \mselect_{1}(B_{\mBWT(R)}, k)$. With these positions, we can compute
+To compute $\mrank_{c}(\mBWT(S), i)$, we first determine the number of lcs-positions in $\mBWT(S)$ up to position $S[i]$ as $k = \mrank_{1}(B_{\mBWT(S)}, i)$. Then we find the lcs-position $k$ in $\mBWT(R)$ as $j = \mselect_{1}(B_{\mBWT(R)}, k)$. With these positions, we can compute
 $$
 \mrank_{c}(\mBWT(S), i) = \mrank_{c}(\mBWT(R), j) - \mrank_{c}(\mCS(R), j-k) + \mrank_{c}(\mCS(S), i-k).
 $$
@@ -338,7 +343,7 @@ To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the 
 
 If we want the relative FM-index to support \locate{} and \extract{} queries, we cannot build it from any common subsequence of $\mBWT(R)$ and $\mBWT(S)$. We need a \emph{bwt-invariant subsequence} \cite{Belazzougui2014}, where the relative order of the characters in the same in both the original sequences and their Burrows-Wheeler transforms.
 
-\begin{definition}
+\begin{definition}\label{def:bwt-invariant}
 Let $X$ be a common subsequence of $\mBWT(R)$ and $\mBWT(S)$, and let $\mBWT(R)[i_{R}]$ and $\mBWT(S)[i_{S}]$ be the lcs-positions corresponding to $X[i]$. Subsequence X is bwt-invariant, if
 $$
 \mSA(R)[i_{R}] < \mSA(R)[j_{R}] \iff \mSA(S)[i_{S}] < \mSA(S)[j_{S}]
@@ -352,10 +357,35 @@ To compute the answer to a $\mlocate(i)$ query, we start by iterating $\mBWT(S)$
 
 The $\mISA(S)[i]$ access required for \extract{} queries is supported in a similar way. We find the lcs-position $S[i+k]$ for the smallest $k \ge 0$, and map it to the corresponding position $R[j]$ by using $\mLCS(R,S)$. Then we determine $\mISA(R)[j+1]$ by using the reference index, and map it back to $\mISA(S)[i+k+1]$ with $\mLCS(\mBWT(R),\mBWT(S))$. Finally we iterate $\mBWT(S)$ backwards $k+1$ steps with \LF{} queries to find $\mISA(S)[i]$.
 
-\begin{itemize}
-\item finding a BWT-invariant subsequence
-\item substring moves are expensive in the full RFM but not in the RFM supporting only counting queries
-\end{itemize}
+\subsection{Finding bwt-invariant subsequence}
+
+With the basic relative FM-index, we approximate the longest common subsequence of $\mBWT(R)$ and $\mBWT(S)$ by partitioning the \BWT{}s according to lexicographic contexts, finding the longest common subsequence for each pair of substrings in the partitioning, and concatenating the results. The algorithm is fast and easy to parallelize, while not using too much memory. As such, \RFM{} construction is practical for very large \BWT{}s.
+
+To find a bwt-invariant subsequence, we start by \emph{matching} each suffix of the reference sequence with the lexicographically nearest suffixes of the target sequence. Unlike in the original algorithm \cite{Belazzougui2014}, we only match suffixes that are lexicographically adjacent in the \emph{mutual suffix array} of the two sequences.
+
+\begin{definition}
+Let $R$ and $S$ be two sequences, and let $\mSA = \mSA(RS)$ and $\mISA = \mISA(RS)$. The \emph{left match} of suffix $R[i,\abs{R}]$ is suffix $S[\mSA[\mISA[i]-1] - \abs{R}, \abs{S}]$, if $\mISA[i] > 1$ and $\mSA[\mISA[i]-1]$ points to a suffix of $S$ ($\mSA[\mISA[i]-1] > \abs{R}$). The \emph{right match} of suffix $R[i,\abs{R}]$ is suffix $S[\mSA[\mISA[i]+1] - \abs{R}, \abs{S}]$, if $\mISA[i] < \abs{RS}$ and $\mSA[\mISA[i]+1]$ points to a suffix of $S$.
+\end{definition}
+
+Instead of using the mutual suffix array, we can use $\mCSA(R)$, $\mCSA(S)$, and the \emph{merging bitvector} $B_{R,S}$ of length $\abs{RS}$. We set $B_{R,S}[i] = 1$, if $\mSA(RS)[i]$ points to a suffix of $S$. We can build the merging bitvector in $\Oh(\abs{S} \cdot t_{\mLF})$ time, where $t_{\mLF}$ is the time required by an \LF{} query, by extracting $S$ from $\mCSA(S)$ and backward searching for it in $\mCSA(R)$ \cite{Siren2009}. Suffix $R[i,\abs{R}]$ has a left (right) match, if $B_{R,S}[\mselect_{0}(B_{R,S}, \mSA(R)[i])-1] = 1$ ($B_{R,S}[\mselect_{0}(B_{R,S}, \mSA(R)[i])+1] = 1)$).
+
+Our next step is building the \emph{match arrays} $\mleft$ and $\mright$, which correspond to the arrays $A[\cdot][2]$ and $A[\cdot][1]$ in the original algorithm. This is done by traversing $\mCSA(R)$ backwards from $\mISA(R)[\abs{R}] = 1$ using \LF{} queries and following the left and the right matches of the current suffix. During the traversal, we maintain invariant $j = \mSA(R)[i]$ with $(i,j) \leftarrow (i-1, \mLF_{R}(j))$. If suffix $R[i,\abs{R}]$ has a left (right) match, we use shorthand $l(i) = \mrank_{1}(B_{R,S}, \mselect_{0}(B_{R,S}, j)-1)$ ($r(i) = \mrank_{1}(B_{R,S}, \mselect_{0}(B_{R,S}, j)+1)$) to refer to its position in $\mCSA(S)$.
+
+We say that suffixes $R[i,\abs{R}]$ and $R[i+1,\abs{R}]$ have the same left match, if $l(i) = \mLF_{S}(l(i+1))$. Let $R[i,\abs{R}]$ to $R[i+\ell,\abs{R}]$ be a maximal run of suffixes having the same left match, with suffixes $R[i,\abs{R}]$ to $R[i+\ell-1,\abs{R}]$ starting with the same characters as their left matches.\footnote{The first character of a suffix can be determined by using the $\mC$ array.} We find the left match of suffix $R[i,\abs{R}]$ as $i' = \mSA(S)[l(i)]$ by using $\mCSA(S)$, and set $\mleft[i,i+\ell-1] = [i',i'+\ell-1]$. The right match array $\mright$ is built in a similar way.
+
+The match arrays require $2\abs{R} \log \abs{S}$ bits of space. If sequences $R$ and $S$ are similar, the runs in the arrays tend to be long. Hence we can run-length encode the match arrays to save space. The traversal takes $\Oh(\abs{R} \cdot (t_{\mLF} + t_{\mrank} + t_{\mselect}) + rd \cdot t_{\mLF})$ time, where $t_{\mrank}$ and $t_{\mselect}$ denote the time required by \rank{} and \select{} operations, $r$ is the number of runs in the two arrays, and $d$ is the suffix array sample interval in $\mCSA(S)$.\footnote{The time bound assumes text order sampling.}
+
+The final step is finding the longest increasing subsequence $X$ of arrays $\mleft$ and $\mright$, which corresponds to a common subsequence of $R$ and $S$. More precisely, we want to find a binary sequence $B_{R}[1,\abs{R}]$, which marks the common subsequence in $R$, and an integer sequence $X$, which contains the positions of the common subsequence in $S$. The goal is to make sequence $X$ strictly increasing and as long as possible, with $X[\mrank_{1}(B_{R}, i)]$ being either $\mleft[i]$ or $\mright[i]$. This can be done in $\Oh(\abs{R} \log \abs{R})$ time with $\Oh(\abs{R} \log \abs{R})$ bits of additional working space with a straightforward modification of the dynamic programming algorithm for finding the longest increasing subsequence. While the dynamic programming tables can be run-length encoded, the time and space savings are negligible in practice.
+
+As sequence $X$ is strictly increasing, we can convert it into binary sequence $B_{S}[1,\abs{S}]$, marking the values in sequence $X$ with \onebit{}s. Afterwards, we can consider binary sequences $B_{R}$ and $B_{S}$ as the lcs-bitvectors $\mLCS(R,S)$. Because every suffix of $R$ starts with the same character as its matches stored in the $\mleft$ and $\mright$ arrays, subsequences $R[B_{R}]$ and $S[B_{S}]$ are identical. As each suffix $R[i,\abs{R}]$ with $B_{R}[i] = 1$ is paired with its left match or right match in sequence $S$, no other suffix of $R$ or $S$ is lexicographically between the two paired suffixes.
+
+For any $i$, let $i_{R} = \mselect_{1}(B_{R}, i)$ and $i_{S} = \mselect_{1}(B_{S}, i)$ be the lcs-positions of rank $i$. Then,
+$$
+\mISA(R)[i_{R}] < \mISA(R)[j_{R}] \iff \mISA(S)[i_{S}] < \mISA(S)[j_{S}]
+$$
+for any $i,j \le \abs{X}$, which is equivalent to the condition in Definition~\ref{def:bwt-invariant}. We can convert $\mLCS(R,S)$ to $\mLCS(\mBWT(R),\mBWT(S))$ in $\Oh((\abs{R}+\abs{S}) \cdot t_{\mLF})$ time by traversing $\mCSA(R)$ and $\mCSA(S)$ backwards. The resulting subsequence of $\mBWT(R)$ and $\mBWT(S)$ is bwt-invariant.
+
+Note that the full relative FM-index is more limited than the basic index, because it does not handle \emph{substring moves} very well. Let $R = xy$ and $S = yx$, for two random sequences $x$ and $y$ of length $n/2$ each. Because $\mBWT(R)$ and $\mBWT(S)$ are very similar, we can expect to find a common subsequence of length almost $n$. On the other hand, the length of the longest bwt-invariant subsequence is around $n/2$, because we can either pair the suffixes of $x$ or the suffixes of $y$ in $R$ and $S$, but not both.
 
 
 \section{Relative compressed suffix tree}
