@@ -71,10 +71,10 @@
 \newcommand{\extract}{\textsf{extract}}
 \newcommand{\rank}{\textsf{rank}}
 \newcommand{\select}{\textsf{select}}
-\newcommand{\psv}{\textsf{psv}}
-\newcommand{\psev}{\textsf{psev}}
 \newcommand{\nsv}{\textsf{nsv}}
 \newcommand{\nsev}{\textsf{nsev}}
+\newcommand{\psv}{\textsf{psv}}
+\newcommand{\psev}{\textsf{psev}}
 \newcommand{\rmq}{\textsf{rmq}}
 
 % Operators
@@ -390,10 +390,30 @@ Note that the full relative FM-index is more limited than the basic index, becau
 
 \section{Relative compressed suffix tree}
 
+The \emph{relative compressed suffix tree} (\RCST) is a \CSTnpr{} of the target sequence relative to a \CST{} of the reference sequence. It consists of two major components: the relative FM-index and the relative \LCP{} (\RLCP) array. Optional relative select structures can be generated or loaded from disk to speed up algorithms based on forward searching. The \RLCP{} array is based on the \RLZ{} parsing, while the support for \nsv/\psv/\rmq{} queries is based on a minimum tree over the phrases.
+
+\subsection{Relative \LCP{} array}
+
+Given \LCP{} array $\mLCP[1,n]$, we define the \emph{differential} \LCP{} \emph{array} $\mDLCP[1,n]$ as $\mDLCP[1] = \mLCP[1]$ and $\mDLCP[i] = \mLCP[i] - \mLCP[i-1]$ for $i > 1$. If $\mBWT[i,j] = c^{j+1-i}$ for some $c \in \Sigma$, then $\mLCP[\mLF(i)+1,\mLF(j)]$ is the same as $\mLCP[i+1,j]$, with each value incremented by $1$ \cite{Fischer2009a}. This means $\mDLCP[\mLF(i)+2,\mLF(j)] = \mDLCP[i+2,j]$ making the \DLCP{} array of a repetitive text compressible with grammar-based compression \cite{Abeliuk2013}.
+
+We make a similar observation in the relative setting. If target sequence $S$ is similar to the reference sequence $T$, then their \LCP{} arrays should also be similar. If there are long identical ranges $\mLCP(R)[i,i+k] = \mLCP(S)[j,j+k]$, the corresponding \DLCP{} ranges $\mDLCP(R)[i+1,i+k]$ and $\mDLCP(S)[j+1,j+k]$ are also identical. Hence we can use \RLZ{} parsing to compress either the original \LCP{} array or the \DLCP{} array.
+
+While the identical ranges are a bit longer in the \LCP{} array, we opt to compress the \DLCP{} array, because it behaves better when there are long repetitions in the sequences. In particular, assembled genomes often have long runs of character $N$, which correspond to regions of very large \LCP{} values. If the runs are longer in the target sequence than in the reference sequence, the \RLZ{} parsing of the \LCP{} array will have many phrases consisting of only the mismatch character. The corresponding ranges in the \DLCP{} array typically consist of values $\set{-1, 0, 1}$, making them much easier to compress.
+
 \begin{itemize}
-\item overview
-\item RLZ compression of the DLCP array
-\item supporting RMQ/PSV/NSV (Abeliuk2013)
+\item reference as slarray (need fast random and sequential access)
+\item RLZ compression; no pointer compression
+\item random access using mismatches as samples
+\item decompressing entire phrases
+\end{itemize}
+
+\subsection{Supporting \nsv/\psv/\rmq{} queries}
+
+\begin{itemize}
+\item minimum tree
+\item encoding the tree
+\item supporting queries
+\item Also \nsev/\psev{} \cite{Abeliuk2013}.
 \end{itemize}
 
 
@@ -418,6 +438,7 @@ Note that the full relative FM-index is more limited than the basic index, becau
 \begin{itemize}
 \item conclusions
 \item other ideas: RLZ bitvectors, RLZ pointer compression
+\item analyze the similarity between LCP arrays based on edit distances
 \end{itemize}
 
 
