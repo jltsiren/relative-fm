@@ -57,12 +57,13 @@
 \newcommand{\mC}{\ensuremath{\mathsf{C}}}
 \newcommand{\RLZ}{\textsf{RLZ}}
 \newcommand{\mRLZ}{\ensuremath{\mathsf{RLZ}}}
-\newcommand{\sdarray}{\textsf{sdarray}}
 \newcommand{\LCS}{\textsf{LCS}}
 \newcommand{\mLCS}{\ensuremath{\mathsf{LCS}}}
 \newcommand{\mCS}{\ensuremath{\complement{\mathsf{LCS}}}}
 \newcommand{\mleft}{\ensuremath{\mathsf{left}}}
 \newcommand{\mright}{\ensuremath{\mathsf{right}}}
+\newcommand{\sdarray}{\textsf{sdarray}}
+\newcommand{\slarray}{\textsf{slarray}}
 
 % Queries
 \newcommand{\LF}{\textsf{LF}}
@@ -304,7 +305,7 @@ Tree topology representations are the main differences between the various \CST{
 
 For typical texts and component choices, the size of compressed suffix trees ranges from the $1.5n$ to $3n$ bytes of \CSTsada{} to the $0.5n$ to $n$ bytes of \FCST{} \cite{Gog2011a,Abeliuk2013}. There are also some \CST{} variants for repetitive texts, such as versioned document collections and collections of individual genomes. Abeliuk et al.~\cite{Abeliuk2013} developed a variant of \CSTnpr{} that can be smaller than $n$ bits, while achieving similar performance as the \FCST. Navarro and Ordóñez \cite{Navarro2014} used grammar-based compression for the tree representation of \CSTsada, resulting in a compressed suffix tree that requires slightly more space than the \CSTnpr{} of Abeliuk et al., while being closer to the non-repetitive \CSTsada{} and \CSTnpr{} in performance.
 
-\subsection{Relative Lempel-Ziv}
+\subsection{Relative Lempel-Ziv}\label{sect:rlz}
 
 \emph{Relative Lempel-Ziv} (\RLZ) parsing \cite{Kuruppu2010} compresses \emph{target} sequence $S$ relative to \emph{reference} sequence $R$. The target sequence is represented as a concatenation of $z$ \emph{phrases} $w_{i} = (p_{i}, \ell_{i}, c_{i})$, where $p_{i}$ is the starting position of the phrase in the reference, $\ell_{i}$ is the length of the copied substring, and $c_{i}$ is the \emph{mismatching} character. If phrase $w_{i}$ starts from position $p'$ in the target, then $S[p',p'+\ell_{i}-1] = R[p_{i},p_{i}+\ell_{i}-1]$ and $S[p'+\ell_{i}] = c_{i}$.
 
@@ -390,7 +391,7 @@ Note that the full relative FM-index is more limited than the basic index, becau
 
 \section{Relative compressed suffix tree}
 
-The \emph{relative compressed suffix tree} (\RCST) is a \CSTnpr{} of the target sequence relative to a \CST{} of the reference sequence. It consists of two major components: the relative FM-index and the relative \LCP{} (\RLCP) array. Optional relative select structures can be generated or loaded from disk to speed up algorithms based on forward searching. The \RLCP{} array is based on the \RLZ{} parsing, while the support for \nsv/\psv/\rmq{} queries is based on a minimum tree over the phrases.
+The \emph{relative compressed suffix tree} (\RCST) is a \CSTnpr{} of the target sequence relative to a \CST{} of the reference sequence. It consists of two major components: the relative FM-index and the \emph{relative} \LCP{} (\RLCP) \emph{array}. Optional relative select structures can be generated or loaded from disk to speed up algorithms based on forward searching. The \RLCP{} array is based on the \RLZ{} parsing, while the support for \nsv/\psv/\rmq{} queries is based on a minimum tree over the phrases.
 
 \subsection{Relative \LCP{} array}
 
@@ -400,12 +401,16 @@ We make a similar observation in the relative setting. If target sequence $S$ is
 
 While the identical ranges are a bit longer in the \LCP{} array, we opt to compress the \DLCP{} array, because it behaves better when there are long repetitions in the sequences. In particular, assembled genomes often have long runs of character $N$, which correspond to regions of very large \LCP{} values. If the runs are longer in the target sequence than in the reference sequence, the \RLZ{} parsing of the \LCP{} array will have many phrases consisting of only the mismatch character. The corresponding ranges in the \DLCP{} array typically consist of values $\set{-1, 0, 1}$, making them much easier to compress.
 
-\begin{itemize}
-\item reference as slarray (need fast random and sequential access)
-\item RLZ compression; no pointer compression
-\item random access using mismatches as samples
-\item decompressing entire phrases
-\end{itemize}
+We create an \RLZ{} parsing of $\mDLCP(S)$ relative to $\mDLCP(R)$, while using $\mLCP(R)$ as the reference afterwards. The reference is stored in a structure we call \slarray{} \cite{Abouelhoda2004}. Small values $\mLCP(R)[i] < 255$ are stored in a byte array, while large values $\mLCP(R)[i] \ge 255$ are marked with a $255$ in the byte array and stored separately. To quickly find the large values, we also build a $\mrank_{255}$ structure over the byte array. The \slarray{} provides reasonably fast random access and very fast sequential access to the underlying array.
+
+The \RLZ{} parsing produces a sequence of phrases $w_{i} = (p_{i}, \ell_{i}, c_{i})$ (see Section~\ref{sect:rlz}). We use absolute phrase pointers, as the run-length encoding of relative pointers does not work too well with the \DLCP{} array, and because we need access to the beginning of the phrase anyway. Phrase lengths are encoded in the $W_{\ell}$ bitvector in the usual way. We convert the mismatching \DLCP{} values $c_{i}$ into absolute \LCP{} values in the mismatch array $W_{c}$, and store them in an \slarray. The mismatching values are used as \emph{absolute samples} for the differential encoding.
+
+To access $\mLCP(S)[j]$, we determine phrase $w_{i}$ as usual, and check whether we should return the mismatch $W_{c}[j]$. If not, we determine the starting position $s_{i} = \mselect_{1}(W_{\ell}, i)$ of the phrase in the reference. Now we can compute the solution as
+\begin{align*}
+\mLCP(S)[j] &= W_{c}[i-1] + \sum_{k = W_{p}[i]}^{W_{p}[i]+j-s_{i}} (\mLCP(R)[k] - \mLCP(R)[k-1]) \\
+&= W_{c}[i-1] + \mLCP(R)[W_{p}[i]+j-s_{i}] - \mLCP(R)[W_{p}[i]-1],
+\end{align*}
+where $W_{c}[0] = \mLCP(R)[0] = 0$. After finding $\mLCP(S)[j]$, accessing $\mLCP(S)[j-1]$ and $\mLCP(S)[j+1]$ is fast, as long as we do not cross phrase boundaries.
 
 \subsection{Supporting \nsv/\psv/\rmq{} queries}
 
