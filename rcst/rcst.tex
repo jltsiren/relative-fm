@@ -403,7 +403,7 @@ While the identical ranges are a bit longer in the \LCP{} array, we opt to compr
 
 We create an \RLZ{} parsing of $\mDLCP(S)$ relative to $\mDLCP(R)$, while using $\mLCP(R)$ as the reference afterwards. The reference is stored in a structure we call \slarray{} \cite{Abouelhoda2004}. Small values $\mLCP(R)[i] < 255$ are stored in a byte array, while large values $\mLCP(R)[i] \ge 255$ are marked with a $255$ in the byte array and stored separately. To quickly find the large values, we also build a $\mrank_{255}$ structure over the byte array. The \slarray{} provides reasonably fast random access and very fast sequential access to the underlying array.
 
-The \RLZ{} parsing produces a sequence of phrases $w_{i} = (p_{i}, \ell_{i}, c_{i})$ (see Section~\ref{sect:rlz}). We use absolute phrase pointers, as the run-length encoding of relative pointers does not work too well with the \DLCP{} array, and because we need access to the beginning of the phrase anyway. Phrase lengths are encoded in the $W_{\ell}$ bitvector in the usual way. We convert the mismatching \DLCP{} values $c_{i}$ into absolute \LCP{} values in the mismatch array $W_{c}$, and store them in an \slarray. The mismatching values are used as \emph{absolute samples} for the differential encoding.
+The \RLZ{} parsing produces a sequence of phrases $w_{i} = (p_{i}, \ell_{i}, c_{i})$ (see Section~\ref{sect:rlz}). Because some queries involve decompressing an entire phrase, we limit the maximum phrase length to $1024$. We use absolute phrase pointers, as the run-length encoding of relative pointers does not work too well with the \DLCP{} array, and because we need access to the beginning of the phrase anyway. Phrase lengths are encoded in the $W_{\ell}$ bitvector in the usual way. We convert the mismatching \DLCP{} values $c_{i}$ into absolute \LCP{} values in the mismatch array $W_{c}$, and store them in an \slarray. The mismatching values are used as \emph{absolute samples} for the differential encoding.
 
 To access $\mLCP(S)[j]$, we determine phrase $w_{i}$ as usual, and check whether we should return the mismatch $W_{c}[j]$. If not, we determine the starting position $s_{i} = \mselect_{1}(W_{\ell}, i)$ of the phrase in the reference. Now we can compute the solution as
 \begin{align*}
@@ -414,14 +414,15 @@ where $W_{c}[0] = \mLCP(R)[0] = 0$. After finding $\mLCP(S)[j]$, accessing $\mLC
 
 \subsection{Supporting \nsv/\psv/\rmq{} queries}
 
+Suffix tree topology can be inferred from the \LCP{} array with range minimum queries (\rmq) and next/previous smaller value (\nsv/\psv) queries \cite{Fischer2009a}. Some tree operations can be implemented more efficiently, if we also support \emph{next/previous smaller or equal value} (\nsev/\psev) queries \cite{Abeliuk2013}. Query $\mnsev(i)$ ($\mpsev(i)$) finds the next (previous) value smaller than or equal to $\mLCP[i]$.
 
+In order to support the queries, we build a $4$-ary \emph{minimum tree} over the phrases of the \RLZ{} parsing. Each leaf node stores the smallest \LCP{} value in the corresponding phrase, while each internal node stores the smallest value in the subtree. Internal nodes are created and stored in a levelwise fashion, so that each internal node, except perhaps the rightmost one of its level, has $4$ children.
 
-\begin{itemize}
-\item minimum tree
-\item encoding the tree
-\item supporting queries
-\item Also \nsev/\psev{} \cite{Abeliuk2013}.
-\end{itemize}
+We encode the minimum tree as two arrays. The smallest \LCP{} values are stored in $M_{\mLCP}$, which we encode as an \slarray. Plain array $M_{L}$ stores the starting offset of each level in $M_{\mLCP}$, with the leaves stored starting from offset $M_{L}[1] = 1$. If $i$ is a minimum tree node located at level $j$, the corresponding minimum value is $M_{\mLCP}[i]$, the parent of the node is $M_{L}[j+1] + (i - M_{L}[j]) / 4$, and its first child is $M_{L}[j-1] + 4 \cdot (i - M_{L}[j])$.
+
+A range minimum query $\mrmq(sp,ep)$ starts by finding the minimal range of phrases $w_{l}, \dotsc, w_{r}$ covering the query and the maximal range of phrases $w_{l'}, \dotsc, w_{r'}$ contained in the query. Then we use the minimum tree to find the leftmost minimum value $j = M_{\mLCP}[k]$ in $M_{\mLCP}[l',r']$, and find the leftmost occurrence $\mLCP[i] = j$ in phrase $w_{k}$. If $l < l'$ and $M_{\mLCP}[l] \le j$, we decompress phrase $w_{l}$ and find the leftmost minimum value $\mLCP[i'] = j'$ (with $i' \ge sp$) in the phrase. If $j' \le j$, we update $(i,j) \leftarrow (i',j')$. Finally we check phrase $w_{r}$ in a similar way, if $r > r'$ and $M_{mLCP}[r] < j$. The answer to the range minimum query is $\mLCP[i] = j$, so we return $(i,j)$.\footnote{The definition of the query only calls for the leftmost minimum position $i$- We also return $\mLCP[i] = j$, because suffix tree operations often need it.}
+
+The remaining queries are all similar to each other. In order to answer query $\mnsv(i)$, we start by determining the phrase $w_{k}$ containing position $i$, and then determining $\mLCP[i]$. Next we scan the rest of the phrase to see whether there is a smaller value $\mLCP[j] < \mLCP[i]$ later in the phrase. If so, we return $(j,\mLCP[j])$. Otherwise we traverse the minimum tree to find the smallest $k' > k$ with $M_{\mLCP}[k'] < \mLCP[i]$. Finally we decompress phrase $w_{k'}$, find the leftmost position $j$ with $\mLCP[j] < \mLCP[i]$, and return $(j,\mLCP[j])$.
 
 
 \section{Experiments}
