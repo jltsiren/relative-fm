@@ -427,13 +427,24 @@ The remaining queries are all similar to each other. In order to answer query $\
 
 \section{Experiments}
 
+We have implemented the relative compressed suffix tree in C++, extending the old relative FM-index implementation.\footnote{The implementation is available at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based on the \emph{Succinct Data Structure Library 2.0}~\cite{Gog2014b}. Some parts of the implementation have been parallelized using \emph{OpenMP} and the \emph{libstdc++ parallel mode}.
+
+The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction was multi-threaded, and there may have been other jobs running on the same nodes at the same time.
+
+As our primary target sequence, we used the \emph{maternal haplotype} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
+
+\subsection{Basic experiments}
+
 \begin{itemize}
-\item environment
-\item datasets
-\item construction time, space (inexact)
-\item component sizes; comparison to the old RFM
+\item construction time, space
+\item component sizes; comparison to the old RFM and SimpleFM
 \item basic queries: LF, Psi, RMQ/PSV/NSV
 \item locate() performance; note on sample rates with suffix order sampling
+\end{itemize}
+
+\subsection{Suffix tree experiments}
+
+\begin{itemize}
 \item RCST size vs. mutation rate
 \item RCST vs. CST for repetitive collections
 \item CST traversal
