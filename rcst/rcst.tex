@@ -2,7 +2,9 @@
 \usepackage{fullpage}
 %\documentclass[10pt]{llncs}
 
+\usepackage{array}
 \usepackage{graphicx}
+\usepackage{multirow}
 \usepackage{url}
 
 \usepackage[utf8]{inputenc}
@@ -336,7 +338,7 @@ $$
 
 We can implement the entire functionality of a compressed suffix array with \rank{} queries on the \BWT. However, if we use the \CSA{} in a compressed suffix tree, we also need \select{} queries to support \emph{forward searching} with $\mathsf{\mPsi}$ and $\mChild$ queries. We can always implement \select{} queries by binary searching with \rank{} queries, but the result will be much slower than \rank{} queries.
 
-The faster alternative to support \select{} queries in the relative FM-index is to build a \emph{relative select} structure \cite{Boucher2015}. Let $\mF = \mF(X)$ be a sequence consisting of the characters of sequence $X$ in sorted order. Alternatively, $\mF$ is a sequence such that $\mF[i] = \mBWT[\mPsi(i)]$. The relative select structure consists of bitvectors $\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and $B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array $\mC(\mLCS)$ for the common subsequence.
+The faster alternative to support \select{} queries in the relative FM-index is to build a \emph{relative select} structure \cite{Boucher2015}. Let $\mF(X)$ be a sequence consisting of the characters of sequence $X$ in sorted order. Alternatively, $\mF(X)$ is a sequence such that $\mF(X)[i] = \mBWT(X)[\mPsi(i)]$. The relative select structure consists of bitvectors $\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and $B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array $\mC(\mLCS)$ for the common subsequence.
 
 To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the first $i$ occurrences of character $c$ are lcs-positions as $k = \mrank_{1}(B_{\mF(S)}, \mC(\mBWT(S))[c] + i) - \mC(\mLCS)[c]$. Then we check from bit $B_{\mF(S)}[\mC(\mBWT(S))[c] + i]$ whether the occurrence we are looking for is an lcs-position or not. If the occurrence is an lcs-position, we find it in $\mBWT(R)$ as $j = \mselect_{c}(\mBWT(R), \mselect_{1}(B_{\mF(R)}, \mC(\mLCS)[c] + k))$, and then map $j$ to $\mselect_{c}(\mBWT(S), i)$ by using $\mLCS(\mBWT(R), \mBWT(S))$. Otherwise we find the occurrence in $\mCS(S)$ as $j = \mselect_{c}(\mCS(S), i-k)$, and then return $\mselect_{c}(\mBWT(S), i) = \mselect_{0}(B_{\mBWT(S)}, j)$.
 
@@ -391,7 +393,7 @@ Note that the full relative FM-index is more limited than the basic index, becau
 
 \section{Relative compressed suffix tree}
 
-The \emph{relative compressed suffix tree} (\RCST) is a \CSTnpr{} of the target sequence relative to a \CST{} of the reference sequence. It consists of two major components: the relative FM-index and the \emph{relative} \LCP{} (\RLCP) \emph{array}. Optional relative select structures can be generated or loaded from disk to speed up algorithms based on forward searching. The \RLCP{} array is based on the \RLZ{} parsing, while the support for \nsv/\psv/\rmq{} queries is based on a minimum tree over the phrases.
+The \emph{relative compressed suffix tree} (\RCST) is a \CSTnpr{} of the target sequence relative to a \CST{} of the reference sequence. It consists of two major components: the relative FM-index with full functionality and the \emph{relative} \LCP{} (\RLCP) \emph{array}. Optional relative select structures can be generated or loaded from disk to speed up algorithms based on forward searching. The \RLCP{} array is based on the \RLZ{} parsing, while the support for \nsv/\psv/\rmq{} queries is based on a minimum tree over the phrases.
 
 \subsection{Relative \LCP{} array}
 
@@ -429,18 +431,76 @@ The remaining queries are all similar to each other. In order to answer query $\
 
 We have implemented the relative compressed suffix tree in C++, extending the old relative FM-index implementation.\footnote{The implementation is available at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based on the \emph{Succinct Data Structure Library 2.0}~\cite{Gog2014b}. Some parts of the implementation have been parallelized using \emph{OpenMP} and the \emph{libstdc++ parallel mode}.
 
-The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction was multi-threaded, and there may have been other jobs running on the same nodes at the same time.
+The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction used 8 parallel threads, but there may have been other jobs running on the same nodes at the same time.
 
 As our primary target sequence, we used the \emph{maternal haplotype} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
 
+In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
+
 \subsection{Basic experiments}
 
-\begin{itemize}
-\item construction time, space
-\item component sizes; comparison to the old RFM and SimpleFM
-\item basic queries: LF, Psi, RMQ/PSV/NSV
-\item locate() performance; note on sample rates with suffix order sampling
-\end{itemize}
+Describe the FM-index and LCP reference. Describe sample periods. Tell why the period should be prime with suffix order sampling.
+
+Table~\ref{table:construction}: Index construction time/space, LCS lengths. Note that basic RFM is much better optimized.
+
+\begin{table}
+\caption{Sequence lengths and resources used for index construction for NA12878 relative to the human reference genome with and without chromosome Y. Approx and Inv denote the approximate \LCS{} and the bwt-invariant subsequence. Index lengths are in millions of base pairs, while construction resources are in minutes of wall clock time and gigabytes of memory.}\label{table:construction}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cccc|cc|cc|cc}
+\hline
+ &
+\multicolumn{4}{c|}{\textbf{Sequence length}} &
+\multicolumn{2}{c|}{\textbf{\RFM{} (basic)}} &
+\multicolumn{2}{c|}{\textbf{\RFM{} (full)}} &
+\multicolumn{2}{c}{\textbf{\RCST}} \\
+\textbf{ChrY} &
+\textbf{Reference} & \textbf{Target} & \textbf{Approx} & \textbf{Inv} &
+\textbf{Time} & \textbf{Space} &
+\textbf{Time} & \textbf{Space} &
+\textbf{Time} & \textbf{Space} \\
+\hline
+yes & 3096M & 3036M & 2992M & 2980M & 2.35 min & 4.96 GB & -- & -- & 379 min & 99.0 GB \\
+no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & -- & -- & 398 min & 97.2 GB \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Table~\ref{table:indexes}: index sizes.
+
+\begin{table}
+\caption{Various indexes for NA12878 relative to the human reference genome with and without chromosome Y. Index sizes are in megabytes and in bits per character. Select denotes the optional relative select structures.}\label{table:indexes}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc|cccc}
+\hline
+ &
+\multicolumn{2}{c|}{\textbf{FM-index}} &
+\multicolumn{2}{c|}{\textbf{\RFM}} &
+\multicolumn{3}{c}{\textbf{\RCST}} \\
+\textbf{ChrY} &
+\textbf{Basic} & \textbf{Full} &
+\textbf{Basic} & \textbf{Full} &
+\textbf{\RLCP} & \textbf{Total} & \textbf{Select} \\
+\hline
+\multirow{2}{*}{yes} &  1090 MB &  1953 MB &   218 MB &   447 MB &  1100 MB &  1547 MB &   190 MB \\
+                     & 3.01 bpc & 5.42 bpc & 0.60 bpc & 1.23 bpc & 3.04 bpc & 4.27 bpc & 0.52 bpc \\
+\hline
+\multirow{2}{*}{no}  &  1090 MB &  1953 MB &   181 MB &   395 MB &   775 MB &  1145 MB &   163 MB \\
+                     & 3.01 bpc & 5.42 bpc & 0.50 bpc & 1.09 bpc & 2.07 bpc & 3.16 bpc & 0.45 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Table: component sizes (full RFM, RLCP)
+
+Table: basic queries (LF, Psi, NSV, PSV, RMQ)
+
+Table/Figure: locate performance
 
 \subsection{Suffix tree experiments}
 
