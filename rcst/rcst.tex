@@ -422,7 +422,7 @@ In order to support the queries, we build a $4$-ary \emph{minimum tree} over the
 
 We encode the minimum tree as two arrays. The smallest \LCP{} values are stored in $M_{\mLCP}$, which we encode as an \slarray. Plain array $M_{L}$ stores the starting offset of each level in $M_{\mLCP}$, with the leaves stored starting from offset $M_{L}[1] = 1$. If $i$ is a minimum tree node located at level $j$, the corresponding minimum value is $M_{\mLCP}[i]$, the parent of the node is $M_{L}[j+1] + (i - M_{L}[j]) / 4$, and its first child is $M_{L}[j-1] + 4 \cdot (i - M_{L}[j])$.
 
-A range minimum query $\mrmq(sp,ep)$ starts by finding the minimal range of phrases $w_{l}, \dotsc, w_{r}$ covering the query and the maximal range of phrases $w_{l'}, \dotsc, w_{r'}$ contained in the query. Then we use the minimum tree to find the leftmost minimum value $j = M_{\mLCP}[k]$ in $M_{\mLCP}[l',r']$, and find the leftmost occurrence $\mLCP[i] = j$ in phrase $w_{k}$. If $l < l'$ and $M_{\mLCP}[l] \le j$, we decompress phrase $w_{l}$ and find the leftmost minimum value $\mLCP[i'] = j'$ (with $i' \ge sp$) in the phrase. If $j' \le j$, we update $(i,j) \leftarrow (i',j')$. Finally we check phrase $w_{r}$ in a similar way, if $r > r'$ and $M_{mLCP}[r] < j$. The answer to the range minimum query is $\mLCP[i] = j$, so we return $(i,j)$.\footnote{The definition of the query only calls for the leftmost minimum position $i$- We also return $\mLCP[i] = j$, because suffix tree operations often need it.}
+A range minimum query $\mrmq(sp,ep)$ starts by finding the minimal range of phrases $w_{l}, \dotsc, w_{r}$ covering the query and the maximal range of phrases $w_{l'}, \dotsc, w_{r'}$ contained in the query. Then we use the minimum tree to find the leftmost minimum value $j = M_{\mLCP}[k]$ in $M_{\mLCP}[l',r']$, and find the leftmost occurrence $\mLCP[i] = j$ in phrase $w_{k}$. If $l < l'$ and $M_{\mLCP}[l] \le j$, we decompress phrase $w_{l}$ and find the leftmost minimum value $\mLCP[i'] = j'$ (with $i' \ge sp$) in the phrase. If $j' \le j$, we update $(i,j) \leftarrow (i',j')$. Finally we check phrase $w_{r}$ in a similar way, if $r > r'$ and $M_{mLCP}[r] < j$. The answer to the range minimum query is $\mLCP[i] = j$, so we return $(i,j)$.\footnote{The definition of the query only calls for the leftmost minimum position $i$. We also return $\mLCP[i] = j$, because suffix tree operations often need it.}
 
 The remaining queries are all similar to each other. In order to answer query $\mnsv(i)$, we start by determining the phrase $w_{k}$ containing position $i$, and then determining $\mLCP[i]$. Next we scan the rest of the phrase to see whether there is a smaller value $\mLCP[j] < \mLCP[i]$ later in the phrase. If so, we return $(j,\mLCP[j])$. Otherwise we traverse the minimum tree to find the smallest $k' > k$ with $M_{\mLCP}[k'] < \mLCP[i]$. Finally we decompress phrase $w_{k'}$, find the leftmost position $j$ with $\mLCP[j] < \mLCP[i]$, and return $(j,\mLCP[j])$.
 
@@ -433,7 +433,7 @@ We have implemented the relative compressed suffix tree in C++, extending the ol
 
 The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction used 8 parallel threads, but there may have been other jobs running on the same nodes at the same time.
 
-As our primary target sequence, we used the \emph{maternal haplotype} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
+As our primary target sequence, we used the \emph{maternal haplotypes} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
 
 In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
 
@@ -441,7 +441,7 @@ In the following, a basic FM-index is an index supporting only \find{} queries, 
 
 Describe the FM-index and LCP reference. Describe sample periods. Tell why the period should be prime with suffix order sampling.
 
-Table~\ref{table:construction}: Index construction time/space, LCS lengths. Note that basic RFM is much better optimized.
+Table~\ref{table:construction}: Index construction time/space, LCS lengths. Note that basic RFM is much better optimized and parallelized. Note that relative index construction assumes that the corresponding FM-indexes and LCP arrays already exist. Note: DLCP indexing time!
 
 \begin{table}
 \caption{Sequence lengths and resources used for index construction for NA12878 relative to the human reference genome with and without chromosome Y. Approx and Inv denote the approximate \LCS{} and the bwt-invariant subsequence. Index lengths are in millions of base pairs, while construction resources are in minutes of wall clock time and gigabytes of memory.}\label{table:construction}
@@ -461,8 +461,8 @@ Table~\ref{table:construction}: Index construction time/space, LCS lengths. Note
 \textbf{Time} & \textbf{Space} &
 \textbf{Time} & \textbf{Space} \\
 \hline
-yes & 3096M & 3036M & 2992M & 2980M & 2.35 min & 4.96 GB & -- & -- & 379 min & 99.0 GB \\
-no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & -- & -- & 398 min & 97.2 GB \\
+yes & 3096M & 3036M & 2992M & 2980M & 2.35 min & 4.96 GB & 238 min & 83.7 GB & 379 min & 99.0 GB \\
+no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & 214 min & 82.3 GB & 398 min & 97.2 GB \\
 \hline
 \end{tabular}
 \end{center}
