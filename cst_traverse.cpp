@@ -123,6 +123,14 @@ main(int argc, char** argv)
       std::cout << std::endl;
     }
 
+    {
+      std::string name = "cst_fully";
+      cst_fully<> cst;
+      buildCST(cst, seq_name, name);
+//      traverse(cst, name);
+      std::cout << std::endl;
+    }
+
     std::cout << std::endl;
   }
 

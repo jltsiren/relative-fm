@@ -132,6 +132,14 @@ main(int argc, char** argv)
     std::cout << std::endl;
   }
 
+  {
+    std::string name = "cst_fully";
+    cst_fully<> cst;
+    buildCST(cst, target_name, name);
+//    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    std::cout << std::endl;
+  }
+
 #ifdef VERIFY_RESULTS
   for(uint64_t i = 0; i < seq.size(); i++)
   {

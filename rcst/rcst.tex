@@ -32,6 +32,7 @@
 \newcommand{\BWT}{\textsf{BWT}}
 \newcommand{\CSA}{\textsf{CSA}}
 \newcommand{\FMI}{\textsf{FMI}}
+\newcommand{\SSA}{\textsf{SSA}}
 \newcommand{\RFM}{\textsf{RFM}}
 \newcommand{\mSA}{\ensuremath{\mathsf{SA}}}
 \newcommand{\mISA}{\ensuremath{\mathsf{ISA}}}
@@ -244,7 +245,7 @@ Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with $\mSA[\mLF
 
 \emph{Compressed suffix arrays} (\CSA) \cite{Ferragina2005a,Grossi2005} are text indexes supporting similar functionality as the suffix array. This includes the following queries: i) $\mfind(P) = [sp,ep]$ finds the lexicographic range of suffixes starting with \emph{pattern} $P[1,\ell]$; ii) $\mlocate(sp,ep) = \mSA[sp,ep]$ locates these suffixes in the text; and iii) $\mextract(i,j) = T[i,j]$ extracts substrings of the text. In practice, the \find{} performance of compressed suffix arrays can be competitive with suffix arrays, while \locate{} queries are orders of magnitude slower \cite{Ferragina2009a}. Typical index sizes are less than the size of the uncompressed text.
 
-The \emph{FM-index} (\FMI) \cite{Ferragina2005a} is a common type of compressed suffix arrays. A typical implementation stores the \BWT{} in a wavelet tree. \find{} queries are supported by \emph{backward searching}. Let $[sp,ep]$ be the lexicographic range of suffixes starting with the suffix $P[i+1,\ell]$ of the pattern. We can find the range matching the suffix $P[i,\ell]$ with a generalization of function \LF{} as
+The \emph{FM-index} (\FMI) \cite{Ferragina2005a} is a common type of compressed suffix arrays. A typical implementation stores the \BWT{} in a wavelet tree \cite{Grossi2003}. \find{} queries are supported by \emph{backward searching}. Let $[sp,ep]$ be the lexicographic range of suffixes starting with the suffix $P[i+1,\ell]$ of the pattern. We can find the range matching the suffix $P[i,\ell]$ with a generalization of function \LF{} as
 $$
 \mLF([sp,ep],P[i]) =
 [\mC[P[i]] + \mrank_{P[i]}(\mBWT, sp-1) + 1,
@@ -302,7 +303,7 @@ Tree topology representations are the main differences between the various \CST{
 \begin{itemize}
 \item \emph{Sadakane's compressed suffix tree} (\CSTsada) \cite{Sadakane2007} uses a \emph{balanced parentheses} representation for the tree. Each node is encoded as an opening parenthesis, followed by the encodings of its children and finally a closing parenthesis. This can be encoded as a bitvector of length $2n'$ for a tree with $n'$ nodes, requiring up to $4n+\oh(n)$ bits. \CSTsada{} tends to be larger and faster than the other compressed suffix trees \cite{Gog2011a,Abeliuk2013}.
 \item The \emph{fully compressed suffix tree} (\FCST) of Russo et al.~\cite{Russo2011,Navarro2014a} aims to use as little space as possible. It does not require an \LCP{} array at all, and stores a balanced parentheses representation for Navarro2014a sampled subset of suffix tree nodes in $\oh(n)$ bits. Unsampled nodes are retrieved by following suffix links. \FCST{} is smaller and much slower than the other compressed suffix trees \cite{Russo2011,Abeliuk2013}.
-\item Fischer et al.~\cite{Fischer2009a,Ohlebusch2010,Gog2011a,Abeliuk2013} proposed an intermediate representation, \CSTnpr, based on \LCP{} intervals. Tree navigation is handled by searching for the values defining the \LCP{} intervals. \emph{Range minimum queries} $\mrmq(sp,ep)$ find the leftmost minimal value in $\mLCP[sp,ep]$, while \emph{next/previous smaller value} queries $\mnsv(i)$ and $\mpsv(i)$ find the next/previous \LCP{} value smaller than $\mLCP[i]$.
+\item Fischer et al.~\cite{Fischer2009a} proposed an intermediate representation, \CSTnpr, based on \LCP{} intervals. Tree navigation is handled by searching for the values defining the \LCP{} intervals. \emph{Range minimum queries} $\mrmq(sp,ep)$ find the leftmost minimal value in $\mLCP[sp,ep]$, while \emph{next/previous smaller value} queries $\mnsv(i)$ and $\mpsv(i)$ find the next/previous \LCP{} value smaller than $\mLCP[i]$. After the improvements by various authors \cite{Ohlebusch2009,Ohlebusch2010,Gog2011a,Abeliuk2013}, the \CSTnpr{} is perhaps the most practical compressed suffix tree.
 \end{itemize}
 
 For typical texts and component choices, the size of compressed suffix trees ranges from the $1.5n$ to $3n$ bytes of \CSTsada{} to the $0.5n$ to $n$ bytes of \FCST{} \cite{Gog2011a,Abeliuk2013}. There are also some \CST{} variants for repetitive texts, such as versioned document collections and collections of individual genomes. Abeliuk et al.~\cite{Abeliuk2013} developed a variant of \CSTnpr{} that can be smaller than $n$ bits, while achieving similar performance as the \FCST. Navarro and Ordóñez \cite{Navarro2014} used grammar-based compression for the tree representation of \CSTsada, resulting in a compressed suffix tree that requires slightly more space than the \CSTnpr{} of Abeliuk et al., while being closer to the non-repetitive \CSTsada{} and \CSTnpr{} in performance.
@@ -429,17 +430,19 @@ The remaining queries are all similar to each other. In order to answer query $\
 
 \section{Experiments}
 
-We have implemented the relative compressed suffix tree in C++, extending the old relative FM-index implementation.\footnote{The implementation is available at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based on the \emph{Succinct Data Structure Library 2.0}~\cite{Gog2014b}. Some parts of the implementation have been parallelized using \emph{OpenMP} and the \emph{libstdc++ parallel mode}.
+We have implemented the relative compressed suffix tree in C++, extending the old relative FM-index implementation.\footnote{The implementation is available at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based on the \emph{Succinct Data Structure Library (SDSL) 2.0}~\cite{Gog2014b}. Some parts of the implementation have been parallelized using \emph{OpenMP} and the \emph{libstdc++ parallel mode}.
 
 The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction used 8 parallel threads, but there may have been other jobs running on the same nodes at the same time.
 
 As our primary target sequence, we used the \emph{maternal haplotypes} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
 
-In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
+We used the SDSL implementation of the \emph{succinct suffix array} (\SSA{}) \cite{Ferragina2007a,Maekinen2005} as our reference \CSA{} and our baseline index. The \SSA{} encodes the Burrows-Wheeler transform as a \emph{Huffman-shaped wavelet tree}, combining very fast queries with size close to the \emph{order\nobreakdash-$0$ empirical entropy}. These properties make it the index of choice for DNA sequences \cite{Ferragina2009a}. Due to the long runs of character $N$, \emph{fixed block compression boosting} \cite{Kaerkkaeinen2011} could reduce index size without significantly increasing query times. Unfortunately there is no implementation capable of handling multi-gigabyte datasets available.
+
+We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample periods were $17$ for \SA{} and $64$ for \ISA. In \RFM, we used sample periods $257$ for \SA{} and $512$ for \ISA{} to handle the regions with no match in the reference. The sample periods for suffix order sampling were primes due to the long runs of character $N$ in the assembled genomes. If the number of long runs of character $N$ in the indexed sequence is even, then the lexicographic ranks of almost all suffixes in half of the runs are odd, and those runs are almost completely unsampled. This can be avoided by making the sample period and the number of runs \emph{relatively prime}.
 
 \subsection{Basic experiments}
 
-Describe the FM-index and LCP reference. Describe sample periods. Tell why the period should be prime with suffix order sampling.
+In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
 
 Table~\ref{table:construction}: Index construction time/space, LCS lengths. Note that basic RFM is much better optimized and parallelized. Note that relative index construction assumes that the corresponding FM-indexes and LCP arrays already exist. Note: DLCP indexing time!
 
@@ -478,7 +481,7 @@ Table~\ref{table:indexes}: index sizes.
 \begin{tabular}{c|cc|cc|cccc}
 \hline
  &
-\multicolumn{2}{c|}{\textbf{FM-index}} &
+\multicolumn{2}{c|}{\textbf{\SSA}} &
 \multicolumn{2}{c|}{\textbf{\RFM}} &
 \multicolumn{3}{c}{\textbf{\RCST}} \\
 \textbf{ChrY} &
