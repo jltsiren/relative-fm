@@ -436,15 +436,15 @@ The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.
 
 As our primary target sequence, we used the \emph{maternal haplotypes} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
 
+In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
+
+\subsection{Basic experiments}
+
 We used the SDSL implementation of the \emph{succinct suffix array} (\SSA{}) \cite{Ferragina2007a,Maekinen2005} as our reference \CSA{} and our baseline index. The \SSA{} encodes the Burrows-Wheeler transform as a \emph{Huffman-shaped wavelet tree}, combining very fast queries with size close to the \emph{order\nobreakdash-$0$ empirical entropy}. These properties make it the index of choice for DNA sequences \cite{Ferragina2009a}. Due to the long runs of character $N$, \emph{fixed block compression boosting} \cite{Kaerkkaeinen2011} could reduce index size without significantly increasing query times. Unfortunately there is no implementation capable of handling multi-gigabyte datasets available.
 
 We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample periods were $17$ for \SA{} and $64$ for \ISA. In \RFM, we used sample periods $257$ for \SA{} and $512$ for \ISA{} to handle the regions with no match in the reference. The sample periods for suffix order sampling were primes due to the long runs of character $N$ in the assembled genomes. If the number of long runs of character $N$ in the indexed sequence is even, then the lexicographic ranks of almost all suffixes in half of the runs are odd, and those runs are almost completely unsampled. This can be avoided by making the sample period and the number of runs \emph{relatively prime}.
 
-\subsection{Basic experiments}
-
-In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
-
-Table~\ref{table:construction}: Index construction time/space, LCS lengths. Note that basic RFM is much better optimized and parallelized. Note that relative index construction assumes that the corresponding FM-indexes and LCP arrays already exist. Note: DLCP indexing time!
+Table~\ref{table:construction} lists the resource requirements for building the relative indexes, assuming that we have already built the corresponding non-relative structures for the sequences. As a comparison, building an FM-index for a human genome typically takes 16--17 minutes and 25--26 gigabytes of memory. While the construction of the basic relative FM-index is highly optimized, the other construction algorithms are just the first implementations that were deemed good enough for this paper. The construction times for the relative \CST{} do not include the time required for indexing the \DLCP{} array of the reference sequence. While this takes another two hours, it only needs to be done once for every reference sequence.
 
 \begin{table}
 \caption{Sequence lengths and resources used for index construction for NA12878 relative to the human reference genome with and without chromosome Y. Approx and Inv denote the approximate \LCS{} and the bwt-invariant subsequence. Index lengths are in millions of base pairs, while construction resources are in minutes of wall clock time and gigabytes of memory.}\label{table:construction}
@@ -471,7 +471,7 @@ no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & 214 min & 82.3 GB & 3
 \end{center}
 \end{table}
 
-Table~\ref{table:indexes}: index sizes.
+The sizes of the constructed indexes are listed in Table~\ref{table:indexes}. While a basic \RFM{} index is 5--6 times smaller than a basic \SSA, the full \RFM{} is 4.4--5 times smaller than the full \SSA. The \RLCP{} array is about twice as large as the full \RFM{} index, increasing the total size of the \RCST{} to 3.2--4.3 bits per character. The optional relative select structures are almost as large as the basic \RFM{} index. As the relative structures are significantly larger relative to a male reference than relative to a female reference, keeping a separate female reference seems worthwhile, if there are more than a few female genomes among the target sequences.
 
 \begin{table}
 \caption{Various indexes for NA12878 relative to the human reference genome with and without chromosome Y. Index sizes are in megabytes and in bits per character. Select denotes the optional relative select structures.}\label{table:indexes}
@@ -499,7 +499,7 @@ Table~\ref{table:indexes}: index sizes.
 \end{center}
 \end{table}
 
-Table: component sizes (full RFM, RLCP)
+Table: component sizes (basic RFM, full RFM, RLCP);  Comment about \LCS{} lengths in Table~\ref{table:construction}.
 
 Table: basic queries (LF, Psi, NSV, PSV, RMQ)
 
@@ -509,9 +509,11 @@ Table/Figure: locate performance
 
 \begin{itemize}
 \item RCST size vs. mutation rate
-\item RCST vs. CST for repetitive collections
+\item RCST vs. CST for repetitive collections; LCP reference structure
+\item SDSL CSTs
 \item CST traversal
 \item maximal matches
+\item \FCST{} is typically around two orders of magnitude slower than the other compressed suffix trees \cite{Abeliuk2013}
 \end{itemize}
 
 
