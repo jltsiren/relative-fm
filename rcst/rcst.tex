@@ -5,6 +5,7 @@
 \usepackage{array}
 \usepackage{graphicx}
 \usepackage{multirow}
+\usepackage{textgreek}
 \usepackage{url}
 
 \usepackage[utf8]{inputenc}
@@ -67,9 +68,11 @@
 \newcommand{\mright}{\ensuremath{\mathsf{right}}}
 \newcommand{\sdarray}{\textsf{sdarray}}
 \newcommand{\slarray}{\textsf{slarray}}
+\newcommand{\rselect}{\textsf{rselect}}
 
 % Queries
 \newcommand{\LF}{\textsf{LF}}
+\newcommand{\Psiop}{\textsf{\textPsi}}
 \newcommand{\find}{\textsf{find}}
 \newcommand{\locate}{\textsf{locate}}
 \newcommand{\extract}{\textsf{extract}}
@@ -116,9 +119,10 @@
 \newcommand{\mChild}{\ensuremath{\mathsf{Child}}}
 \newcommand{\mLetter}{\ensuremath{\mathsf{Letter}}}
 
-% Bits
+% Other
 \newcommand{\onebit}{$1$\nobreakdash-bit}
 \newcommand{\zerobit}{$0$\nobreakdash-bit}
+\newcommand{\mus}{\textmu{}s}
 
 
 \title{Relative Compressed Suffix Trees\thanks{This work is funded in part by:
@@ -337,9 +341,9 @@ $$
 
 \subsection{Relative select}
 
-We can implement the entire functionality of a compressed suffix array with \rank{} queries on the \BWT. However, if we use the \CSA{} in a compressed suffix tree, we also need \select{} queries to support \emph{forward searching} with $\mathsf{\mPsi}$ and $\mChild$ queries. We can always implement \select{} queries by binary searching with \rank{} queries, but the result will be much slower than \rank{} queries.
+We can implement the entire functionality of a compressed suffix array with \rank{} queries on the \BWT. However, if we use the \CSA{} in a compressed suffix tree, we also need \select{} queries to support \emph{forward searching} with $\mPsi$ and $\mChild$ queries. We can always implement \select{} queries by binary searching with \rank{} queries, but the result will be much slower than \rank{} queries.
 
-The faster alternative to support \select{} queries in the relative FM-index is to build a \emph{relative select} structure \cite{Boucher2015}. Let $\mF(X)$ be a sequence consisting of the characters of sequence $X$ in sorted order. Alternatively, $\mF(X)$ is a sequence such that $\mF(X)[i] = \mBWT(X)[\mPsi(i)]$. The relative select structure consists of bitvectors $\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and $B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array $\mC(\mLCS)$ for the common subsequence.
+The faster alternative to support \select{} queries in the relative FM-index is to build a \emph{relative select} structure \rselect{} \cite{Boucher2015}. Let $\mF(X)$ be a sequence consisting of the characters of sequence $X$ in sorted order. Alternatively, $\mF(X)$ is a sequence such that $\mF(X)[i] = \mBWT(X)[\mPsi(i)]$. The relative select structure consists of bitvectors $\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and $B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array $\mC(\mLCS)$ for the common subsequence.
 
 To compute $\mselect_{c}(\mBWT(S), i)$, we start by determining how many of the first $i$ occurrences of character $c$ are lcs-positions as $k = \mrank_{1}(B_{\mF(S)}, \mC(\mBWT(S))[c] + i) - \mC(\mLCS)[c]$. Then we check from bit $B_{\mF(S)}[\mC(\mBWT(S))[c] + i]$ whether the occurrence we are looking for is an lcs-position or not. If the occurrence is an lcs-position, we find it in $\mBWT(R)$ by computing $j = \mselect_{c}(\mBWT(R), \mselect_{1}(B_{\mF(R)}, \mC(\mLCS)[c] + k))$, and then map $j$ to $\mselect_{c}(\mBWT(S), i)$ by using $\mLCS(\mBWT(R), \mBWT(S))$. Otherwise we find the occurrence in $\mCS(\mBWT(S))$ as $j = \mselect_{c}(\mCS(\mBWT(S)), i-k)$, and then return $\mselect_{c}(\mBWT(S), i) = \mselect_{0}(B_{\mBWT(S)}, j)$.
 
@@ -434,7 +438,7 @@ We have implemented the relative compressed suffix tree in C++, extending the ol
 
 The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction used 8 parallel threads, but there may have been other jobs running on the same nodes at the same time.
 
-As our primary target sequence, we used the \emph{maternal haplotypes} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome Y.
+As our primary target sequence, we used the \emph{maternal haplotypes} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome~Y.
 
 In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
 
@@ -447,7 +451,7 @@ We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample p
 Table~\ref{table:construction} lists the resource requirements for building the relative indexes, assuming that we have already built the corresponding non-relative structures for the sequences. As a comparison, building an FM-index for a human genome typically takes 16--17 minutes and 25--26 gigabytes of memory. While the construction of the basic relative FM-index is highly optimized, the other construction algorithms are just the first implementations that were deemed good enough for this paper. The construction times for the relative \CST{} do not include the time required for indexing the \DLCP{} array of the reference sequence. While this takes another two hours, it only needs to be done once for every reference sequence.
 
 \begin{table}
-\caption{Sequence lengths and resources used for index construction for NA12878 relative to the human reference genome with and without chromosome Y. Approx and Inv denote the approximate \LCS{} and the bwt-invariant subsequence. Index lengths are in millions of base pairs, while construction resources are in minutes of wall clock time and gigabytes of memory.}\label{table:construction}
+\caption{Sequence lengths and resources used for index construction for NA12878 relative to the human reference genome with and without chromosome~Y. Approx and Inv denote the approximate \LCS{} and the bwt-invariant subsequence. Index lengths are in millions of base pairs, while construction resources are in minutes of wall clock time and gigabytes of memory.}\label{table:construction}
 \setlength{\extrarowheight}{2pt}
 \setlength{\tabcolsep}{3pt}
 \begin{center}
@@ -474,7 +478,7 @@ no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & 214 min & 82.3 GB & 3
 The sizes of the constructed indexes are listed in Table~\ref{table:indexes}. While a basic \RFM{} index is 5--6 times smaller than a basic \SSA, the full \RFM{} is 4.4--5 times smaller than the full \SSA. The \RLCP{} array is about twice as large as the full \RFM{} index, increasing the total size of the \RCST{} to 3.2--4.3 bits per character. The optional relative select structures are almost as large as the basic \RFM{} index. As the relative structures are significantly larger relative to a male reference than relative to a female reference, keeping a separate female reference seems worthwhile, if there are more than a few female genomes among the target sequences.
 
 \begin{table}
-\caption{Various indexes for NA12878 relative to the human reference genome with and without chromosome Y. Index sizes are in megabytes and in bits per character. Select denotes the optional relative select structures.}\label{table:indexes}
+\caption{Various indexes for NA12878 relative to the human reference genome with and without chromosome~Y. Index sizes are in megabytes and in bits per character.}\label{table:indexes}
 \setlength{\extrarowheight}{2pt}
 \setlength{\tabcolsep}{3pt}
 \begin{center}
@@ -487,7 +491,7 @@ The sizes of the constructed indexes are listed in Table~\ref{table:indexes}. Wh
 \textbf{ChrY} &
 \textbf{Basic} & \textbf{Full} &
 \textbf{Basic} & \textbf{Full} &
-\textbf{\RLCP} & \textbf{Total} & \textbf{Select} \\
+\textbf{\RLCP} & \textbf{Total} & \textbf{\rselect} \\
 \hline
 \multirow{2}{*}{yes} &  1090 MB &  1953 MB &   218 MB &   447 MB &  1100 MB &  1547 MB &   190 MB \\
                      & 3.01 bpc & 5.42 bpc & 0.60 bpc & 1.23 bpc & 3.04 bpc & 4.27 bpc & 0.52 bpc \\
@@ -499,10 +503,10 @@ The sizes of the constructed indexes are listed in Table~\ref{table:indexes}. Wh
 \end{center}
 \end{table}
 
-Table~\ref{table:rfm components} and Table~\ref{table:rlcp components} list the sizes of the individual components of the relative FM-index and the \RLCP{} array. Including the chromosome Y in the reference increases the sizes of almost all relative components, with the exception of $\mCS(\mBWT(S))$ and $\mLCS(R,S)$. In the first case, the common subsequence still covers approximately the same positions of $\mBWT(S)$ as before. In the second case, chromosome Y appears in bitvector $B_{R}$ as a long run of \zerobit{}s, which compresses well. The components of a full \RFM{} index are slightly larger than the corresponding components of a basic \RFM{} index, because the bwt-invariant subsequence is slightly shorter than the approximate longest common subsequence (see Table~\ref{table:construction}).
+Table~\ref{table:rfm components} and Table~\ref{table:rlcp components} list the sizes of the individual components of the relative FM-index and the \RLCP{} array. Including the chromosome~Y in the reference increases the sizes of almost all relative components, with the exception of $\mCS(\mBWT(S))$ and $\mLCS(R,S)$. In the first case, the common subsequence still covers approximately the same positions of $\mBWT(S)$ as before. In the second case, chromosome~Y appears in bitvector $B_{R}$ as a long run of \zerobit{}s, which compresses well. The components of a full \RFM{} index are slightly larger than the corresponding components of a basic \RFM{} index, because the bwt-invariant subsequence is slightly shorter than the approximate longest common subsequence (see Table~\ref{table:construction}).
 
 \begin{table}
-\caption{Breakdown of component sizes in the \RFM{} index for NA12878 relative to the human reference genome with and without chromosome Y in bits per character.}\label{table:rfm components}
+\caption{Breakdown of component sizes in the \RFM{} index for NA12878 relative to the human reference genome with and without chromosome~Y in bits per character.}\label{table:rfm components}
 \setlength{\extrarowheight}{2pt}
 \setlength{\tabcolsep}{3pt}
 \begin{center}
@@ -524,22 +528,56 @@ $\mLCS(R,S)$               &                -- &                -- &          0.
 \end{table}
 
 \begin{table}
-\caption{Breakdown of component sizes in the \RLCP{} array for NA12878 relative to the human reference genome with and without chromosome Y in bits per character. The components are phrase pointers, phrase boundaries in the target \LCP{} array, mismatching characters, and the minimum tree.}\label{table:rlcp components}
+\caption{Breakdown of component sizes in the \RLCP{} array for NA12878 relative to the human reference genome with and without chromosome~Y in bits per character. The components are phrase pointers, phrase boundaries in the target \LCP{} array, mismatching characters, and the minimum tree.}\label{table:rlcp components}
 \setlength{\extrarowheight}{2pt}
 \setlength{\tabcolsep}{3pt}
 \begin{center}
-\begin{tabular}{c|ccccc}
+\begin{tabular}{c|cccc|c}
 \hline
-\textbf{ChrY} & \textbf{Total}    & $W_{p}$  & $W_{\ell}$ & $W_{c}$  & $M_{\mLCP}$ \\
+\textbf{ChrY} & $W_{p}$  & $W_{\ell}$ & $W_{c}$  & $M_{\mLCP}$ & \textbf{Total}    \\
 \hline
-yes           & \textbf{3.04 bpc} & 1.44 bpc &   0.34 bpc & 0.54 bpc &    0.71 bpc \\
-no            & \textbf{2.07 bpc} & 1.11 bpc &   0.27 bpc & 0.30 bpc &    0.39 bpc \\
+yes           & 1.44 bpc &   0.34 bpc & 0.54 bpc &    0.71 bpc & \textbf{3.04 bpc} \\
+no            & 1.11 bpc &   0.27 bpc & 0.30 bpc &    0.39 bpc & \textbf{2.07 bpc} \\
 \hline
 \end{tabular}
 \end{center}
 \end{table}
 
-Table: basic queries (LF, Psi, NSV, PSV, RMQ)
+Average query times for the basic queries can be seen in Table~\ref{table:rfm queries} and Table~\ref{table:rlcp queries}. For \LF{} and \Psiop{} queries with the full \SSA{}, the full \RFM, and the full \RFM{} augmented with \rselect, the results are similar to the earlier ones with basic indexes \cite{Boucher2015}. Random access to the \RLCP{} array is about 20 times slower than to the \LCP{} array. The \LCP{} array provides sequential access iterators, which are much faster than using random access sequentially. The \RLCP{} array does not such iterators, because subsequent phrases are often copied from different parts of the reference. However, queries based on the minimum tree (\nsv, \psv, and \rmq) use fast sequential access to the \RLCP{} array within a phrase. \SSA{} and the \LCP{} array are consistently slower when the reference does not contain chromosome~Y, even though the structures are identical in either case. This is probably a memory management artifact that depends on the other memory allocations.
+
+\begin{table}
+\caption{Query times with \SSA{} and the \RFM{} index for NA12878 relative to the human reference genome with and without chromosome~Y in microseconds. The query times are averages over 10 million random queries.}\label{table:rfm queries}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc|c}
+\hline
+ & \multicolumn{2}{c|}{\textbf{\SSA}} & \multicolumn{2}{c|}{\textbf{\RFM}} & \textbf{\rselect} \\
+\textbf{ChrY} & \textbf{\LF} & \textbf{\Psiop} & \textbf{\LF} & \textbf{\Psiop} & \textbf{\Psiop} \\
+\hline
+yes & 0.560 \mus & 1.139 \mus & 3.980 \mus & 47.249 \mus & 6.277 \mus \\
+no  & 0.627 \mus & 1.563 \mus & 3.861 \mus & 55.068 \mus & 6.486 \mus \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Query times with the reference \LCP{} array and the \RLCP{} array for NA12878 relative to the human reference genome with and without chromosome~Y in microseconds. For the random queries, the query times are averages over 100 million queries. The range lengths for \rmq{} queries were $16^{k}$ (for $k \ge 1$) with probability $0.5^{k}$. For sequential access, the times are averages per position for scanning the entire \LCP{} array.}\label{table:rlcp queries}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|ccccc}
+\hline
+ & \multicolumn{2}{c|}{\textbf{\LCP{} array}} & \multicolumn{5}{c}{\textbf{\RLCP{} array}} \\
+\textbf{ChrY} & \textbf{Random} & \textbf{Sequential} & \textbf{Random} & \textbf{Sequential} & \textbf{\nsv} & \textbf{\psv} & \textbf{\rmq} \\
+\hline
+yes & 0.052 \mus & 0.001 \mus & 1.096 \mus & 0.119 \mus & 1.910 \mus & 1.935 \mus & 2.769 \mus \\
+no  & 0.070 \mus & 0.001 \mus & 1.263 \mus & 0.124 \mus & 1.801 \mus & 1.923 \mus & 2.605 \mus \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
 
 Table/Figure: locate performance
 
