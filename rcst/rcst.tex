@@ -546,7 +546,7 @@ no            & 1.11 bpc &   0.27 bpc & 0.30 bpc &    0.39 bpc & \textbf{2.07 bp
 Average query times for the basic queries can be seen in Table~\ref{table:rfm queries} and Table~\ref{table:rlcp queries}. For \LF{} and \Psiop{} queries with the full \SSA{}, the full \RFM, and the full \RFM{} augmented with \rselect, the results are similar to the earlier ones with basic indexes \cite{Boucher2015}. Random access to the \RLCP{} array is about 20 times slower than to the \LCP{} array. The \LCP{} array provides sequential access iterators, which are much faster than using random access sequentially. The \RLCP{} array does not such iterators, because subsequent phrases are often copied from different parts of the reference. However, queries based on the minimum tree (\nsv, \psv, and \rmq) use fast sequential access to the \RLCP{} array within a phrase. \SSA{} and the \LCP{} array are consistently slower when the reference does not contain chromosome~Y, even though the structures are identical in either case. This is probably a memory management artifact that depends on the other memory allocations.
 
 \begin{table}
-\caption{Query times with \SSA{} and the \RFM{} index for NA12878 relative to the human reference genome with and without chromosome~Y in microseconds. The query times are averages over 10 million random queries.}\label{table:rfm queries}
+\caption{Query times with \SSA{} and the \RFM{} index for NA12878 relative to the human reference genome with and without chromosome~Y in microseconds. The query times are averages over 10~million random queries.}\label{table:rfm queries}
 \setlength{\extrarowheight}{2pt}
 \setlength{\tabcolsep}{3pt}
 \begin{center}
@@ -563,7 +563,7 @@ no  & 0.627 \mus & 1.563 \mus & 3.861 \mus & 55.068 \mus & 6.486 \mus \\
 \end{table}
 
 \begin{table}
-\caption{Query times with the reference \LCP{} array and the \RLCP{} array for NA12878 relative to the human reference genome with and without chromosome~Y in microseconds. For the random queries, the query times are averages over 100 million queries. The range lengths for \rmq{} queries were $16^{k}$ (for $k \ge 1$) with probability $0.5^{k}$. For sequential access, the times are averages per position for scanning the entire \LCP{} array.}\label{table:rlcp queries}
+\caption{Query times with the reference \LCP{} array and the \RLCP{} array for NA12878 relative to the human reference genome with and without chromosome~Y in microseconds. For the random queries, the query times are averages over 100~million queries. The range lengths for \rmq{} queries were $16^{k}$ (for $k \ge 1$) with probability $0.5^{k}$. For sequential access, the times are averages per position for scanning the entire \LCP{} array.}\label{table:rlcp queries}
 \setlength{\extrarowheight}{2pt}
 \setlength{\tabcolsep}{3pt}
 \begin{center}
@@ -579,7 +579,14 @@ no  & 0.070 \mus & 0.001 \mus & 1.263 \mus & 0.124 \mus & 1.801 \mus & 1.923 \mu
 \end{center}
 \end{table}
 
-Table/Figure: locate performance
+We also tested the \locate{} performance of the full \RFM{} index, and compared it to \SSA. We built \SSA{} with \SA{} sample periods $7$, $17$, $31$, $61$, and $127$ for the reference and the target sequence, using only the reference without chromosome~Y. \ISA{} sample period was set to the maximum of $64$ and the \SA{} sample period. We then built \RFM{} for the target sequence, and extracted 2~million random patterns of length $32$, consisting of characters $ACGT$, from the target sequence. The time/space trade-offs for \locate{} queries with these patterns can be seen in Figure~\ref{fig:locate}. While the \RFM{} index was 8.6x slower than \SSA{} with sample period $7$, the absolute performance difference remained almost constant with higher sample periods. With sample period $127$, \RFM{} was only 1.2x slower than \SSA.
+
+\begin{figure}
+\begin{center}
+\includegraphics{locate.pdf}
+\end{center}
+\caption{The \locate{} performance of \SSA{} and \RFM{} on NA12878 relative to the human reference genome without chromosome~Y. Index size in bits per character for various \SA{} sample rates, and the time required to perform 2~million queries of length $32$ with a total of 255~million occurrences.}\label{fig:locate}
+\end{figure}
 
 \subsection{Suffix tree experiments}
 
