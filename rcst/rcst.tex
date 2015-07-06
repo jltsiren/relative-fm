@@ -436,17 +436,17 @@ The remaining queries are all similar to each other. In order to answer query $\
 
 We have implemented the relative compressed suffix tree in C++, extending the old relative FM-index implementation.\footnote{The implementation is available at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based on the \emph{Succinct Data Structure Library (SDSL) 2.0}~\cite{Gog2014b}. Some parts of the implementation have been parallelized using \emph{OpenMP} and the \emph{libstdc++ parallel mode}.
 
+We used the SDSL implementation of the \emph{succinct suffix array} (\SSA{}) \cite{Ferragina2007a,Maekinen2005} as our reference \CSA{} and our baseline index. The \SSA{} encodes the Burrows-Wheeler transform as a \emph{Huffman-shaped wavelet tree}, combining very fast queries with size close to the \emph{order\nobreakdash-$0$ empirical entropy}. These properties make it the index of choice for DNA sequences \cite{Ferragina2009a}. Due to the long runs of character $N$, \emph{fixed block compression boosting} \cite{Kaerkkaeinen2011} could reduce index size without significantly increasing query times. Unfortunately there is no implementation capable of handling multi-gigabyte datasets available.
+
+We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample periods were $17$ for \SA{} and $64$ for \ISA. In \RFM, we used sample periods $257$ for \SA{} and $512$ for \ISA{} to handle the regions with no match in the reference. The sample periods for suffix order sampling were primes due to the long runs of character $N$ in the assembled genomes. If the number of long runs of character $N$ in the indexed sequence is even, then the lexicographic ranks of almost all suffixes in half of the runs are odd, and those runs are almost completely unsampled. This can be avoided by making the sample period and the number of runs \emph{relatively prime}.
+
 The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu 12.04 with Linux kerbel 2.6.32. For most experiments, we used cluster nodes with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some index construction jobs may have run on nodes with two 12-core AMD Opteron 6174 processors and 80 or 128 gigabytes of memory. All query experiments were run single-threaded with no other jobs on the same node. Index construction used 8 parallel threads, but there may have been other jobs running on the same nodes at the same time.
 
 As our primary target sequence, we used the \emph{maternal haplotypes} of the \emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37 assembly} of the \emph{human reference genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}} Because NA12878 is female, we also created a reference sequence without chromosome~Y.
 
 In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
 
-\subsection{Basic experiments}
-
-We used the SDSL implementation of the \emph{succinct suffix array} (\SSA{}) \cite{Ferragina2007a,Maekinen2005} as our reference \CSA{} and our baseline index. The \SSA{} encodes the Burrows-Wheeler transform as a \emph{Huffman-shaped wavelet tree}, combining very fast queries with size close to the \emph{order\nobreakdash-$0$ empirical entropy}. These properties make it the index of choice for DNA sequences \cite{Ferragina2009a}. Due to the long runs of character $N$, \emph{fixed block compression boosting} \cite{Kaerkkaeinen2011} could reduce index size without significantly increasing query times. Unfortunately there is no implementation capable of handling multi-gigabyte datasets available.
-
-We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample periods were $17$ for \SA{} and $64$ for \ISA. In \RFM, we used sample periods $257$ for \SA{} and $512$ for \ISA{} to handle the regions with no match in the reference. The sample periods for suffix order sampling were primes due to the long runs of character $N$ in the assembled genomes. If the number of long runs of character $N$ in the indexed sequence is even, then the lexicographic ranks of almost all suffixes in half of the runs are odd, and those runs are almost completely unsampled. This can be avoided by making the sample period and the number of runs \emph{relatively prime}.
+\subsection{Index sizes}
 
 Table~\ref{table:construction} lists the resource requirements for building the relative indexes, assuming that we have already built the corresponding non-relative structures for the sequences. As a comparison, building an FM-index for a human genome typically takes 16--17 minutes and 25--26 gigabytes of memory. While the construction of the basic relative FM-index is highly optimized, the other construction algorithms are just the first implementations that were deemed good enough for this paper. The construction times for the relative \CST{} do not include the time required for indexing the \DLCP{} array of the reference sequence. While this takes another two hours, it only needs to be done once for every reference sequence.
 
@@ -534,14 +534,16 @@ $\mLCS(R,S)$               &                -- &                -- &          0.
 \begin{center}
 \begin{tabular}{c|cccc|c}
 \hline
-\textbf{ChrY} & $W_{p}$  & $W_{\ell}$ & $W_{c}$  & $M_{\mLCP}$ & \textbf{Total}    \\
+\textbf{ChrY} & $\mathbf{W_{p}}$  & $\mathbf{W_{\ell}}$ & $\mathbf{W_{c}}$ & $\mathbf{M_{\mLCP}}$ & \textbf{Total} \\
 \hline
-yes           & 1.44 bpc &   0.34 bpc & 0.54 bpc &    0.71 bpc & \textbf{3.04 bpc} \\
-no            & 1.11 bpc &   0.27 bpc & 0.30 bpc &    0.39 bpc & \textbf{2.07 bpc} \\
+yes & 1.44 bpc & 0.34 bpc & 0.54 bpc & 0.71 bpc & 3.04 bpc \\
+no  & 1.11 bpc & 0.27 bpc & 0.30 bpc & 0.39 bpc & 2.07 bpc \\
 \hline
 \end{tabular}
 \end{center}
 \end{table}
+
+\subsection{Query times}
 
 Average query times for the basic queries can be seen in Table~\ref{table:rfm queries} and Table~\ref{table:rlcp queries}. For \LF{} and \Psiop{} queries with the full \SSA{}, the full \RFM, and the full \RFM{} augmented with \rselect, the results are similar to the earlier ones with basic indexes \cite{Boucher2015}. Random access to the \RLCP{} array is about 20 times slower than to the \LCP{} array. The \LCP{} array provides sequential access iterators, which are much faster than using random access sequentially. The \RLCP{} array does not such iterators, because subsequent phrases are often copied from different parts of the reference. However, queries based on the minimum tree (\nsv, \psv, and \rmq) use fast sequential access to the \RLCP{} array within a phrase. \SSA{} and the \LCP{} array are consistently slower when the reference does not contain chromosome~Y, even though the structures are identical in either case. This is probably a memory management artifact that depends on the other memory allocations.
 
@@ -588,14 +590,29 @@ We also tested the \locate{} performance of the full \RFM{} index, and compared 
 \caption{The \locate{} performance of \SSA{} and \RFM{} on NA12878 relative to the human reference genome without chromosome~Y. Index size in bits per character for various \SA{} sample rates, and the time required to perform 2~million queries of length $32$ with a total of 255~million occurrences.}\label{fig:locate}
 \end{figure}
 
-\subsection{Suffix tree experiments}
+\subsection{Synthetic collections}
+
+In order to determine how the differences between the reference sequence and the target sequence affect the size of relative structures, we built \RCST{} for various synthetic datasets. We took the human reference genome as the reference sequence, and generated synthetic target sequences with mutation rates $p \in \set{0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1}$. A total of 90\% of the mutations were single-character substitutions, while 5\% were insertions and another 5\% deletions. The length of an insertion or deletion was $k \ge 1$ with probability $0.2 \cdot 0.8^{k-1}$.
+
+The results can be seen in Figure~\ref{fig:synthetic}~(left). The \RLCP{} array quickly grew with increasing mutation rates, peaking out at $p = 0.01$. At that point, the average length of an \RLZ{} phrase was comparable to what could be found in the \DLCP{} arrays of unrelated DNA sequences. With even higher mutation rates, the phrases became slightly longer due to the smaller average \LCP{} values. The \RFM{} index, on the other hand, remained small until $p = 0.003$. Afterwards, the index started to grow quickly, eventually overtaking the \RLCP{} array.
+
+\begin{figure}
+\begin{center}
+\includegraphics{synth.pdf}\hspace{-0.4in}\includegraphics{comp.pdf}
+\end{center}
+\caption{Index size in bits per character vs.~mutation rate for synthetic datasets. Left: Synthetic genomes relative to the human reference genome. Right: Collections of 25 synthetic sequences relative to a 20~MB reference.}\label{fig:synthetic}
+\end{figure}
+
+We also compared the size of the relative \CST{} to a compressed suffix tree for repetitive collections. While the structures are intended for different purposes, the comparison shows how much additional space is required to provide access to the compressed suffix trees of individual datasets. We chose to skip the \CSTnpr{} for repetitive collections \cite{Abeliuk2013}, as its implementation was not stable enough. Because the implementation of \CSTsada{} for repetitive collections \cite{Navarro2014} is based on a library that uses signed 32\nobreakdash-bit integers internally, we had to limit the size of the collections to about 500 megabytes for this experiment. We therefore took a 20\nobreakdash-megabyte DNA prefix of the human reference genome, and generated 25 synthetic sequences for each mutation rate (see above).
+
+Figure~\ref{fig:synthetic}~(right) shows the sizes of the compressed suffix trees. The numbers for \RCST{} include individual indexes for each of the 25 target sequences as well as the reference data, while the numbers for \CSTsada{} are for a single index containing the 25 sequences. With low mutation rates, \RCST{} was not much larger than \CSTsada{}. The size of \RCST{} starts growing quickly at around $p = 0.001$, while the size of \CSTsada{} stabilizes to 3\nobreakdash--4~bpc.
+
+\subsection{Suffix tree operations}
 
 \begin{itemize}
-\item RCST size vs. mutation rate
-\item RCST vs. CST for repetitive collections; LCP reference structure
 \item SDSL CSTs
 \item CST traversal
-\item maximal matches
+\item matching statistics
 \item \FCST{} is typically around two orders of magnitude slower than the other compressed suffix trees \cite{Abeliuk2013}
 \end{itemize}
 
