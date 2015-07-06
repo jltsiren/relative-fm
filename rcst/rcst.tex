@@ -34,6 +34,7 @@
 \newcommand{\CSA}{\textsf{CSA}}
 \newcommand{\FMI}{\textsf{FMI}}
 \newcommand{\SSA}{\textsf{SSA}}
+\newcommand{\CSAsada}{\textsf{CSA-Sada}}
 \newcommand{\RFM}{\textsf{RFM}}
 \newcommand{\mSA}{\ensuremath{\mathsf{SA}}}
 \newcommand{\mISA}{\ensuremath{\mathsf{ISA}}}
@@ -446,9 +447,11 @@ As our primary target sequence, we used the \emph{maternal haplotypes} of the \e
 
 In the following, a basic FM-index is an index supporting only \find{} queries, while a full index also supports \locate{} and \extract{} queries.
 
-\subsection{Index sizes}
+\subsection{Indexes and their sizes}
 
-Table~\ref{table:construction} lists the resource requirements for building the relative indexes, assuming that we have already built the corresponding non-relative structures for the sequences. As a comparison, building an FM-index for a human genome typically takes 16--17 minutes and 25--26 gigabytes of memory. While the construction of the basic relative FM-index is highly optimized, the other construction algorithms are just the first implementations that were deemed good enough for this paper. The construction times for the relative \CST{} do not include the time required for indexing the \DLCP{} array of the reference sequence. While this takes another two hours, it only needs to be done once for every reference sequence.
+Table~\ref{table:construction} lists the resource requirements for building the relative indexes, assuming that we have already built the corresponding non-relative structures for the sequences. As a comparison, building an FM-index for a human genome typically takes 16--17 minutes and 25--26 gigabytes of memory. While the construction of the basic relative FM-index is highly optimized, the other construction algorithms are just the first implementations that were deemed good enough.
+
+The construction times for the relative \CST{} do not include the time required for indexing the \DLCP{} array of the reference sequence. While this takes another two hours, it only needs to be done once for every reference sequence. Building the optional \rselect{} structures takes 9--10 minutes and around $\abs{R} + \abs{S}$ bits of working space.
 
 \begin{table}
 \caption{Sequence lengths and resources used for index construction for NA12878 relative to the human reference genome with and without chromosome~Y. Approx and Inv denote the approximate \LCS{} and the bwt-invariant subsequence. Index lengths are in millions of base pairs, while construction resources are in minutes of wall clock time and gigabytes of memory.}\label{table:construction}
@@ -603,18 +606,42 @@ The results can be seen in Figure~\ref{fig:synthetic}~(left). The \RLCP{} array 
 \caption{Index size in bits per character vs.~mutation rate for synthetic datasets. Left: Synthetic genomes relative to the human reference genome. Right: Collections of 25 synthetic sequences relative to a 20~MB reference.}\label{fig:synthetic}
 \end{figure}
 
-We also compared the size of the relative \CST{} to a compressed suffix tree for repetitive collections. While the structures are intended for different purposes, the comparison shows how much additional space is required to provide access to the compressed suffix trees of individual datasets. We chose to skip the \CSTnpr{} for repetitive collections \cite{Abeliuk2013}, as its implementation was not stable enough. Because the implementation of \CSTsada{} for repetitive collections \cite{Navarro2014} is based on a library that uses signed 32\nobreakdash-bit integers internally, we had to limit the size of the collections to about 500 megabytes for this experiment. We therefore took a 20\nobreakdash-megabyte DNA prefix of the human reference genome, and generated 25 synthetic sequences for each mutation rate (see above).
+We also compared the size of the relative \CST{} to a compressed suffix tree for repetitive collections. While the structures are intended for different purposes, the comparison shows how much additional space is required to provide access to the compressed suffix trees of individual datasets. We chose to skip the \CSTnpr{} for repetitive collections \cite{Abeliuk2013}, as its implementation was not stable enough. Because the implementation of the \CSTsada{} for repetitive collections \cite{Navarro2014} is based on a library that uses signed 32\nobreakdash-bit integers internally, we had to limit the size of the collections to about 500 megabytes for this experiment. We therefore took a 20\nobreakdash-megabyte DNA prefix of the human reference genome, and generated 25 synthetic sequences for each mutation rate (see above).
 
 Figure~\ref{fig:synthetic}~(right) shows the sizes of the compressed suffix trees. The numbers for \RCST{} include individual indexes for each of the 25 target sequences as well as the reference data, while the numbers for \CSTsada{} are for a single index containing the 25 sequences. With low mutation rates, \RCST{} was not much larger than \CSTsada{}. The size of \RCST{} starts growing quickly at around $p = 0.001$, while the size of \CSTsada{} stabilizes to 3\nobreakdash--4~bpc.
 
 \subsection{Suffix tree operations}
 
-\begin{itemize}
-\item SDSL CSTs
-\item CST traversal
-\item matching statistics
-\item \FCST{} is typically around two orders of magnitude slower than the other compressed suffix trees \cite{Abeliuk2013}
-\end{itemize}
+In the final set of experiments, we compared the performance of \RCST{} to the SDSL implementations of various compressed suffix trees. We used the maternal haplotypes of NA12878 as the target sequence and the human reference genome without chromosome~Y as the reference sequence. We then built \RCST, \CSTsada, \CSTnpr, and \FCST{} for the target sequence. \CSTsada{} used \emph{Sadakane's compressed suffix array} (\CSAsada) \cite{Sadakane2003} as its \CSA, while the other SDSL implementations used \SSA. All SDSL compressed suffix trees used \PLCP{} as their \LCP{} encoding, but we also built \CSTnpr{} with \LCPbyte.
+
+We used two algorithms for the performance comparison. The first algorithm was \emph{depth-first traversal} of the suffix tree. We used SDSL iterators (\texttt{cst\_dfs\_const\_forward\_iterator}), which in turn used operations $\mRoot$, $\mLeaf$, $\mParent$, $\mFChild$, and $\mNSibling$. The traversal was generally quite fast, because the iterators cached the most recent parent nodes.
+
+% FIXME Reference?
+The second algorithm was computing \emph{matching statistics} \cite{???}. Given sequence $S'$ of length $n'$, the goal was to find the longest prefix $S'[i,i+\ell_{i}-1]$ of each suffix $S'[i,n']$ occurring in sequence $S$. For each such prefix, we store its length $\ell_{i}$ and the suffix array range $\mSA(S)[sp_{i},ep_{i}]$ of its occurrences in sequence $S$. We computed the matching statistics with forward searching, using operations $\mRoot$, $\mSDepth$, $\mSLink$, $\mChild$, and $\mLetter$. Computing the matching statistics would probably have been faster using backward searching \cite{Ohlebusch2010a}, but the purpose of this experiment was to test a different part of the interface.
+
+We used the paternal haplotypes of NA12878 as sequence $S'$. Because forward searching is much slower than tree traversal, we only computed matching statistics for chromosome~1. We also truncated the runs of character $N$ in sequence $S'$ into a single character. Because the time complexities of certain operations in the succinct tree representation used in SDSL depend on the depth of the current node, including the runs (which make the suffix tree extremely deep locally) would have made the SDSL suffix trees much slower than \RCST.
+
+The results can be seen in Table~\ref{table:cst}. \RCST{} was clearly smaller than \FCST, and several times smaller than the other compressed suffix trees. In depth-first traversal, \RCST{} was 2.2~times slower than \CSTnpr{} and about 8~times slower than \CSTsada. For computing matching statistis, \RCST{} was 2.9~times slower than \CSTsada{} and 4.7\nobreakdash--7.6~times slower than \CSTnpr{}. With the optional \rselect{} structures, the differences were reduced to 1.2~times and 2.0\nobreakdash--3.2~times, respectively. We did not run the full experiments with \FCST, because it was much slower than the rest. According to earlier results, \FCST{} is about two orders of magnitude slower than \CSTsada{} and \CSTnpr{} \cite{Abeliuk2013}.
+
+\begin{table}
+\caption{Compressed suffix trees for NA12878 relative to the human reference genome without chromosome~Y. Component choices, index size in bits per character, and time in minutes for depth-first traversal and computing matching statistics for the paternal haplotypes of chromosome~1 of NA12878.}\label{table:cst}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|c|c|c}
+\hline
+\textbf{\CST} & \textbf{\CSA} & \textbf{\LCP} & \textbf{Size} & \textbf{Traversal} & \textbf{Matching statistics} \\
+\hline
+\CSTsada           & \CSAsada & \PLCP    & 12.33 bpc &  5 min & 315 min \\
+\CSTnpr            & \SSA     & \PLCP    & 10.79 bpc & 18 min & 195 min \\
+\CSTnpr            & \SSA     & \LCPbyte & 18.08 bpc & 18 min & 120 min \\
+\FCST              & \SSA     & \PLCP    &  4.98 bpc &     -- &      -- \\
+\RCST              & \RFM     & \RLCP    &  3.16 bpc & 39 min & 910 min \\
+\RCST{} + \rselect & \RFM     & \RLCP    &  3.61 bpc & 39 min & 389 min \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
 
 
 \section{Conclusions}\label{section:conclusions}
