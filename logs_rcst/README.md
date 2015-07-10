@@ -24,7 +24,7 @@
 
 ## Synthetic datasets
 
-* Varying mutation rate: `index_synt_*.log`
+* Varying mutation rate: `index_synth_*.log`
 * Comparison to GCT: `index_multi_*.log`, `index_multi_*.err`
   * Use `cst_size.py` to parse the `.log` files.
 
