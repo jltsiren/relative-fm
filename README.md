@@ -47,7 +47,7 @@ These programs are technical and/or obsolete:
   * RLZ parsing that streams the text from disk.
 * Alternate solutions:
   * RLCP based on LCP instead of DLCP can be smaller.
-  * `hyb_vector` could work well in RCS bitvectors, once it supports select queries.
+  * `hyb_vector` could work well in LCS bitvectors, once it supports select queries.
   * Finding bwt-invariant subsequences using SA instead of CSA.
 * Implementation:
   * Use class-specific `size_type` instead of `uint64_t` when possible.
@@ -62,9 +62,9 @@ These programs are technical and/or obsolete:
 
 ## References
 
-Djamal Belazzougui, Travis Gagie, Simon Gog, Giovanni Manzini, and Jouni Sirén:   *Relative FM-indexes  *.
+Djamal Belazzougui, Travis Gagie, Simon Gog, Giovanni Manzini, and Jouni Sirén: **Relative FM-indexes**.
 Proc. SPIRE 2014, Springer LNCS 8799, pp. 52-65, Ouro Preto, Brazil, October 20-22, 2014.
 [DOI: 10.1007/978-3-319-11918-2_6](http://dx.doi.org/10.1007/978-3-319-11918-2_6)
 
-Christina Boucher, Alexander Bowe, Travis Gagie, Giovanni Manzini, and Jouni Sirén:   *Relative Select  *.
+Christina Boucher, Alexander Bowe, Travis Gagie, Giovanni Manzini, and Jouni Sirén: **Relative Select**.
 Accepted to SPIRE 2015.
