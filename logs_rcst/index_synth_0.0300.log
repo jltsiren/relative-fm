@@ -1,0 +1,134 @@
+Start
+Thu Apr 16 09:42:00 BST 2015
+
+Indexing a synthetic human genome
+
+Reference: human
+Mutation rate: 0.0300
+Target: synth_0.0300
+Threads: 8
+
+Sequence mutator
+
+Source: human
+Size: 3095693981
+Target: synth_0.0300
+Mutation rate: 0.03
+
+Target size: 3095676408
+Substitutions: 76712447
+Insertions: 4615431, total size 23056540
+Deletions: 4615538, total size 23074113
+
+BWT construction
+Options: alphabet isa_sample_rate=64 lcp sa_sample_rate=17
+
+File: synth_0.0300
+Text size: 3095676408
+BWT built in 1133.86 seconds (2.60373 MB/s)
+Alphabet written to synth_0.0300.alpha
+BWT written to synth_0.0300.bwt
+Samples written to synth_0.0300.samples
+LCP array built in 803.386 seconds (3.67478 MB/s)
+LCP array written to synth_0.0300.lcp
+
+Relative FM-index and LCP array builder
+Using OpenMP with 8 threads
+
+Algorithm: invariant
+Input format: plain
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: human
+
+BWT:              1120.49 MB (3.03628 bpc)
+SA samples:       694.655 MB (1.88235 bpc)
+ISA samples:      184.518 MB (0.5 bpc)
+Simple FM:        1999.67 MB (5.41863 bpc)
+
+LCP array:        3862.42 MB (10.4663 bpc)
+
+
+Target: synth_0.0300
+Reference size: 3095693982
+Target size: 3095676409
+Built the merging bitvector in 3930.01 seconds
+Matched 2138221141 positions in 9807.02 seconds
+Found a common subsequence of length 1668016180 in 972.001 seconds
+Built the bwt_lcs bitvectors and samples in 1837.77 seconds
+Index built in 16888.5 seconds
+
+BWT:              1121.44 MB (3.03885 bpc)
+SA samples:       694.651 MB (1.88235 bpc)
+ISA samples:      184.517 MB (0.5 bpc)
+Simple FM:        2000.61 MB (5.4212 bpc)
+
+ref_minus_lcs:    503.44 MB (1.36421 bpc)
+seq_minus_lcs:    504.361 MB (1.36671 bpc)
+bwt_lcs:          754.906 MB (2.04563 bpc)
+text_lcs:         566.424 MB (1.53489 bpc)
+SA samples:       45.9497 MB (0.124514 bpc)
+ISA samples:      23.0646 MB (0.0625 bpc)
+Relative FM:      2398.15 MB (6.49845 bpc)
+
+The RLZ parsing of the LCP array consists of 269943182 phrases
+Relative LCP array built in 16949.5 seconds
+
+LCP array:        3819.89 MB (10.3511 bpc)
+
+Phrases:          1029.75 MB (2.7904 bpc)
+Blocks:           215.192 MB (0.583122 bpc)
+Samples:          329.561 MB (0.893038 bpc)
+Tree:             439.413 MB (1.19071 bpc)
+Relative LCP:     2013.92 MB (5.45728 bpc)
+
+
+Memory usage: 106092 MB
+
+
+End
+Thu Apr 16 19:45:26 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-4-1-04>
+Subject: Job 3888645: </nfs/users/nfs_j/js35/job_scripts/index_synth 0.0300 8> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/index_synth 0.0300 8> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <8*vr-4-1-04>, in queue <long>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Thu Apr 16 09:42:00 2015
+Results reported at Thu Apr 16 19:45:26 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/index_synth 0.0300 8
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               38398.93 sec.
+    Max Memory :             106099 MB
+    Average Memory :         27990.40 MB
+    Total Requested Memory : 131072.00 MB
+    Delta Memory :           24973.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               109678 MB
+
+    Max Processes :          4
+    Max Threads :            12
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/index_synth_0.0300.err> for stderr output of this job.
+

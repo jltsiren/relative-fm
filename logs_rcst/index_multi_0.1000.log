@@ -1,0 +1,1499 @@
+Start
+Wed Apr 22 08:49:57 BST 2015
+
+Indexing a synthetic human genome
+
+Source: human
+Target dir: multi_0.1000
+Mutation rate: 0.1000
+Threads: 4
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq1
+Mutation rate: 0.1
+Seed: 5005089644506278062
+
+Target size: 20975832
+Substitutions: 1796834
+Insertions: 102767, total size 515237
+Deletions: 102438, total size 510925
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq2
+Mutation rate: 0.1
+Seed: 2772774237538688653
+
+Target size: 20975236
+Substitutions: 1796606
+Insertions: 103342, total size 516784
+Deletions: 102618, total size 513068
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq3
+Mutation rate: 0.1
+Seed: 540458830571099244
+
+Target size: 20974354
+Substitutions: 1797359
+Insertions: 102567, total size 512936
+Deletions: 102451, total size 510102
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq4
+Mutation rate: 0.1
+Seed: 16754887497313061451
+
+Target size: 20970080
+Substitutions: 1796865
+Insertions: 103007, total size 513136
+Deletions: 102798, total size 514576
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq5
+Mutation rate: 0.1
+Seed: 14522572090345472042
+
+Target size: 20975595
+Substitutions: 1795250
+Insertions: 102790, total size 515435
+Deletions: 102405, total size 511360
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq6
+Mutation rate: 0.1
+Seed: 12290256683377882633
+
+Target size: 20969798
+Substitutions: 1796878
+Insertions: 102306, total size 512167
+Deletions: 102848, total size 513889
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq7
+Mutation rate: 0.1
+Seed: 10057941276410293224
+
+Target size: 20972997
+Substitutions: 1798821
+Insertions: 103502, total size 518707
+Deletions: 103097, total size 517230
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq8
+Mutation rate: 0.1
+Seed: 7825625869442703815
+
+Target size: 20976420
+Substitutions: 1795864
+Insertions: 102788, total size 514028
+Deletions: 102440, total size 509128
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq9
+Mutation rate: 0.1
+Seed: 5593310462475114406
+
+Target size: 20975077
+Substitutions: 1797776
+Insertions: 102850, total size 515001
+Deletions: 102548, total size 511444
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq10
+Mutation rate: 0.1
+Seed: 3360995055507524997
+
+Target size: 20975275
+Substitutions: 1798147
+Insertions: 102398, total size 513982
+Deletions: 102203, total size 510227
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq11
+Mutation rate: 0.1
+Seed: 1128679648539935588
+
+Target size: 20968756
+Substitutions: 1795659
+Insertions: 102483, total size 512357
+Deletions: 102692, total size 515121
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq12
+Mutation rate: 0.1
+Seed: 17343108315281897795
+
+Target size: 20977616
+Substitutions: 1797857
+Insertions: 103067, total size 516529
+Deletions: 102280, total size 510433
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq13
+Mutation rate: 0.1
+Seed: 15110792908314308386
+
+Target size: 20974990
+Substitutions: 1795603
+Insertions: 103228, total size 518323
+Deletions: 102595, total size 514853
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq14
+Mutation rate: 0.1
+Seed: 12878477501346718977
+
+Target size: 20971701
+Substitutions: 1795126
+Insertions: 102735, total size 514084
+Deletions: 102689, total size 513903
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq15
+Mutation rate: 0.1
+Seed: 10646162094379129568
+
+Target size: 20972382
+Substitutions: 1796396
+Insertions: 102616, total size 514050
+Deletions: 103050, total size 513188
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq16
+Mutation rate: 0.1
+Seed: 6060963415536194783
+
+Target size: 20976952
+Substitutions: 1798265
+Insertions: 103289, total size 515882
+Deletions: 102490, total size 510450
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq17
+Mutation rate: 0.1
+Seed: 3828648008568605374
+
+Target size: 20966750
+Substitutions: 1798281
+Insertions: 102651, total size 513005
+Deletions: 103429, total size 517775
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq18
+Mutation rate: 0.1
+Seed: 1596332601601015965
+
+Target size: 20967740
+Substitutions: 1796253
+Insertions: 102531, total size 514479
+Deletions: 103374, total size 518259
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq19
+Mutation rate: 0.1
+Seed: 17810761268342978172
+
+Target size: 20972329
+Substitutions: 1796885
+Insertions: 102609, total size 515011
+Deletions: 102565, total size 514202
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq20
+Mutation rate: 0.1
+Seed: 15578445861375388763
+
+Target size: 20970847
+Substitutions: 1796342
+Insertions: 102762, total size 514376
+Deletions: 102731, total size 515049
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq21
+Mutation rate: 0.1
+Seed: 13346130454407799354
+
+Target size: 20970601
+Substitutions: 1795224
+Insertions: 102745, total size 513494
+Deletions: 102567, total size 514413
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq22
+Mutation rate: 0.1
+Seed: 11113815047440209945
+
+Target size: 20969191
+Substitutions: 1793011
+Insertions: 103172, total size 515702
+Deletions: 103006, total size 518031
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq23
+Mutation rate: 0.1
+Seed: 8881499640472620536
+
+Target size: 20971860
+Substitutions: 1797886
+Insertions: 103281, total size 513047
+Deletions: 102949, total size 512707
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq24
+Mutation rate: 0.1
+Seed: 6649184233505031127
+
+Target size: 20972148
+Substitutions: 1797598
+Insertions: 102850, total size 513934
+Deletions: 102915, total size 513306
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: seq25
+Mutation rate: 0.1
+Seed: 4416868826537441718
+
+Target size: 20973348
+Substitutions: 1794655
+Insertions: 103068, total size 514541
+Deletions: 102948, total size 512713
+
+BWT construction
+Options: alphabet isa_sample_rate=64 lcp sa_sample_rate=17
+
+File: ref
+Text size: 20971520
+BWT built in 3.57874 seconds (5.58856 MB/s)
+Alphabet written to ref.alpha
+BWT written to ref.bwt
+Samples written to ref.samples
+LCP array built in 4.81635 seconds (4.15253 MB/s)
+LCP array written to ref.lcp
+
+File: seq1
+Text size: 20975832
+BWT built in 3.4523 seconds (5.79443 MB/s)
+Alphabet written to seq1.alpha
+BWT written to seq1.bwt
+Samples written to seq1.samples
+LCP array built in 4.58747 seconds (4.3606 MB/s)
+LCP array written to seq1.lcp
+
+File: seq2
+Text size: 20975236
+BWT built in 3.45076 seconds (5.79685 MB/s)
+Alphabet written to seq2.alpha
+BWT written to seq2.bwt
+Samples written to seq2.samples
+LCP array built in 4.54578 seconds (4.40047 MB/s)
+LCP array written to seq2.lcp
+
+File: seq3
+Text size: 20974354
+BWT built in 3.41913 seconds (5.85023 MB/s)
+Alphabet written to seq3.alpha
+BWT written to seq3.bwt
+Samples written to seq3.samples
+LCP array built in 4.54813 seconds (4.39801 MB/s)
+LCP array written to seq3.lcp
+
+File: seq4
+Text size: 20970080
+BWT built in 3.42215 seconds (5.84387 MB/s)
+Alphabet written to seq4.alpha
+BWT written to seq4.bwt
+Samples written to seq4.samples
+LCP array built in 4.51416 seconds (4.4302 MB/s)
+LCP array written to seq4.lcp
+
+File: seq5
+Text size: 20975595
+BWT built in 3.44181 seconds (5.81203 MB/s)
+Alphabet written to seq5.alpha
+BWT written to seq5.bwt
+Samples written to seq5.samples
+LCP array built in 4.57515 seconds (4.37229 MB/s)
+LCP array written to seq5.lcp
+
+File: seq6
+Text size: 20969798
+BWT built in 3.42945 seconds (5.83136 MB/s)
+Alphabet written to seq6.alpha
+BWT written to seq6.bwt
+Samples written to seq6.samples
+LCP array built in 4.88411 seconds (4.09458 MB/s)
+LCP array written to seq6.lcp
+
+File: seq7
+Text size: 20972997
+BWT built in 3.7867 seconds (5.28202 MB/s)
+Alphabet written to seq7.alpha
+BWT written to seq7.bwt
+Samples written to seq7.samples
+LCP array built in 4.62792 seconds (4.3219 MB/s)
+LCP array written to seq7.lcp
+
+File: seq8
+Text size: 20976420
+BWT built in 3.45477 seconds (5.79045 MB/s)
+Alphabet written to seq8.alpha
+BWT written to seq8.bwt
+Samples written to seq8.samples
+LCP array built in 4.55807 seconds (4.38885 MB/s)
+LCP array written to seq8.lcp
+
+File: seq9
+Text size: 20975077
+BWT built in 3.45092 seconds (5.79653 MB/s)
+Alphabet written to seq9.alpha
+BWT written to seq9.bwt
+Samples written to seq9.samples
+LCP array built in 4.56771 seconds (4.3793 MB/s)
+LCP array written to seq9.lcp
+
+File: seq10
+Text size: 20975275
+BWT built in 3.4791 seconds (5.74964 MB/s)
+Alphabet written to seq10.alpha
+BWT written to seq10.bwt
+Samples written to seq10.samples
+LCP array built in 4.58486 seconds (4.36296 MB/s)
+LCP array written to seq10.lcp
+
+File: seq11
+Text size: 20968756
+BWT built in 3.46624 seconds (5.76918 MB/s)
+Alphabet written to seq11.alpha
+BWT written to seq11.bwt
+Samples written to seq11.samples
+LCP array built in 4.6509 seconds (4.29968 MB/s)
+LCP array written to seq11.lcp
+
+File: seq12
+Text size: 20977616
+BWT built in 3.49011 seconds (5.73214 MB/s)
+Alphabet written to seq12.alpha
+BWT written to seq12.bwt
+Samples written to seq12.samples
+LCP array built in 4.56327 seconds (4.3841 MB/s)
+LCP array written to seq12.lcp
+
+File: seq13
+Text size: 20974990
+BWT built in 3.47427 seconds (5.75755 MB/s)
+Alphabet written to seq13.alpha
+BWT written to seq13.bwt
+Samples written to seq13.samples
+LCP array built in 4.58159 seconds (4.36602 MB/s)
+LCP array written to seq13.lcp
+
+File: seq14
+Text size: 20971701
+BWT built in 3.46217 seconds (5.77678 MB/s)
+Alphabet written to seq14.alpha
+BWT written to seq14.bwt
+Samples written to seq14.samples
+LCP array built in 4.54217 seconds (4.40322 MB/s)
+LCP array written to seq14.lcp
+
+File: seq15
+Text size: 20972382
+BWT built in 3.44926 seconds (5.79858 MB/s)
+Alphabet written to seq15.alpha
+BWT written to seq15.bwt
+Samples written to seq15.samples
+LCP array built in 4.91605 seconds (4.06847 MB/s)
+LCP array written to seq15.lcp
+
+File: seq16
+Text size: 20976952
+BWT built in 4.04791 seconds (4.9421 MB/s)
+Alphabet written to seq16.alpha
+BWT written to seq16.bwt
+Samples written to seq16.samples
+LCP array built in 4.94306 seconds (4.04713 MB/s)
+LCP array written to seq16.lcp
+
+File: seq17
+Text size: 20966750
+BWT built in 3.59519 seconds (5.56173 MB/s)
+Alphabet written to seq17.alpha
+BWT written to seq17.bwt
+Samples written to seq17.samples
+LCP array built in 4.56785 seconds (4.37743 MB/s)
+LCP array written to seq17.lcp
+
+File: seq18
+Text size: 20967740
+BWT built in 3.44135 seconds (5.81063 MB/s)
+Alphabet written to seq18.alpha
+BWT written to seq18.bwt
+Samples written to seq18.samples
+LCP array built in 4.55048 seconds (4.39435 MB/s)
+LCP array written to seq18.lcp
+
+File: seq19
+Text size: 20972329
+BWT built in 3.46693 seconds (5.76902 MB/s)
+Alphabet written to seq19.alpha
+BWT written to seq19.bwt
+Samples written to seq19.samples
+LCP array built in 4.64104 seconds (4.30955 MB/s)
+LCP array written to seq19.lcp
+
+File: seq20
+Text size: 20970847
+BWT built in 3.45064 seconds (5.79585 MB/s)
+Alphabet written to seq20.alpha
+BWT written to seq20.bwt
+Samples written to seq20.samples
+LCP array built in 4.5457 seconds (4.39962 MB/s)
+LCP array written to seq20.lcp
+
+File: seq21
+Text size: 20970601
+BWT built in 3.43903 seconds (5.81533 MB/s)
+Alphabet written to seq21.alpha
+BWT written to seq21.bwt
+Samples written to seq21.samples
+LCP array built in 4.56827 seconds (4.37783 MB/s)
+LCP array written to seq21.lcp
+
+File: seq22
+Text size: 20969191
+BWT built in 3.44481 seconds (5.80518 MB/s)
+Alphabet written to seq22.alpha
+BWT written to seq22.bwt
+Samples written to seq22.samples
+LCP array built in 4.58646 seconds (4.36017 MB/s)
+LCP array written to seq22.lcp
+
+File: seq23
+Text size: 20971860
+BWT built in 3.4421 seconds (5.8105 MB/s)
+Alphabet written to seq23.alpha
+BWT written to seq23.bwt
+Samples written to seq23.samples
+LCP array built in 4.66477 seconds (4.28753 MB/s)
+LCP array written to seq23.lcp
+
+File: seq24
+Text size: 20972148
+BWT built in 3.50996 seconds (5.69824 MB/s)
+Alphabet written to seq24.alpha
+BWT written to seq24.bwt
+Samples written to seq24.samples
+LCP array built in 4.59584 seconds (4.35189 MB/s)
+LCP array written to seq24.lcp
+
+File: seq25
+Text size: 20973348
+BWT built in 3.50375 seconds (5.70867 MB/s)
+Alphabet written to seq25.alpha
+BWT written to seq25.bwt
+Samples written to seq25.samples
+LCP array built in 4.54491 seconds (4.40091 MB/s)
+LCP array written to seq25.lcp
+
+Indexing the differential LCP array
+
+File: ref
+LCP size: 20971521
+DLCP width: 20
+SA width: 25
+Index built in 27.688 seconds (0.722336 MB/s)
+
+Relative FM-index and LCP array builder
+Using OpenMP with 4 threads
+
+Algorithm: invariant
+Input format: plain
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: ref
+
+BWT:              7.51739 MB (3.00695 bpc)
+SA samples:       3.67648 MB (1.47059 bpc)
+ISA samples:      0.976579 MB (0.390631 bpc)
+Simple FM:        12.1708 MB (4.86832 bpc)
+
+LCP array:        22.5668 MB (9.02673 bpc)
+
+
+Target: seq1
+Reference size: 20971521
+Target size: 20975833
+Built the merging bitvector in 8.99304 seconds
+Matched 8554214 positions in 30.5187 seconds
+Found a common subsequence of length 4212228 in 2.55925 seconds
+Built the bwt_lcs bitvectors and samples in 3.90382 seconds
+Index built in 49.5084 seconds
+
+BWT:              7.52171 MB (3.00806 bpc)
+SA samples:       3.67724 MB (1.47059 bpc)
+ISA samples:      0.976777 MB (0.39063 bpc)
+Simple FM:        12.1761 MB (4.86943 bpc)
+
+ref_minus_lcs:    5.92576 MB (2.36982 bpc)
+seq_minus_lcs:    5.93028 MB (2.37163 bpc)
+bwt_lcs:          3.79623 MB (1.51818 bpc)
+text_lcs:         3.14923 MB (1.25943 bpc)
+SA samples:       0.243257 MB (0.0972826 bpc)
+ISA samples:      0.122109 MB (0.0488337 bpc)
+Relative FM:      19.1674 MB (7.66536 bpc)
+
+The RLZ parsing of the LCP array consists of 2130752 phrases
+Relative LCP array built in 46.9617 seconds
+
+LCP array:        22.0907 MB (8.83446 bpc)
+
+Phrases:          6.35014 MB (2.53954 bpc)
+Blocks:           1.70199 MB (0.680654 bpc)
+Samples:          2.24233 MB (0.896749 bpc)
+Tree:             2.98985 MB (1.19569 bpc)
+Relative LCP:     13.2843 MB (5.31263 bpc)
+
+
+Target: seq2
+Reference size: 20971521
+Target size: 20975237
+Built the merging bitvector in 10.6205 seconds
+Matched 8702526 positions in 33.209 seconds
+Found a common subsequence of length 4289944 in 3.00138 seconds
+Built the bwt_lcs bitvectors and samples in 5.05217 seconds
+Index built in 56.2117 seconds
+
+BWT:              7.52211 MB (3.00831 bpc)
+SA samples:       3.67713 MB (1.47059 bpc)
+ISA samples:      0.976754 MB (0.390632 bpc)
+Simple FM:        12.1764 MB (4.86968 bpc)
+
+ref_minus_lcs:    5.88495 MB (2.35356 bpc)
+seq_minus_lcs:    5.88938 MB (2.35533 bpc)
+bwt_lcs:          3.80528 MB (1.52184 bpc)
+text_lcs:         3.16922 MB (1.26746 bpc)
+SA samples:       0.243249 MB (0.0972823 bpc)
+ISA samples:      0.122109 MB (0.0488351 bpc)
+Relative FM:      19.1147 MB (7.64451 bpc)
+
+The RLZ parsing of the LCP array consists of 2125642 phrases
+Relative LCP array built in 54.0545 seconds
+
+LCP array:        22.0899 MB (8.8344 bpc)
+
+Phrases:          6.33492 MB (2.53352 bpc)
+Blocks:           1.69945 MB (0.67966 bpc)
+Samples:          2.22438 MB (0.889595 bpc)
+Tree:             2.97116 MB (1.18825 bpc)
+Relative LCP:     13.2299 MB (5.29103 bpc)
+
+
+Target: seq3
+Reference size: 20971521
+Target size: 20974355
+Built the merging bitvector in 12.6377 seconds
+Matched 8707177 positions in 35.7281 seconds
+Found a common subsequence of length 4457275 in 3.08529 seconds
+Built the bwt_lcs bitvectors and samples in 4.41252 seconds
+Index built in 60.1403 seconds
+
+BWT:              7.5212 MB (3.00807 bpc)
+SA samples:       3.67698 MB (1.47059 bpc)
+ISA samples:      0.976708 MB (0.390631 bpc)
+Simple FM:        12.1752 MB (4.86944 bpc)
+
+ref_minus_lcs:    5.78438 MB (2.31344 bpc)
+seq_minus_lcs:    5.78851 MB (2.31509 bpc)
+bwt_lcs:          3.76342 MB (1.50516 bpc)
+text_lcs:         3.171 MB (1.26823 bpc)
+SA samples:       0.243241 MB (0.0972834 bpc)
+ISA samples:      0.122102 MB (0.0488341 bpc)
+Relative FM:      18.8731 MB (7.54823 bpc)
+
+The RLZ parsing of the LCP array consists of 2115657 phrases
+Relative LCP array built in 53.0788 seconds
+
+LCP array:        22.0859 MB (8.83317 bpc)
+
+Phrases:          6.30516 MB (2.52172 bpc)
+Blocks:           1.69455 MB (0.677729 bpc)
+Samples:          2.19251 MB (0.876887 bpc)
+Tree:             2.92864 MB (1.1713 bpc)
+Relative LCP:     13.1209 MB (5.24764 bpc)
+
+
+Target: seq4
+Reference size: 20971521
+Target size: 20970081
+Built the merging bitvector in 12.0556 seconds
+Matched 8705738 positions in 34.1995 seconds
+Found a common subsequence of length 4301174 in 3.05388 seconds
+Built the bwt_lcs bitvectors and samples in 4.39183 seconds
+Index built in 58.0006 seconds
+
+BWT:              7.51966 MB (3.00807 bpc)
+SA samples:       3.67623 MB (1.47059 bpc)
+ISA samples:      0.97651 MB (0.390631 bpc)
+Simple FM:        12.1728 MB (4.86944 bpc)
+
+ref_minus_lcs:    5.87903 MB (2.35177 bpc)
+seq_minus_lcs:    5.88099 MB (2.35256 bpc)
+bwt_lcs:          3.81316 MB (1.52537 bpc)
+text_lcs:         3.16858 MB (1.26752 bpc)
+SA samples:       0.243188 MB (0.0972818 bpc)
+ISA samples:      0.122079 MB (0.0488349 bpc)
+Relative FM:      19.1075 MB (7.64353 bpc)
+
+The RLZ parsing of the LCP array consists of 2104821 phrases
+Relative LCP array built in 53.1737 seconds
+
+LCP array:        22.0825 MB (8.83359 bpc)
+
+Phrases:          6.27287 MB (2.50932 bpc)
+Blocks:           1.68895 MB (0.675625 bpc)
+Samples:          2.15906 MB (0.863683 bpc)
+Tree:             2.87883 MB (1.15161 bpc)
+Relative LCP:     12.9997 MB (5.20024 bpc)
+
+
+Target: seq5
+Reference size: 20971521
+Target size: 20975596
+Built the merging bitvector in 12.1098 seconds
+Matched 8726101 positions in 34.1755 seconds
+Found a common subsequence of length 4210923 in 3.05589 seconds
+Built the bwt_lcs bitvectors and samples in 4.39323 seconds
+Index built in 58.0839 seconds
+
+BWT:              7.52185 MB (3.00816 bpc)
+SA samples:       3.6772 MB (1.47059 bpc)
+ISA samples:      0.976762 MB (0.390629 bpc)
+Simple FM:        12.1762 MB (4.86952 bpc)
+
+ref_minus_lcs:    5.93681 MB (2.37426 bpc)
+seq_minus_lcs:    5.94144 MB (2.37611 bpc)
+bwt_lcs:          3.83747 MB (1.53469 bpc)
+text_lcs:         3.1727 MB (1.26883 bpc)
+SA samples:       0.243257 MB (0.0972837 bpc)
+ISA samples:      0.122109 MB (0.0488343 bpc)
+Relative FM:      19.2543 MB (7.70021 bpc)
+
+The RLZ parsing of the LCP array consists of 2129668 phrases
+Relative LCP array built in 53.2348 seconds
+
+LCP array:        22.0908 MB (8.83459 bpc)
+
+Phrases:          6.34692 MB (2.53827 bpc)
+Blocks:           1.70148 MB (0.68046 bpc)
+Samples:          2.24151 MB (0.89643 bpc)
+Tree:             2.98874 MB (1.19526 bpc)
+Relative LCP:     13.2786 MB (5.31043 bpc)
+
+
+Target: seq6
+Reference size: 20971521
+Target size: 20969799
+Built the merging bitvector in 12.0761 seconds
+Matched 8609600 positions in 34.0883 seconds
+Found a common subsequence of length 4042416 in 3.01739 seconds
+Built the bwt_lcs bitvectors and samples in 4.38625 seconds
+Index built in 57.9855 seconds
+
+BWT:              7.51962 MB (3.0081 bpc)
+SA samples:       3.67618 MB (1.47059 bpc)
+ISA samples:      0.976495 MB (0.39063 bpc)
+Simple FM:        12.1726 MB (4.86946 bpc)
+
+ref_minus_lcs:    6.07454 MB (2.43002 bpc)
+seq_minus_lcs:    6.07663 MB (2.43085 bpc)
+bwt_lcs:          3.77173 MB (1.50882 bpc)
+text_lcs:         3.16635 MB (1.26664 bpc)
+SA samples:       0.243188 MB (0.0972831 bpc)
+ISA samples:      0.122071 MB (0.0488325 bpc)
+Relative FM:      19.455 MB (7.78264 bpc)
+
+The RLZ parsing of the LCP array consists of 2108889 phrases
+Relative LCP array built in 53.0619 seconds
+
+LCP array:        22.0818 MB (8.83346 bpc)
+
+Phrases:          6.28499 MB (2.5142 bpc)
+Blocks:           1.69101 MB (0.676459 bpc)
+Samples:          2.16979 MB (0.867986 bpc)
+Tree:             2.8931 MB (1.15733 bpc)
+Relative LCP:     13.0389 MB (5.21598 bpc)
+
+
+Target: seq7
+Reference size: 20971521
+Target size: 20972998
+Built the merging bitvector in 12.0811 seconds
+Matched 8598667 positions in 34.1398 seconds
+Found a common subsequence of length 4280683 in 3.03524 seconds
+Built the bwt_lcs bitvectors and samples in 4.37944 seconds
+Index built in 57.9541 seconds
+
+BWT:              7.52087 MB (3.00814 bpc)
+SA samples:       3.67674 MB (1.47059 bpc)
+ISA samples:      0.976647 MB (0.390631 bpc)
+Simple FM:        12.1746 MB (4.8695 bpc)
+
+ref_minus_lcs:    5.88893 MB (2.35541 bpc)
+seq_minus_lcs:    5.89207 MB (2.35666 bpc)
+bwt_lcs:          3.80245 MB (1.52087 bpc)
+text_lcs:         3.16565 MB (1.26617 bpc)
+SA samples:       0.243218 MB (0.0972805 bpc)
+ISA samples:      0.122094 MB (0.0488342 bpc)
+Relative FM:      19.1149 MB (7.64542 bpc)
+
+The RLZ parsing of the LCP array consists of 2103532 phrases
+Relative LCP array built in 53.2877 seconds
+
+LCP array:        22.0866 MB (8.83402 bpc)
+
+Phrases:          6.26903 MB (2.50743 bpc)
+Blocks:           1.68834 MB (0.675287 bpc)
+Samples:          2.1547 MB (0.861821 bpc)
+Tree:             2.873 MB (1.14912 bpc)
+Relative LCP:     12.9851 MB (5.19366 bpc)
+
+
+Target: seq8
+Reference size: 20971521
+Target size: 20976421
+Built the merging bitvector in 12.0747 seconds
+Matched 8753752 positions in 34.3479 seconds
+Found a common subsequence of length 4298820 in 3.07922 seconds
+Built the bwt_lcs bitvectors and samples in 4.42009 seconds
+Index built in 58.3062 seconds
+
+BWT:              7.52166 MB (3.00796 bpc)
+SA samples:       3.67735 MB (1.47059 bpc)
+ISA samples:      0.976808 MB (0.390632 bpc)
+Simple FM:        12.1762 MB (4.86933 bpc)
+
+ref_minus_lcs:    5.88273 MB (2.35254 bpc)
+seq_minus_lcs:    5.88708 MB (2.35428 bpc)
+bwt_lcs:          3.80997 MB (1.52363 bpc)
+text_lcs:         3.17328 MB (1.26901 bpc)
+SA samples:       0.243264 MB (0.0972829 bpc)
+ISA samples:      0.122109 MB (0.0488324 bpc)
+Relative FM:      19.1189 MB (7.64577 bpc)
+
+The RLZ parsing of the LCP array consists of 2114379 phrases
+Relative LCP array built in 53.716 seconds
+
+LCP array:        22.0886 MB (8.83336 bpc)
+
+Phrases:          6.30135 MB (2.51995 bpc)
+Blocks:           1.69395 MB (0.677421 bpc)
+Samples:          2.18687 MB (0.874543 bpc)
+Tree:             2.92112 MB (1.16818 bpc)
+Relative LCP:     13.1033 MB (5.24009 bpc)
+
+
+Target: seq9
+Reference size: 20971521
+Target size: 20975078
+Built the merging bitvector in 12.1912 seconds
+Matched 8599936 positions in 34.3351 seconds
+Found a common subsequence of length 4146255 in 3.05314 seconds
+Built the bwt_lcs bitvectors and samples in 4.3675 seconds
+Index built in 58.3985 seconds
+
+BWT:              7.52164 MB (3.00815 bpc)
+SA samples:       3.67711 MB (1.47059 bpc)
+ISA samples:      0.976739 MB (0.390629 bpc)
+Simple FM:        12.1758 MB (4.86951 bpc)
+
+ref_minus_lcs:    5.9727 MB (2.38867 bpc)
+seq_minus_lcs:    5.97702 MB (2.3904 bpc)
+bwt_lcs:          3.80335 MB (1.52108 bpc)
+text_lcs:         3.16545 MB (1.26596 bpc)
+SA samples:       0.243249 MB (0.0972831 bpc)
+ISA samples:      0.122102 MB (0.0488324 bpc)
+Relative FM:      19.2844 MB (7.71243 bpc)
+
+The RLZ parsing of the LCP array consists of 2125227 phrases
+Relative LCP array built in 53.335 seconds
+
+LCP array:        22.0895 MB (8.8343 bpc)
+
+Phrases:          6.33368 MB (2.53304 bpc)
+Blocks:           1.69925 MB (0.679586 bpc)
+Samples:          2.22186 MB (0.888592 bpc)
+Tree:             2.9678 MB (1.18692 bpc)
+Relative LCP:     13.2226 MB (5.28814 bpc)
+
+
+Target: seq10
+Reference size: 20971521
+Target size: 20975276
+Built the merging bitvector in 12.2018 seconds
+Matched 8605019 positions in 34.3254 seconds
+Found a common subsequence of length 4295472 in 3.07653 seconds
+Built the bwt_lcs bitvectors and samples in 4.35873 seconds
+Index built in 58.325 seconds
+
+BWT:              7.52195 MB (3.00824 bpc)
+SA samples:       3.67714 MB (1.47059 bpc)
+ISA samples:      0.976754 MB (0.390632 bpc)
+Simple FM:        12.1762 MB (4.86961 bpc)
+
+ref_minus_lcs:    5.88054 MB (2.3518 bpc)
+seq_minus_lcs:    5.88492 MB (2.35355 bpc)
+bwt_lcs:          3.8192 MB (1.52741 bpc)
+text_lcs:         3.16635 MB (1.26631 bpc)
+SA samples:       0.243249 MB (0.0972822 bpc)
+ISA samples:      0.122109 MB (0.048835 bpc)
+Relative FM:      19.1169 MB (7.64537 bpc)
+
+The RLZ parsing of the LCP array consists of 2115339 phrases
+Relative LCP array built in 53.8897 seconds
+
+LCP array:        22.0901 MB (8.83444 bpc)
+
+Phrases:          6.30422 MB (2.52123 bpc)
+Blocks:           1.69441 MB (0.677641 bpc)
+Samples:          2.1923 MB (0.876763 bpc)
+Tree:             2.92839 MB (1.17115 bpc)
+Relative LCP:     13.1193 MB (5.24679 bpc)
+
+
+Target: seq11
+Reference size: 20971521
+Target size: 20968757
+Built the merging bitvector in 12.2094 seconds
+Matched 8646440 positions in 34.4575 seconds
+Found a common subsequence of length 4291339 in 3.09222 seconds
+Built the bwt_lcs bitvectors and samples in 4.36408 seconds
+Index built in 58.4815 seconds
+
+BWT:              7.51906 MB (3.00802 bpc)
+SA samples:       3.676 MB (1.4706 bpc)
+ISA samples:      0.976449 MB (0.390631 bpc)
+Simple FM:        12.1719 MB (4.86939 bpc)
+
+ref_minus_lcs:    5.88497 MB (2.3543 bpc)
+seq_minus_lcs:    5.8865 MB (2.35491 bpc)
+bwt_lcs:          3.82738 MB (1.53115 bpc)
+text_lcs:         3.1703 MB (1.26829 bpc)
+SA samples:       0.243173 MB (0.0972819 bpc)
+ISA samples:      0.122071 MB (0.0488349 bpc)
+Relative FM:      19.1349 MB (7.65496 bpc)
+
+The RLZ parsing of the LCP array consists of 2113253 phrases
+Relative LCP array built in 53.5121 seconds
+
+LCP array:        22.0808 MB (8.8335 bpc)
+
+Phrases:          6.298 MB (2.51953 bpc)
+Blocks:           1.6933 MB (0.677409 bpc)
+Samples:          2.18547 MB (0.874304 bpc)
+Tree:             2.91929 MB (1.16787 bpc)
+Relative LCP:     13.0961 MB (5.23911 bpc)
+
+
+Target: seq12
+Reference size: 20971521
+Target size: 20977617
+Built the merging bitvector in 12.0916 seconds
+Matched 8619200 positions in 34.0656 seconds
+Found a common subsequence of length 4250538 in 3.05573 seconds
+Built the bwt_lcs bitvectors and samples in 4.38076 seconds
+Index built in 57.9248 seconds
+
+BWT:              7.52248 MB (3.00812 bpc)
+SA samples:       3.67755 MB (1.47059 bpc)
+ISA samples:      0.976861 MB (0.390631 bpc)
+Simple FM:        12.1772 MB (4.86948 bpc)
+
+ref_minus_lcs:    5.90972 MB (2.3632 bpc)
+seq_minus_lcs:    5.91434 MB (2.36505 bpc)
+bwt_lcs:          3.81063 MB (1.52381 bpc)
+text_lcs:         3.17023 MB (1.26772 bpc)
+SA samples:       0.243272 MB (0.0972804 bpc)
+ISA samples:      0.122117 MB (0.0488326 bpc)
+Relative FM:      19.1708 MB (7.66609 bpc)
+
+The RLZ parsing of the LCP array consists of 2113478 phrases
+Relative LCP array built in 51.7165 seconds
+
+LCP array:        22.0923 MB (8.83435 bpc)
+
+Phrases:          6.29867 MB (2.51874 bpc)
+Blocks:           1.68212 MB (0.672653 bpc)
+Samples:          2.18602 MB (0.874155 bpc)
+Tree:             2.92 MB (1.16766 bpc)
+Relative LCP:     13.0868 MB (5.2332 bpc)
+
+
+Target: seq13
+Reference size: 20971521
+Target size: 20974991
+Built the merging bitvector in 12.2034 seconds
+Matched 8555850 positions in 34.4275 seconds
+Found a common subsequence of length 4199098 in 3.07744 seconds
+Built the bwt_lcs bitvectors and samples in 4.41531 seconds
+Index built in 58.4913 seconds
+
+BWT:              7.52201 MB (3.0083 bpc)
+SA samples:       3.67709 MB (1.47059 bpc)
+ISA samples:      0.976739 MB (0.390631 bpc)
+Simple FM:        12.1762 MB (4.86967 bpc)
+
+ref_minus_lcs:    5.94055 MB (2.37583 bpc)
+seq_minus_lcs:    5.94493 MB (2.37758 bpc)
+bwt_lcs:          3.8205 MB (1.52795 bpc)
+text_lcs:         3.16805 MB (1.26701 bpc)
+SA samples:       0.243241 MB (0.0972804 bpc)
+ISA samples:      0.122102 MB (0.0488326 bpc)
+Relative FM:      19.2399 MB (7.69467 bpc)
+
+The RLZ parsing of the LCP array consists of 2116016 phrases
+Relative LCP array built in 53.2712 seconds
+
+LCP array:        22.0896 MB (8.83437 bpc)
+
+Phrases:          6.30623 MB (2.52207 bpc)
+Blocks:           1.69472 MB (0.677775 bpc)
+Samples:          2.19288 MB (0.877007 bpc)
+Tree:             2.92915 MB (1.17147 bpc)
+Relative LCP:     13.123 MB (5.24832 bpc)
+
+
+Target: seq14
+Reference size: 20971521
+Target size: 20971702
+Built the merging bitvector in 12.0655 seconds
+Matched 8609912 positions in 33.1104 seconds
+Found a common subsequence of length 4343991 in 2.59229 seconds
+Built the bwt_lcs bitvectors and samples in 3.95582 seconds
+Index built in 55.8773 seconds
+
+BWT:              7.52062 MB (3.00822 bpc)
+SA samples:       3.67651 MB (1.47059 bpc)
+ISA samples:      0.976586 MB (0.390631 bpc)
+Simple FM:        12.1741 MB (4.86959 bpc)
+
+ref_minus_lcs:    5.8533 MB (2.3413 bpc)
+seq_minus_lcs:    5.85618 MB (2.34245 bpc)
+bwt_lcs:          3.80536 MB (1.52213 bpc)
+text_lcs:         3.17168 MB (1.26866 bpc)
+SA samples:       0.243203 MB (0.0972804 bpc)
+ISA samples:      0.122087 MB (0.0488342 bpc)
+Relative FM:      19.0523 MB (7.62085 bpc)
+
+The RLZ parsing of the LCP array consists of 2114315 phrases
+Relative LCP array built in 53.1951 seconds
+
+LCP array:        22.0876 MB (8.83498 bpc)
+
+Phrases:          6.30116 MB (2.52044 bpc)
+Blocks:           1.69392 MB (0.677564 bpc)
+Samples:          2.18718 MB (0.874865 bpc)
+Tree:             2.92155 MB (1.16861 bpc)
+Relative LCP:     13.1038 MB (5.24148 bpc)
+
+
+Target: seq15
+Reference size: 20971521
+Target size: 20972383
+Built the merging bitvector in 11.9982 seconds
+Matched 8643524 positions in 33.8622 seconds
+Found a common subsequence of length 4289152 in 3.07929 seconds
+Built the bwt_lcs bitvectors and samples in 4.24919 seconds
+Index built in 57.5416 seconds
+
+BWT:              7.52075 MB (3.00818 bpc)
+SA samples:       3.67664 MB (1.47059 bpc)
+ISA samples:      0.976617 MB (0.390631 bpc)
+Simple FM:        12.1744 MB (4.86954 bpc)
+
+ref_minus_lcs:    5.88557 MB (2.35413 bpc)
+seq_minus_lcs:    5.88886 MB (2.35545 bpc)
+bwt_lcs:          3.82625 MB (1.53044 bpc)
+text_lcs:         3.16854 MB (1.26736 bpc)
+SA samples:       0.243211 MB (0.0972803 bpc)
+ISA samples:      0.122087 MB (0.0488326 bpc)
+Relative FM:      19.135 MB (7.65369 bpc)
+
+The RLZ parsing of the LCP array consists of 2113616 phrases
+Relative LCP array built in 53.0452 seconds
+
+LCP array:        22.0858 MB (8.83396 bpc)
+
+Phrases:          6.29908 MB (2.51953 bpc)
+Blocks:           1.69358 MB (0.677405 bpc)
+Samples:          2.18613 MB (0.874415 bpc)
+Tree:             2.92016 MB (1.16802 bpc)
+Relative LCP:     13.099 MB (5.23936 bpc)
+
+
+Target: seq16
+Reference size: 20971521
+Target size: 20976953
+Built the merging bitvector in 11.9406 seconds
+Matched 8652672 positions in 33.9313 seconds
+Found a common subsequence of length 4288176 in 3.04339 seconds
+Built the bwt_lcs bitvectors and samples in 4.31355 seconds
+Index built in 57.537 seconds
+
+BWT:              7.52206 MB (3.00804 bpc)
+SA samples:       3.67744 MB (1.47059 bpc)
+ISA samples:      0.97683 MB (0.390631 bpc)
+Simple FM:        12.1767 MB (4.86941 bpc)
+
+ref_minus_lcs:    5.88334 MB (2.35273 bpc)
+seq_minus_lcs:    5.88805 MB (2.35461 bpc)
+bwt_lcs:          3.80267 MB (1.52067 bpc)
+text_lcs:         3.16726 MB (1.26657 bpc)
+SA samples:       0.243264 MB (0.0972805 bpc)
+ISA samples:      0.122117 MB (0.0488342 bpc)
+Relative FM:      19.1072 MB (7.64089 bpc)
+
+The RLZ parsing of the LCP array consists of 2113763 phrases
+Relative LCP array built in 53.0236 seconds
+
+LCP array:        22.0904 MB (8.83388 bpc)
+
+Phrases:          6.29952 MB (2.51915 bpc)
+Blocks:           1.69356 MB (0.677248 bpc)
+Samples:          2.18632 MB (0.874301 bpc)
+Tree:             2.92041 MB (1.16786 bpc)
+Relative LCP:     13.0998 MB (5.23857 bpc)
+
+
+Target: seq17
+Reference size: 20971521
+Target size: 20966751
+Built the merging bitvector in 12.1169 seconds
+Matched 8695854 positions in 34.1703 seconds
+Found a common subsequence of length 4242585 in 3.02263 seconds
+Built the bwt_lcs bitvectors and samples in 4.36 seconds
+Index built in 57.9713 seconds
+
+BWT:              7.51866 MB (3.00815 bpc)
+SA samples:       3.67565 MB (1.4706 bpc)
+ISA samples:      0.976357 MB (0.390632 bpc)
+Simple FM:        12.171 MB (4.86952 bpc)
+
+ref_minus_lcs:    5.91228 MB (2.36545 bpc)
+seq_minus_lcs:    5.91353 MB (2.36595 bpc)
+bwt_lcs:          3.82725 MB (1.53125 bpc)
+text_lcs:         3.16646 MB (1.26687 bpc)
+SA samples:       0.24315 MB (0.097282 bpc)
+ISA samples:      0.122056 MB (0.0488335 bpc)
+Relative FM:      19.1852 MB (7.67582 bpc)
+
+The RLZ parsing of the LCP array consists of 2116740 phrases
+Relative LCP array built in 53.1169 seconds
+
+LCP array:        22.0802 MB (8.83411 bpc)
+
+Phrases:          6.30839 MB (2.52393 bpc)
+Blocks:           1.69498 MB (0.678145 bpc)
+Samples:          2.19751 MB (0.879205 bpc)
+Tree:             2.93534 MB (1.1744 bpc)
+Relative LCP:     13.1362 MB (5.25568 bpc)
+
+
+Target: seq18
+Reference size: 20971521
+Target size: 20967741
+Built the merging bitvector in 12.1466 seconds
+Matched 8556329 positions in 34.1087 seconds
+Found a common subsequence of length 4107909 in 3.00639 seconds
+Built the bwt_lcs bitvectors and samples in 4.3769 seconds
+Index built in 58.0593 seconds
+
+BWT:              7.51919 MB (3.00822 bpc)
+SA samples:       3.67582 MB (1.47059 bpc)
+ISA samples:      0.976396 MB (0.390629 bpc)
+Simple FM:        12.1718 MB (4.86958 bpc)
+
+ref_minus_lcs:    5.9885 MB (2.39583 bpc)
+seq_minus_lcs:    5.99018 MB (2.3965 bpc)
+bwt_lcs:          3.80174 MB (1.52097 bpc)
+text_lcs:         3.14496 MB (1.25821 bpc)
+SA samples:       0.243157 MB (0.0972805 bpc)
+ISA samples:      0.122064 MB (0.0488343 bpc)
+Relative FM:      19.2911 MB (7.71782 bpc)
+
+The RLZ parsing of the LCP array consists of 2114438 phrases
+Relative LCP array built in 53.2206 seconds
+
+LCP array:        22.0815 MB (8.83418 bpc)
+
+Phrases:          6.30153 MB (2.52107 bpc)
+Blocks:           1.69389 MB (0.677677 bpc)
+Samples:          2.18977 MB (0.876065 bpc)
+Tree:             2.92501 MB (1.17022 bpc)
+Relative LCP:     13.1102 MB (5.24502 bpc)
+
+
+Target: seq19
+Reference size: 20971521
+Target size: 20972330
+Built the merging bitvector in 12.0683 seconds
+Matched 8705646 positions in 34.1402 seconds
+Found a common subsequence of length 4352249 in 3.12138 seconds
+Built the bwt_lcs bitvectors and samples in 4.32304 seconds
+Index built in 57.9764 seconds
+
+BWT:              7.52084 MB (3.00822 bpc)
+SA samples:       3.67663 MB (1.47059 bpc)
+ISA samples:      0.976617 MB (0.390632 bpc)
+Simple FM:        12.1744 MB (4.86959 bpc)
+
+ref_minus_lcs:    5.84765 MB (2.33897 bpc)
+seq_minus_lcs:    5.85089 MB (2.34026 bpc)
+bwt_lcs:          3.79992 MB (1.51991 bpc)
+text_lcs:         3.16821 MB (1.26724 bpc)
+SA samples:       0.243211 MB (0.0972806 bpc)
+ISA samples:      0.122087 MB (0.0488327 bpc)
+Relative FM:      19.0324 MB (7.61268 bpc)
+
+The RLZ parsing of the LCP array consists of 2112561 phrases
+Relative LCP array built in 53.1505 seconds
+
+LCP array:        22.086 MB (8.83406 bpc)
+
+Phrases:          6.29594 MB (2.51828 bpc)
+Blocks:           1.69296 MB (0.677159 bpc)
+Samples:          2.18503 MB (0.873978 bpc)
+Tree:             2.91869 MB (1.16743 bpc)
+Relative LCP:     13.0926 MB (5.23684 bpc)
+
+
+Target: seq20
+Reference size: 20971521
+Target size: 20970848
+Built the merging bitvector in 12.0231 seconds
+Matched 8604553 positions in 33.8891 seconds
+Found a common subsequence of length 4184551 in 3.03164 seconds
+Built the bwt_lcs bitvectors and samples in 4.35672 seconds
+Index built in 57.6931 seconds
+
+BWT:              7.51991 MB (3.00806 bpc)
+SA samples:       3.67637 MB (1.47059 bpc)
+ISA samples:      0.976548 MB (0.390632 bpc)
+Simple FM:        12.1732 MB (4.86943 bpc)
+
+ref_minus_lcs:    5.9486 MB (2.37952 bpc)
+seq_minus_lcs:    5.9512 MB (2.38056 bpc)
+bwt_lcs:          3.8193 MB (1.52777 bpc)
+text_lcs:         3.16423 MB (1.26573 bpc)
+SA samples:       0.243196 MB (0.0972813 bpc)
+ISA samples:      0.122079 MB (0.0488331 bpc)
+Relative FM:      19.2491 MB (7.69988 bpc)
+
+The RLZ parsing of the LCP array consists of 2112650 phrases
+Relative LCP array built in 53.1627 seconds
+
+LCP array:        22.085 MB (8.8343 bpc)
+
+Phrases:          6.2962 MB (2.51856 bpc)
+Blocks:           1.69299 MB (0.677219 bpc)
+Samples:          2.18509 MB (0.874064 bpc)
+Tree:             2.91876 MB (1.16754 bpc)
+Relative LCP:     13.093 MB (5.23739 bpc)
+
+
+Target: seq21
+Reference size: 20971521
+Target size: 20970602
+Built the merging bitvector in 11.9959 seconds
+Matched 8548613 positions in 33.8124 seconds
+Found a common subsequence of length 4246656 in 3.05776 seconds
+Built the bwt_lcs bitvectors and samples in 4.26316 seconds
+Index built in 57.4471 seconds
+
+BWT:              7.52021 MB (3.00822 bpc)
+SA samples:       3.67632 MB (1.47059 bpc)
+ISA samples:      0.976533 MB (0.39063 bpc)
+Simple FM:        12.1734 MB (4.86958 bpc)
+
+ref_minus_lcs:    5.9137 MB (2.36558 bpc)
+seq_minus_lcs:    5.91639 MB (2.36666 bpc)
+bwt_lcs:          3.80591 MB (1.52243 bpc)
+text_lcs:         3.17135 MB (1.2686 bpc)
+SA samples:       0.243196 MB (0.0972825 bpc)
+ISA samples:      0.122079 MB (0.0488337 bpc)
+Relative FM:      19.1731 MB (7.66958 bpc)
+
+The RLZ parsing of the LCP array consists of 2116006 phrases
+Relative LCP array built in 52.9872 seconds
+
+LCP array:        22.0843 MB (8.83411 bpc)
+
+Phrases:          6.3062 MB (2.52259 bpc)
+Blocks:           1.69473 MB (0.67792 bpc)
+Samples:          2.1953 MB (0.878158 bpc)
+Tree:             2.93237 MB (1.173 bpc)
+Relative LCP:     13.1286 MB (5.25167 bpc)
+
+
+Target: seq22
+Reference size: 20971521
+Target size: 20969192
+Built the merging bitvector in 12.0623 seconds
+Matched 8652099 positions in 33.1084 seconds
+Found a common subsequence of length 4353367 in 2.56736 seconds
+Built the bwt_lcs bitvectors and samples in 4.12188 seconds
+Index built in 55.4361 seconds
+
+BWT:              7.51955 MB (3.00816 bpc)
+SA samples:       3.67607 MB (1.47059 bpc)
+ISA samples:      0.976464 MB (0.390629 bpc)
+Simple FM:        12.1724 MB (4.86952 bpc)
+
+ref_minus_lcs:    5.85012 MB (2.34031 bpc)
+seq_minus_lcs:    5.85262 MB (2.34131 bpc)
+bwt_lcs:          3.80932 MB (1.5239 bpc)
+text_lcs:         3.17355 MB (1.26956 bpc)
+SA samples:       0.24318 MB (0.0972829 bpc)
+ISA samples:      0.122071 MB (0.0488339 bpc)
+Relative FM:      19.0513 MB (7.62139 bpc)
+
+The RLZ parsing of the LCP array consists of 2113490 phrases
+Relative LCP array built in 46.8042 seconds
+
+LCP array:        22.0817 MB (8.83364 bpc)
+
+Phrases:          6.29871 MB (2.51976 bpc)
+Blocks:           1.68222 MB (0.672963 bpc)
+Samples:          2.186 MB (0.874497 bpc)
+Tree:             2.91995 MB (1.16811 bpc)
+Relative LCP:     13.0869 MB (5.23533 bpc)
+
+
+Target: seq23
+Reference size: 20971521
+Target size: 20971861
+Built the merging bitvector in 10.4562 seconds
+Matched 8598106 positions in 28.8613 seconds
+Found a common subsequence of length 4237206 in 2.57243 seconds
+Built the bwt_lcs bitvectors and samples in 4.04733 seconds
+Index built in 49.4694 seconds
+
+BWT:              7.52077 MB (3.00826 bpc)
+SA samples:       3.67655 MB (1.47059 bpc)
+ISA samples:      0.976594 MB (0.390631 bpc)
+Simple FM:        12.1743 MB (4.86962 bpc)
+
+ref_minus_lcs:    5.9171 MB (2.3668 bpc)
+seq_minus_lcs:    5.92037 MB (2.36811 bpc)
+bwt_lcs:          3.83126 MB (1.53248 bpc)
+text_lcs:         3.16794 MB (1.26715 bpc)
+SA samples:       0.243211 MB (0.0972827 bpc)
+ISA samples:      0.122087 MB (0.0488338 bpc)
+Relative FM:      19.2024 MB (7.68085 bpc)
+
+The RLZ parsing of the LCP array consists of 2124545 phrases
+Relative LCP array built in 47.3625 seconds
+
+LCP array:        22.0864 MB (8.83441 bpc)
+
+Phrases:          6.33165 MB (2.53262 bpc)
+Blocks:           1.69893 MB (0.679562 bpc)
+Samples:          2.22099 MB (0.88838 bpc)
+Tree:             2.96665 MB (1.18664 bpc)
+Relative LCP:     13.2182 MB (5.2872 bpc)
+
+
+Target: seq24
+Reference size: 20971521
+Target size: 20972149
+Built the merging bitvector in 10.5998 seconds
+Matched 8697540 positions in 29.2336 seconds
+Found a common subsequence of length 4356973 in 2.61776 seconds
+Built the bwt_lcs bitvectors and samples in 4.0629 seconds
+Index built in 50.156 seconds
+
+BWT:              7.52033 MB (3.00804 bpc)
+SA samples:       3.67659 MB (1.47059 bpc)
+ISA samples:      0.976602 MB (0.390629 bpc)
+Simple FM:        12.1739 MB (4.8694 bpc)
+
+ref_minus_lcs:    5.83526 MB (2.33403 bpc)
+seq_minus_lcs:    5.83824 MB (2.33523 bpc)
+bwt_lcs:          3.77389 MB (1.50951 bpc)
+text_lcs:         3.14797 MB (1.25915 bpc)
+SA samples:       0.243211 MB (0.0972814 bpc)
+ISA samples:      0.122087 MB (0.0488331 bpc)
+Relative FM:      18.9611 MB (7.58423 bpc)
+
+The RLZ parsing of the LCP array consists of 2112835 phrases
+Relative LCP array built in 47.7466 seconds
+
+LCP array:        22.0837 MB (8.83323 bpc)
+
+Phrases:          6.29675 MB (2.51863 bpc)
+Blocks:           1.6931 MB (0.67722 bpc)
+Samples:          2.18527 MB (0.874083 bpc)
+Tree:             2.919 MB (1.16757 bpc)
+Relative LCP:     13.0941 MB (5.23749 bpc)
+
+
+Target: seq25
+Reference size: 20971521
+Target size: 20973349
+Built the merging bitvector in 10.6038 seconds
+Matched 8604492 positions in 29.209 seconds
+Found a common subsequence of length 4092701 in 2.60447 seconds
+Built the bwt_lcs bitvectors and samples in 5.46904 seconds
+Index built in 51.3853 seconds
+
+BWT:              7.52094 MB (3.00811 bpc)
+SA samples:       3.6768 MB (1.47059 bpc)
+ISA samples:      0.976663 MB (0.390631 bpc)
+Simple FM:        12.1748 MB (4.86948 bpc)
+
+ref_minus_lcs:    6.00755 MB (2.40281 bpc)
+seq_minus_lcs:    6.01125 MB (2.40429 bpc)
+bwt_lcs:          3.79342 MB (1.51723 bpc)
+text_lcs:         3.17009 MB (1.26792 bpc)
+SA samples:       0.243226 MB (0.0972819 bpc)
+ISA samples:      0.122094 MB (0.0488334 bpc)
+Relative FM:      19.3481 MB (7.73857 bpc)
+
+The RLZ parsing of the LCP array consists of 2116416 phrases
+Relative LCP array built in 46.9827 seconds
+
+LCP array:        22.0888 MB (8.83473 bpc)
+
+Phrases:          6.30742 MB (2.52275 bpc)
+Blocks:           1.69469 MB (0.677816 bpc)
+Samples:          2.19609 MB (0.87836 bpc)
+Tree:             2.93344 MB (1.17327 bpc)
+Relative LCP:     13.1316 MB (5.2522 bpc)
+
+
+Memory usage: 620.621 MB
+
+Total: 230936675
+~bpc: 4.18188
+Ratio: 0.0167305
+
+End
+Sat Apr 25 13:48:11 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-3-1-01>
+Subject: Job 3916888: </nfs/users/nfs_j/js35/job_scripts/index_multi 0.1000 4> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/index_multi 0.1000 4> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <4*vr-3-1-01>, in queue <basement>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Wed Apr 22 08:49:56 2015
+Results reported at Sat Apr 25 13:48:11 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/index_multi 0.1000 4
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               280715.38 sec.
+    Max Memory :             55333 MB
+    Average Memory :         2197.56 MB
+    Total Requested Memory : 32768.00 MB
+    Delta Memory :           -22565.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               55388 MB
+
+    Max Processes :          4
+    Max Threads :            8
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/index_multi_0.1000.err> for stderr output of this job.
+

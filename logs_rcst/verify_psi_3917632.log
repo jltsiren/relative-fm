@@ -1,0 +1,102 @@
+Start
+Wed Apr 22 10:40:57 BST 2015
+
+Verifying LF/Psi operations
+
+Reference: human
+Target: maternal
+
+RFM and RLCP verifier
+
+Reference: human
+
+FM-index:         1999.67 MB (5.41863 bpc)
+
+LCP array:        3862.42 MB (10.4663 bpc)
+
+
+Target: maternal
+
+BWT:              1090.24 MB (3.01219 bpc)
+SA samples:       681.303 MB (1.88235 bpc)
+ISA samples:      180.971 MB (0.5 bpc)
+Simple FM:        1952.51 MB (5.39455 bpc)
+
+ref_minus_lcs:    43.4075 MB (0.119929 bpc)
+seq_minus_lcs:    19.2637 MB (0.0532231 bpc)
+bwt_lcs:          189.846 MB (0.524521 bpc)
+text_lcs:         126.431 MB (0.349311 bpc)
+SA samples:       45.0667 MB (0.124514 bpc)
+ISA samples:      22.6214 MB (0.0625 bpc)
+Relative FM:      446.637 MB (1.234 bpc)
+
+LCP array:        3689.77 MB (10.1944 bpc)
+
+Phrases:          520.881 MB (1.43913 bpc)
+Blocks:           124.647 MB (0.344384 bpc)
+Samples:          196.667 MB (0.543366 bpc)
+Tree:             257.812 MB (0.712303 bpc)
+Relative LCP:     1100.01 MB (3.03918 bpc)
+
+LF (FM):          10000000 queries in 5.59998 seconds (0.559998 µs/query)
+
+LF (RFM):         10000000 queries in 39.7977 seconds (3.97977 µs/query)
+
+Psi (FM):         10000000 queries in 11.3925 seconds (1.13925 µs/query)
+
+Psi (RFM, slow):  10000000 queries in 472.488 seconds (47.2488 µs/query)
+
+Select structures built in 546.911 seconds
+Relative select:  189.888 MB (0.524637 bpc)
+
+Psi (RFM, fast):  10000000 queries in 62.765 seconds (6.2765 µs/query)
+
+
+Memory used: 14546.2 MB
+
+
+End
+Wed Apr 22 11:02:52 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-4-1-10>
+Subject: Job 3917632: </nfs/users/nfs_j/js35/job_scripts/verify_psi human maternal> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/verify_psi human maternal> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <32*vr-4-1-10>, in queue <normal>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Wed Apr 22 10:40:57 2015
+Results reported at Wed Apr 22 11:02:52 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/verify_psi human maternal
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               1325.60 sec.
+    Max Memory :             14282 MB
+    Average Memory :         12380.86 MB
+    Total Requested Memory : 16384.00 MB
+    Delta Memory :           2102.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               14341 MB
+
+    Max Processes :          4
+    Max Threads :            5
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/verify_psi_3917632.err> for stderr output of this job.
+

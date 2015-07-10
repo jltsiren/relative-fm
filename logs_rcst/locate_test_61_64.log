@@ -1,0 +1,135 @@
+Start
+Mon Apr 13 11:23:07 BST 2015
+
+Testing the locate functionality of the relative FM-index
+
+Reference: reference_61_64
+Target: target_61_64
+Threads: 32
+
+BWT construction
+Options: alphabet isa_sample_rate=64 sa_sample_rate=61
+
+File: reference_61_64
+Text size: 3036320415
+BWT built in 861.813 seconds (3.35996 MB/s)
+Alphabet written to reference_61_64.alpha
+BWT written to reference_61_64.bwt
+Samples written to reference_61_64.samples
+
+File: target_61_64
+Text size: 3036191207
+BWT built in 840.184 seconds (3.44631 MB/s)
+Alphabet written to target_61_64.alpha
+BWT written to target_61_64.bwt
+Samples written to target_61_64.samples
+
+Relative FM-index builder
+Using OpenMP with 32 threads
+
+Algorithm: invariant
+Input format: plain
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: reference_61_64
+
+BWT:              1090.28 MB (3.01219 bpc)
+SA samples:       189.879 MB (0.52459 bpc)
+ISA samples:      180.979 MB (0.5 bpc)
+Simple FM:        1461.14 MB (4.03678 bpc)
+
+
+Target: target_61_64
+Reference size: 3036320416
+Target size: 3036191208
+Built the merging bitvector in 3317.01 seconds
+Matched 3001221512 positions in 13689.8 seconds
+Found a common subsequence of length 2980010799 in 916.001 seconds
+Built the bwt_lcs bitvectors and samples in 1604.07 seconds
+Index built in 19563.5 seconds
+
+BWT:              1090.24 MB (3.01219 bpc)
+SA samples:       189.871 MB (0.52459 bpc)
+ISA samples:      180.971 MB (0.5 bpc)
+Simple FM:        1461.08 MB (4.03678 bpc)
+
+ref_minus_lcs:    19.2911 MB (0.053299 bpc)
+seq_minus_lcs:    19.2473 MB (0.0531778 bpc)
+bwt_lcs:          163.138 MB (0.450729 bpc)
+text_lcs:         125.532 MB (0.34683 bpc)
+SA samples:       45.0667 MB (0.124514 bpc)
+ISA samples:      22.6214 MB (0.0625 bpc)
+Relative FM:      394.897 MB (1.09105 bpc)
+
+
+Memory usage: 83254.3 MB
+
+Query test
+
+Reference: reference_61_64
+Sequence: target_61_64
+Patterns: patterns
+
+Read 2000000 patterns of total length 64000000
+
+
+Executing locate() queries.
+
+SimpleFM<plain>:  1461.08 MB (4.03678 bpc)
+SimpleFM<plain>:  Found 2000000 patterns with 254997642 occ in 4436.67 seconds (57475 occ/s)
+Hash of located positions: 11653246869206397622
+
+RFM<plain,plain>: 394.897 MB (1.09105 bpc)
+RFM<plain,plain>: Found 2000000 patterns with 254997642 occ in 6638.69 seconds (38410.8 occ/s)
+Hash of located positions: 11653246869206397622
+
+
+Memory usage: 2210.59 MB
+
+
+End
+Mon Apr 13 20:31:06 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-4-1-05>
+Subject: Job 3870161: </nfs/users/nfs_j/js35/job_scripts/locate_test 61 64 32> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/locate_test 61 64 32> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <32*vr-4-1-05>, in queue <long>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Mon Apr 13 11:23:06 2015
+Results reported at Mon Apr 13 20:31:06 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/locate_test 61 64 32
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               34572.34 sec.
+    Max Memory :             83261 MB
+    Average Memory :         8436.65 MB
+    Total Requested Memory : 131072.00 MB
+    Delta Memory :           47811.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               87416 MB
+
+    Max Processes :          4
+    Max Threads :            36
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/locate_test_61_64.err> for stderr output of this job.
+

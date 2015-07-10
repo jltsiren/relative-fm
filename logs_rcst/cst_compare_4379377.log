@@ -1,0 +1,83 @@
+Start
+Tue Jun 23 15:28:50 BST 2015
+
+Matching statistics timings
+
+Reference: human
+Target: maternal
+
+Finding the matching statistics with a CST
+
+Reference: human
+FM-index:         1999.67 MB (5.41863 bpc)
+LCP array:        3862.42 MB (10.4663 bpc)
+Reference data:   5862.09 MB (15.8849 bpc)
+
+Target: maternal
+Sequence: paternal_chr1_noNruns (225271390 bytes)
+
+Relative (slow):  1546.64 MB (4.27318 bpc)
+Relative (slow):  Average maximal match: 427.958 (69505.4 seconds)
+
+Relative (fast):  1736.53 MB (4.79782 bpc)
+Relative (fast):  Average maximal match: 427.958 (26792.3 seconds)
+
+cst_sct3_dac:     6543.94 MB (18.0801 bpc)
+cst_sct3_dac:     Average maximal match: 427.958 (7836.72 seconds)
+
+cst_sct3_plcp:    3905.7 MB (10.7909 bpc)
+cst_sct3_plcp:    Average maximal match: 427.958 (14071.1 seconds)
+
+cst_sada:         4462.21 MB (12.3285 bpc)
+cst_sada:         Average maximal match: 427.958 (23407.2 seconds)
+
+cst_fully:        1802.96 MB (4.98135 bpc)
+
+Memory used: 23404.7 MB
+
+
+End
+Thu Jun 25 06:52:53 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-1-1-06>
+Subject: Job 4379377: </nfs/users/nfs_j/js35/job_scripts/cst_compare human maternal> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/cst_compare human maternal> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <32*vr-1-1-06>, in queue <long>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Tue Jun 23 15:28:49 2015
+Results reported at Thu Jun 25 06:52:53 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/cst_compare human maternal
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               144219.45 sec.
+    Max Memory :             23400 MB
+    Average Memory :         13169.21 MB
+    Total Requested Memory : 65536.00 MB
+    Delta Memory :           42136.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               26471 MB
+
+    Max Processes :          4
+    Max Threads :            5
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/cst_compare_4379377.err> for stderr output of this job.
+

@@ -1,0 +1,86 @@
+Start
+Thu Apr 16 12:08:01 BST 2015
+
+Verifying the relative LCP array
+
+Reference: female
+Target: maternal2
+
+RLCP verifier
+
+Reference: female
+
+LCP array:        3690.1 MB (10.1948 bpc)
+
+
+Target: maternal2
+
+LCP array:        3689.77 MB (10.1944 bpc)
+
+Phrases:          400.738 MB (1.10719 bpc)
+Blocks:           97.8164 MB (0.270254 bpc)
+Samples:          109.513 MB (0.302572 bpc)
+Tree:             141.778 MB (0.391715 bpc)
+Relative LCP:     749.846 MB (2.07173 bpc)
+
+LCP (random):     100000000 queries in 6.96667 seconds (0.0696667 µs/query)
+LCP (seq):        3036191208 queries in 3.03326 seconds (0.000999036 µs/query)
+RLCP (random):    100000000 queries in 126.268 seconds (1.26268 µs/query)
+RLCP (seq):       3036191208 queries in 377.46 seconds (0.12432 µs/query)
+
+RMQ:              100000000 queries in 260.523 seconds (2.60523 µs/query)
+
+PSV:              100000000 queries in 192.33 seconds (1.9233 µs/query)
+
+PSEV:             100000000 queries in 180.109 seconds (1.80109 µs/query)
+
+NSV:              100000000 queries in 180.52 seconds (1.8052 µs/query)
+
+NSEV:             100000000 queries in 174.404 seconds (1.74404 µs/query)
+
+
+End
+Thu Apr 16 12:33:55 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-4-1-14>
+Subject: Job 3888650: </nfs/users/nfs_j/js35/job_scripts/verify_lcp female maternal2> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/verify_lcp female maternal2> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <32*vr-4-1-14>, in queue <normal>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Thu Apr 16 12:08:01 2015
+Results reported at Thu Apr 16 12:33:55 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/verify_lcp female maternal2
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               1562.30 sec.
+    Max Memory :             9668 MB
+    Average Memory :         8875.98 MB
+    Total Requested Memory : 16384.00 MB
+    Delta Memory :           6716.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               9729 MB
+
+    Max Processes :          4
+    Max Threads :            5
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/verify_lcp_3888650.err> for stderr output of this job.
+

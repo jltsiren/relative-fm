@@ -1,0 +1,16 @@
+Building TextIndex
+change q to 32 again
+Verbatim grammar: 1.56078e+10
+Dictionary: 39753529
+C: 136564568
+Sampled pos in C: 6341236
+Sampled offset in C: 1892619
+Heap excess: 3190901
+Heap min excess: 8780044
+Rules MIN excess: 5276080
+Rules lengths: 9660235
+Rules total excess: 5153295
+Rules leafs: 7367848
+Sampled leafs in C: 7072904
+All fsb/lstb of leafs: 9271872
+CST size: 240325131

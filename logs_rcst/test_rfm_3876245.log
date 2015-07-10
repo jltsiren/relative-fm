@@ -1,0 +1,202 @@
+Start
+Tue Apr 14 12:56:26 BST 2015
+
+Testing the relative FM-index with assembled genomes
+
+Reference: human
+Target: maternal
+Threads: 8
+
+BWT construction
+Options: alphabet isa_sample_rate=64 lcp sa_sample_rate=17
+
+File: human
+Text size: 3095693981
+BWT built in 898.555 seconds (3.28559 MB/s)
+Alphabet written to human.alpha
+BWT written to human.bwt
+Samples written to human.samples
+LCP array built in 716.785 seconds (4.11878 MB/s)
+LCP array written to human.lcp
+
+File: maternal
+Text size: 3036191207
+BWT built in 1017.47 seconds (2.84582 MB/s)
+Alphabet written to maternal.alpha
+BWT written to maternal.bwt
+Samples written to maternal.samples
+LCP array built in 680.301 seconds (4.25626 MB/s)
+LCP array written to maternal.lcp
+
+Indexing the differential LCP array
+
+File: human
+LCP size: 3095693982
+DLCP width: 27
+SA width: 32
+Index built in 7238.68 seconds (0.407848 MB/s)
+
+Relative FM-index and LCP array builder
+Using OpenMP with 8 threads
+
+Algorithm: invariant
+Input format: plain
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: human
+
+BWT:              1120.49 MB (3.03628 bpc)
+SA samples:       694.655 MB (1.88235 bpc)
+ISA samples:      184.518 MB (0.5 bpc)
+Simple FM:        1999.67 MB (5.41863 bpc)
+
+LCP array:        3862.42 MB (10.4663 bpc)
+
+
+Target: maternal
+Reference size: 3095693982
+Target size: 3036191208
+Built the merging bitvector in 3475.35 seconds
+Matched 3032774943 positions in 8219.62 seconds
+Found a common subsequence of length 2979962648 in 778.584 seconds
+Built the bwt_lcs bitvectors and samples in 1636.81 seconds
+Index built in 14154.6 seconds
+
+BWT:              1090.24 MB (3.01219 bpc)
+SA samples:       681.303 MB (1.88235 bpc)
+ISA samples:      180.971 MB (0.5 bpc)
+Simple FM:        1952.51 MB (5.39455 bpc)
+
+ref_minus_lcs:    43.4075 MB (0.119929 bpc)
+seq_minus_lcs:    19.2637 MB (0.0532231 bpc)
+bwt_lcs:          189.846 MB (0.524521 bpc)
+text_lcs:         126.431 MB (0.349311 bpc)
+SA samples:       45.0667 MB (0.124514 bpc)
+ISA samples:      22.6214 MB (0.0625 bpc)
+Relative FM:      446.636 MB (1.234 bpc)
+
+The RLZ parsing of the LCP array consists of 136545925 phrases
+Relative LCP array built in 8609.61 seconds
+
+LCP array:        3689.77 MB (10.1944 bpc)
+
+Phrases:          520.881 MB (1.43913 bpc)
+Blocks:           124.647 MB (0.344384 bpc)
+Samples:          196.667 MB (0.543366 bpc)
+Tree:             257.812 MB (0.712303 bpc)
+Relative LCP:     1100.01 MB (3.03918 bpc)
+
+
+Memory usage: 101413 MB
+
+Query test
+
+Reference: human
+Sequence: maternal
+Patterns: patterns
+
+Read 2000000 patterns of total length 64000000
+
+
+SimpleFM<plain>:  1952.51 MB (5.39455 bpc)
+SimpleFM<plain>:  Found 2000000 patterns with 254997642 occ in 28.2475 seconds (2.16072 MB/s)
+
+RFM<plain,plain>: 446.636 MB (1.234 bpc)
+RFM<plain,plain>: Found 2000000 patterns with 254997642 occ in 272.237 seconds (0.224198 MB/s)
+
+
+Memory usage: 2809.89 MB
+
+Query test
+
+Reference: human
+Sequence: maternal
+Patterns: patterns
+
+Read 2000000 patterns of total length 64000000
+
+
+Executing locate() queries.
+
+SimpleFM<plain>:  1952.51 MB (5.39455 bpc)
+SimpleFM<plain>:  Found 2000000 patterns with 254997642 occ in 702.53 seconds (362970 occ/s)
+Hash of located positions: 11653246869206397622
+
+RFM<plain,plain>: 446.636 MB (1.234 bpc)
+RFM<plain,plain>: Found 2000000 patterns with 254997642 occ in 2590.91 seconds (98420.3 occ/s)
+Hash of located positions: 11653246869206397622
+
+
+Memory usage: 2809.89 MB
+
+Query test
+
+Reference: human
+Sequence: maternal
+Patterns: patterns
+
+Read 2000000 patterns of total length 64000000
+
+
+Executing locate() queries.
+
+Verifying the results with extract() queries.
+
+SimpleFM<plain>:  1952.51 MB (5.39455 bpc)
+SimpleFM<plain>:  Found 2000000 patterns with 254997642 occ in 1037.57 seconds (245764 occ/s)
+Hash of located positions: 11653246869206397622
+
+RFM<plain,plain>: 446.636 MB (1.234 bpc)
+RFM<plain,plain>: Found 2000000 patterns with 254997642 occ in 2936.15 seconds (86847.6 occ/s)
+Hash of located positions: 11653246869206397622
+
+
+Memory usage: 2809.89 MB
+
+
+End
+Wed Apr 15 00:30:41 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-4-1-08>
+Subject: Job 3876245: </nfs/users/nfs_j/js35/job_scripts/test_rfm human maternal 8> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/test_rfm human maternal 8> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <8*vr-4-1-08>, in queue <long>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Tue Apr 14 12:56:26 2015
+Results reported at Wed Apr 15 00:30:41 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/test_rfm human maternal 8
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               43720.10 sec.
+    Max Memory :             101420 MB
+    Average Memory :         25546.49 MB
+    Total Requested Memory : 131072.00 MB
+    Delta Memory :           29652.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               105529 MB
+
+    Max Processes :          4
+    Max Threads :            12
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/test_rfm_3876245.err> for stderr output of this job.
+

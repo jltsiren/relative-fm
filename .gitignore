@@ -3,8 +3,10 @@
 *.bak
 *.bbl
 *.blg
-*.log
 *.pdf
+
+relative.log
+rcst.log
 
 align_bwts
 build_bwt

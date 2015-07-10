@@ -17,7 +17,7 @@ VERBOSE_FLAGS=-DVERBOSE_OUTPUT
 
 # Multithreading with OpenMP. No longer compiles without OpenMP support.
 # Currently used for RFM construction.
-PARALLEL_FLAGS=-fopenmp
+PARALLEL_FLAGS=-fopenmp -D_GLIBCXX_PARALLEL
 
 OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(PARALLEL_FLAGS)
 

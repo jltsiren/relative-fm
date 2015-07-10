@@ -1,0 +1,82 @@
+Start
+Tue Jun 23 15:28:49 BST 2015
+
+CST traverse timings
+
+Reference: female
+Target: maternal2
+
+DFS traversal in compressed suffix trees
+
+Reference: female
+
+FM-index:         1952.6 MB (5.39454 bpc)
+LCP array:        3690.1 MB (10.1948 bpc)
+Reference data:   5642.7 MB (15.5894 bpc)
+
+
+Sequence: maternal2
+
+Relative CST:     1144.74 MB (3.16278 bpc)
+Relative CST:     5127716113 nodes in 2360.38 seconds
+
+cst_sct3_dac:     6543.94 MB (18.0801 bpc)
+cst_sct3_dac:     5127716113 nodes in 1083.43 seconds
+
+cst_sct3_plcp:    3905.7 MB (10.7909 bpc)
+cst_sct3_plcp:    5127716113 nodes in 1069.23 seconds
+
+cst_sada:         4462.21 MB (12.3285 bpc)
+cst_sada:         5127716113 nodes in 301.68 seconds
+
+cst_fully:        1802.96 MB (4.98135 bpc)
+
+
+Memory used: 31886 MB
+
+
+End
+Wed Jun 24 02:59:25 BST 2015
+
+
+------------------------------------------------------------
+Sender: LSF System <lsfadmin@vr-4-1-11>
+Subject: Job 4379376: </nfs/users/nfs_j/js35/job_scripts/cst_traverse female maternal2> in cluster <vr> Done
+
+Job </nfs/users/nfs_j/js35/job_scripts/cst_traverse female maternal2> was submitted from host <vr-2-2-02> by user <js35> in cluster <vr>.
+Job was executed on host(s) <32*vr-4-1-11>, in queue <long>, as user <js35> in cluster <vr>.
+</nfs/users/nfs_j/js35> was used as the home directory.
+</nfs/users/nfs_j/js35> was used as the working directory.
+Started at Tue Jun 23 15:28:49 2015
+Results reported at Wed Jun 24 02:59:25 2015
+
+Your job looked like:
+
+------------------------------------------------------------
+# LSBATCH: User input
+/nfs/users/nfs_j/js35/job_scripts/cst_traverse female maternal2
+------------------------------------------------------------
+
+Successfully completed.
+
+Resource usage summary:
+
+    CPU time :               42158.84 sec.
+    Max Memory :             31894 MB
+    Average Memory :         13099.15 MB
+    Total Requested Memory : 65536.00 MB
+    Delta Memory :           33642.00 MB
+    (Delta: the difference between total requested memory and actual max usage.)
+    Max Swap :               31952 MB
+
+    Max Processes :          4
+    Max Threads :            5
+
+The output (if any) is above this job summary.
+
+
+
+PS:
+
+Read file </nfs/users/nfs_j/js35/logs/cst_traverse_4379376.err> for stderr output of this job.
+
