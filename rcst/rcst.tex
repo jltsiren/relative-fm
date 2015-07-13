@@ -165,6 +165,9 @@ Jouni Sir\'en\inst{3} %\fnmsep
 
 \maketitle
 
+%\thispagestyle{empty} %for ALENEX
+%\setcounter{page}{0} %for ALENEX
+
 \begin{abstract}
 \iffalse
 This work investigates the use of mutual information between data structures for similar
@@ -185,6 +188,8 @@ state being the net result of potentially many individual modifications, all of 
 be represented by a persistent data structure.
 \fi
 \end{abstract}
+
+%\newpage %for ALENEX format
 
 \section{Introduction}
 
@@ -251,14 +256,14 @@ Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with $\mSA[\mLF
 
 \emph{Compressed suffix arrays} (\CSA) \cite{Ferragina2005a,Grossi2005} are text indexes supporting similar functionality to the suffix array. This includes the following queries: i) $\mfind(P) = [sp,ep]$ determines the lexicographic range of suffixes starting with \emph{pattern} $P[1,\ell]$; ii) $\mlocate(sp,ep) = \mSA[sp,ep]$ returns the starting positions of these suffixes; and iii) $\mextract(i,j) = T[i,j]$ extracts substrings of the text. In practice, the \find{} performance of compressed suffix arrays can be competitive with suffix arrays, while \locate{} queries are orders of magnitude slower~\cite{Ferragina2009a}. Typical index sizes are less than the size of the uncompressed text.
 
-The \emph{FM-index} (\FMI) \cite{Ferragina2005a} is a common type of compressed suffix arrays. A typical implementation stores the \BWT{} in a wavelet tree \cite{Grossi2003}. The index implements \find{} queries via a process called \emph{backward search}. Let $[sp,ep]$ be the lexicographic range of the suffixes of the text that start with suffix $P[i+1,\ell]$ of the pattern. We can find the range matching suffix $P[i,\ell]$ with a generalization of function \LF{} as
+The \emph{FM-index} (\FMI) \cite{Ferragina2005a} is a common type of compressed suffix array. A typical implementation stores the \BWT{} in a wavelet tree \cite{Grossi2003}. The index implements \find{} queries via a process called \emph{backward search}. Let $[sp,ep]$ be the lexicographic range of the suffixes of the text that start with suffix $P[i+1,\ell]$ of the pattern. We can find the range matching suffix $P[i,\ell]$ with a generalization of function \LF{} as
 $$
 \mLF([sp,ep],P[i]) =
 [\mC[P[i]] + \mrank_{P[i]}(\mBWT, sp-1) + 1,
 \mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
 $$
 
-We support \locate{} queries by \emph{sampling} some suffix array pointers. If we want to determine a value $\mSA[i]$ that has not been sampled, we can compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer found by iterating \LF{} $k$ times, starting from position $i$. Given \emph{sample interval} $d$, the samples can be chosen in \emph{suffix order}, sampling $\mSA[i]$ at positions divisible by $d$, or in \emph{text order}, sampling $T[i]$ at positions divisible by $d$ and marking the sampled \SA{} positions in a bitvector. Suffix order sampling requires less space, often resulting in better time/space trade-offs in practice, while text order sampling guarantees better worst-case performance. We also sample some \ISA{} pointers for \extract{} queries. To extract $T[i,j]$, we find the nearest sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with function \LF.
+We support \locate{} queries by \emph{sampling} some suffix array pointers. If we want to determine a value $\mSA[i]$ that has not been sampled, we can compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer found by iterating \LF{} $k$ times, starting from position $i$. Given \emph{sample interval} $d$, the samples can be chosen in \emph{suffix order}, sampling $\mSA[i]$ at positions divisible by $d$, or in \emph{text order}, sampling $T[i]$ at positions divisible by $d$ and marking the sampled \SA{} positions in a bitvector. Suffix-order sampling requires less space, often resulting in better time/space trade-offs in practice, while text-order sampling guarantees better worst-case performance. We also sample some \ISA{} pointers for \extract{} queries. To extract $T[i,j]$, we find the nearest sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with function \LF.
 
 \begin{table}
 \centering{}
@@ -651,6 +656,7 @@ The results can be seen in Table~\ref{table:cst}. \RCST{} was clearly smaller th
 \item analyze the similarity between LCP arrays based on edit distance
 \end{itemize}
 
+%\newpage %for ALENEX format
 
 \bibliographystyle{plain}
 \bibliography{rcst}
