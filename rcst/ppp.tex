@@ -1,0 +1,1442 @@
+
+\documentclass[a4paper,11pt]{llncs}
+\usepackage{fullpage}
+%\documentclass[10pt]{llncs}
+
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{textgreek}
+\usepackage{url}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+% Mathematics
+\newcommand{\set}[1]{\ensuremath{\{ #1 \}}}
+\newcommand{\abs}[1]{\ensuremath{\lvert #1 \rvert}}
+\renewcommand{\complement}[1]{\ensuremath{\overline{ #1 }}}
+
+% Suffix trees
+\newcommand{\ST}{\textsf{ST}}
+\newcommand{\CST}{\textsf{CST}}
+\newcommand{\CSTsada}{\textsf{CST\nobreakdash-Sada}}
+\newcommand{\GCT}{\textsf{GCT}}
+\newcommand{\FCST}{\textsf{FCST}}
+\newcommand{\CSTnpr}{\textsf{CST\nobreakdash-NPR}}
+\newcommand{\RCST}{\textsf{RCST}}
+
+% Suffix arrays etc.
+\newcommand{\SA}{\textsf{SA}}
+\newcommand{\ISA}{\textsf{ISA}}
+\newcommand{\BWT}{\textsf{BWT}}
+\newcommand{\CSA}{\textsf{CSA}}
+\newcommand{\FMI}{\textsf{FMI}}
+\newcommand{\SSA}{\textsf{SSA}}
+\newcommand{\CSAsada}{\textsf{CSA-Sada}}
+\newcommand{\RFM}{\textsf{RFM}}
+\newcommand{\mSA}{\ensuremath{\mathsf{SA}}}
+\newcommand{\mISA}{\ensuremath{\mathsf{ISA}}}
+\newcommand{\mBWT}{\ensuremath{\mathsf{BWT}}}
+\newcommand{\mF}{\ensuremath{\mathsf{F}}}
+\newcommand{\mCSA}{\ensuremath{\mathsf{CSA}}}
+\newcommand{\mRFM}{\ensuremath{\mathsf{RFM}}}
+
+% LCP arrays
+\newcommand{\LCP}{\textsf{LCP}}
+\newcommand{\DLCP}{\textsf{DLCP}}
+\newcommand{\PLCP}{\textsf{PLCP}}
+\newcommand{\RLCP}{\textsf{RLCP}}
+\newcommand{\LCPbyte}{\textsf{LCP\nobreakdash-byte}}
+\newcommand{\LCPdac}{\textsf{LCP\nobreakdash-dac}}
+\newcommand{\mLCP}{\ensuremath{\mathsf{LCP}}}
+\newcommand{\mDLCP}{\ensuremath{\mathsf{DLCP}}}
+\newcommand{\mPLCP}{\ensuremath{\mathsf{PLCP}}}
+\newcommand{\mRLCP}{\ensuremath{\mathsf{RLCP}}}
+
+% Other structures
+\newcommand{\WT}{\textsf{WT}}
+\newcommand{\mWT}{\ensuremath{\mathsf{WT}}}
+\newcommand{\C}{\textsf{C}}
+\newcommand{\mC}{\ensuremath{\mathsf{C}}}
+\newcommand{\RLZ}{\textsf{RLZ}}
+\newcommand{\mRLZ}{\ensuremath{\mathsf{RLZ}}}
+\newcommand{\LCS}{\textsf{LCS}}
+\newcommand{\mLCS}{\ensuremath{\mathsf{LCS}}}
+\newcommand{\mCS}{\ensuremath{\complement{\mathsf{LCS}}}}
+\newcommand{\mleft}{\ensuremath{\mathsf{left}}}
+\newcommand{\mright}{\ensuremath{\mathsf{right}}}
+\newcommand{\sdarray}{\textsf{sdarray}}
+\newcommand{\slarray}{\textsf{slarray}}
+\newcommand{\rselect}{\textsf{rselect}}
+
+% Queries
+\newcommand{\LF}{\textsf{LF}}
+\newcommand{\Psiop}{\textsf{\textPsi}}
+\newcommand{\find}{\textsf{find}}
+\newcommand{\locate}{\textsf{locate}}
+\newcommand{\extract}{\textsf{extract}}
+\newcommand{\rank}{\textsf{rank}}
+\newcommand{\select}{\textsf{select}}
+\newcommand{\nsv}{\textsf{nsv}}
+\newcommand{\nsev}{\textsf{nsev}}
+\newcommand{\psv}{\textsf{psv}}
+\newcommand{\psev}{\textsf{psev}}
+\newcommand{\rmq}{\textsf{rmq}}
+
+% Operators
+\newcommand{\mLF}{\ensuremath{\mathsf{LF}}}
+\newcommand{\mPsi}{\ensuremath{\mathsf{\Psi}}}
+\newcommand{\mfind}{\ensuremath{\mathsf{find}}}
+\newcommand{\mlocate}{\ensuremath{\mathsf{locate}}}
+\newcommand{\mextract}{\ensuremath{\mathsf{extract}}}
+\newcommand{\mrank}{\ensuremath{\mathsf{rank}}}
+\newcommand{\mselect}{\ensuremath{\mathsf{select}}}
+\newcommand{\mlcp}{\ensuremath{\mathsf{lcp}}}
+\newcommand{\mpsv}{\ensuremath{\mathsf{psv}}}
+\newcommand{\mpsev}{\ensuremath{\mathsf{psev}}}
+\newcommand{\mnsv}{\ensuremath{\mathsf{nsv}}}
+\newcommand{\mnsev}{\ensuremath{\mathsf{nsev}}}
+\newcommand{\mrmq}{\ensuremath{\mathsf{rmq}}}
+\newcommand{\Oh}{\ensuremath{\mathsf{O}}}
+\newcommand{\oh}{\ensuremath{\mathsf{o}}}
+\newcommand{\Th}{\ensuremath{\mathsf{\Theta}}}
+
+% CST operations
+\newcommand{\mRoot}{\ensuremath{\mathsf{Root}}}
+\newcommand{\mLeaf}{\ensuremath{\mathsf{Leaf}}}
+\newcommand{\mAncestor}{\ensuremath{\mathsf{Ancestor}}}
+\newcommand{\mCount}{\ensuremath{\mathsf{Count}}}
+\newcommand{\mLocate}{\ensuremath{\mathsf{Locate}}}
+\newcommand{\mParent}{\ensuremath{\mathsf{Parent}}}
+\newcommand{\mFChild}{\ensuremath{\mathsf{FChild}}}
+\newcommand{\mNSibling}{\ensuremath{\mathsf{NSibling}}}
+\newcommand{\mLCA}{\ensuremath{\mathsf{LCA}}}
+\newcommand{\mSDepth}{\ensuremath{\mathsf{SDepth}}}
+\newcommand{\mTDepth}{\ensuremath{\mathsf{TDepth}}}
+\newcommand{\mLAQ}{\ensuremath{\mathsf{LAQ}}}
+\newcommand{\mSLink}{\ensuremath{\mathsf{SLink}}}
+\newcommand{\mChild}{\ensuremath{\mathsf{Child}}}
+\newcommand{\mLetter}{\ensuremath{\mathsf{Letter}}}
+
+% Other
+\newcommand{\onebit}{$1$\nobreakdash-bit}
+\newcommand{\zerobit}{$0$\nobreakdash-bit}
+\newcommand{\mus}{\textmu{}s}
+
+
+\title{Relative Compressed Suffix Trees\thanks{This work is funded in part by:
+by Fondecyt Project 1-140796; Basal Funds FB0001, Conicyt, Chile;
+by Academy of Finland grants 258308 and 250345 (CoECGR); and by the Wellcome
+Trust grant [098051].}}
+
+\author{
+Travis Gagie\inst{1}
+\and
+Gonzalo Navarro\inst{2} %\fnmsep
+%\thanks{Funded in part by Fondecyt Project 1-140796, Chile, and Basal Funds
+%FB0001, Conicyt, Chile.}
+\and
+Simon J. Puglisi\inst{1}
+\and
+Jouni Sir\'en\inst{3} %\fnmsep
+%\thanks{Funded by the Jenny and Antti Wihuri Foundation, Finland, and Basal
+%Funds FB0001, Conicyt, Chile.}
+}
+
+\institute{
+    Department of Computer Science,
+    University of Helsinki, Finland\\
+    \email{\{gagie,puglisi\}@cs.helsinki.fi}\\[1ex]
+\and
+    Center for Biotechnology and Bioengineering, Department of Computer
+Science,
+    University of Chile, Chile\\
+    \email{gnavarro@dcc.uchile.cl}\\[1ex]
+\and
+    Wellcome Trust Sanger Institute, United Kingdom\\
+    \email{jouni.siren@sanger.ac.uk}\\[1ex]
+}
+
+\date{}
+
+
+\pagestyle{plain}
+
+\begin{document}
+
+\maketitle
+
+%\thispagestyle{empty} %for ALENEX
+%\setcounter{page}{0} %for ALENEX
+
+\begin{abstract}
+\iffalse
+This work investigates the use of mutual information between data structures
+for similar
+datasets to represent the structures in less space. If two data structures are
+similar to each
+other, one of them can probably be represented by its differences to the
+other, while still
+supporting efficient queries. Such relative data structures may find use in
+bioinformatics,
+where the genomes of individuals of the same species are very similar to each
+other.
+More formally, assume that we have similar datasets R and S. If we build data
+structure D for the datasets, we will likely see that D(R) and D(S) have low
+relative
+entropy. Given D(R), we can probably represent D(S | R) (denoting D(S)
+relative to
+dataset R) in small space, while still supporting the functionality of D
+efficiently. Then,
+given D(R) and D(S | R), we can either simulate D(S) directly, or decompress
+it for
+faster queries. A similar approach may also allow the construction of D(S) and
+D(S | R)
+efficiently, given D(R), R, and the differences between datasets S and R.
+Our work clearly has links to persistent data structures and can be thought of
+as a
+special case where only the initial state and the final state are preserved,
+the final
+state being the net result of potentially many individual modifications, all
+of which would
+be represented by a persistent data structure.
+\fi
+\end{abstract}
+
+%\newpage %for ALENEX format
+
+\include{intro}
+
+\include{background}
+
+\include{rfm}
+
+\include{rcst}
+
+\include{exper}
+
+\include{concl}
+
+%\newpage %for ALENEX format
+
+\bibliographystyle{plain}
+\bibliography{paper}
+
+\end{document}
+
+\section{Introduction}
+
+The suffix tree \cite{Weiner1973} is one of the most powerful bioinformatic tools to
+answer complex queries on DNA and protein sequences \cite{Gus97,Ohl13,MBCT15}.
+A serious problem that hampers its wider use on large genome sequences is its
+size, which may be 10--20 bytes per character. In addition, the non-local
+access patterns required by most interesting problems solved with suffix trees
+complicate secondary-memory deployments. This problem has led to numerous 
+efforts to reduce the suffix tree size by representing it as a set of {\em 
+compact data structures} \cite{Sadakane2007,Fischer2009a,Ohlebusch2009,Ohlebusch2010,Russo2011,Gog2011a,Abeliuk2013,Navarro2014a}, leading to 
+{\em compressed suffix trees (CSTs)}. Currently, the smallest 
+CST is the so-called FCST \cite{Russo2011,Navarro2014a}, which uses about 
+5 {\em bits} per character (bpc) but takes milliseconds to simulate suffix 
+tree navigation operations. In the other extreme, Sadakane's CST 
+\cite{Sadakane2007} takes about 12 bpc and operates in microseconds, and even 
+nanoseconds for the simplest operations.
+
+A space usage of 12 bpc may seem reasonable to handle, for example, one human
+genome, which has about 3.1 billion bases: it can be operated within a
+RAM of 4.5 GB (the representation contains the sequence as well). However, the
+times where a single genome was analyzed are quickly giving way to databases
+of genomes. Sequencing is becoming a routine activity where big companies 
+produce thousands of genomes per day, and initiatives like the {\em 1000 Genomes
+Project} \cite{Rozowsky2011} for challenging the current techniques with
+multigenome-scale data are fluorishing.
+
+Just storing 1000 human genomes using a 12 bpc CST requires almost 4.5 TB, which
+is not a RAM size found in a commodity server. Even considering powerful 
+commodity servers of 256 GB of RAM, we would need a cluster of 17 servers to 
+handle such a collection of CSTs (compared to over 100 with classical suffix
+tree implementations!). With the much smaller (and much slower) FCST, this would
+drop to almost 7 servers. It is clear that further space reductions in the 
+representation of CSTs would lead to reductions in hardware, communication, 
+and energy costs when implementing complex searches over large genomic 
+databases.
+
+An important characteristic of those large genome databases is that they 
+usually consist of the genomes of individuals of the same or closely related
+species. This implies that the collections are highly {\em repetitive}, that
+is, each genome can be obtained by concatenating a few pieces of other genomes
+and adding a few new characters. When repetitiveness is considered, much higher
+compression rates can be obtained in CSTs. For example, it is possible to reduce
+the space to 1--2 bpc (albeit with operation times in the milliseconds)
+\cite{Abeliuk2013}, or to 2--3 bpc with operation times in the microseconds
+\cite{Navarro2014}. For example, using 2 bpc, our 1000 genomes could be handled
+with just 3 servers of 256 GB of RAM. We note, however, that these CSTs index
+the whole collection and not individual sequences, which makes a difference on
+the types of queries that can be answered, and also make a distributed 
+implementation less obviously scalable.
+
+Compression algorithms best capture repetitiveness by using {\em grammar}
+compression or {\em Lempel-Ziv} compression.\footnote{We refer to ``long-range''
+repetitiveness, where similar texts may be found far away in the text
+collection.} In the first case \cite{KY00,CLLPPSS05} one finds a context-free 
+grammar that generates (only) the text collection, and the grammar is smaller 
+as the collection is more repetitive. Rather than directly applying it on the 
+text, the current CSTs for repetitive collections \cite{Abeliuk2013,Navarro2014}
+apply grammar compression on the data structures that simulate the suffix tree.
+Grammar compression yields relatively easy direct access to the compressed 
+sequence \cite{BLRSRW15}. This makes it attractive compared to Lempel-Ziv 
+compression \cite{ZL77}, despite the latter generally achieving less space.
+
+Lempel-Ziv compression cuts the collection into {\em phrases}, each of which
+has already appeared before. To extract the content of a phrase, one may have
+to recursively extract the content at that earlier position, in a possibly long
+chain of indirections.
+Indeed, the only indices built on Lempel-Ziv compression \cite{KN13} or on
+combinations of Lempel-Ziv and grammar compression \cite{GGKNP12,GGKNP14,GP15}
+support only pattern matching, which is just one of the wide range of 
+functionalities offered by suffix trees. The inability to access the data
+at random positions lies at the heart of the research on indices built on
+Lempel-Ziv compression. 
+
+A simple way out of this limitation is the so-called {\em Relative Lempel-Ziv
+(RLZ)} compression \cite{Kuruppu2010}, where one of the sequences is represented
+in plain form and all the others can take phrases only from that reference
+sequence. This enables immediate access for the symbols inside any copied
+phrase (as no transitive referencing exists) and, at least in cases where a
+good reference sequence is found, offers competitive compression compared with
+classical Lempel-Ziv. In our case, taking any random genome per species as the
+references is good enough; more sophisticated techniques have been studied
+\cite{KPZ11}. Structures for direct access \cite{DG11,Ferrada2014}
+and even for pattern matching \cite{DJSS14,Belazzougui2014} have been developed
+on top of RLZ.
+
+In this paper we show that RLZ is sufficiently friendly as a compression format
+to build a CST on it, which uses less space as repetitiveness increases. 
+On a collection of human genomes, we obtain as little as 3 bpc and operate 
+within microseconds. This performance is comparable to that of a previous CST 
+for this scenario \cite{Navarro2014}, but our CSTs have a different 
+functionality: we have a separate CST for each sequence, instead of a single
+CST for their concatenation. Depending on the application, one kind of CST or
+the other is necessary. 
+
+Our CST, called RCST, follows a trend of CSTs \cite{Fischer2009a,Ohlebusch2009,Ohlebusch2010,Gog2011a,Abeliuk2013} that use only a pattern-matching index 
+(called suffix array) and an array with the length of the longest common prefix
+between each suffix and the previous one in lexicographic order (called $\LCP$).
+We use a suffix array tailored to RLZ compression \cite{Belazzougui2014} and 
+also use RLZ to compress $\LCP$. On top of the $\LCP$ phrases we build a tree
+of range minima that enables fast queries for range minimum queries, next and
+previous smaller values, on $\LCP$ \cite{Abeliuk2013}. All the CST functionality
+is built on those queries \cite{Fischer2009a}. Our main algorithmic contribution
+is this RLZ-based representation of the $\LCP$ array with the required extra
+functionality.
+
+\iffalse
+The main topic of the paper will be the relative CST, but we also have the RLZ
+bitvector and the relative FM-index for read collections. The RLZ bitvector is
+a nice idea that works well in practice, if we can just find applications for
+it. Sorting suffixes in lexicographic order amplifies the differences between
+the sequences, so it's probably going to be something unrelated to suffix
+trees and suffix arrays.
+
+Relative data compression is a well-established topic. Version control systems
+store
+revisions of files as insertions and deletions to earlier revisions. In
+bioinformatics, individual
+genomes are often represented by listing their differences to the reference
+genome
+of the same species. More generally, we can use relative Lempel-Ziv (RLZ)
+parsing [10]
+to represent a text as a concatenation of substrings of a related text.
+
+Compressed data structures for repetitive data. Given similar datasets
+S1,...,Sr, the
+data structure D(S1,...,Sr) is often repetitive. If we compress these
+repetitions, we can
+represent and use the data structure in much smaller space. Compressed data
+structures
+achieve better compression than relative data structures, because they can
+take advantage
+of the redundancy between all datasets, instead of just between the current
+dataset and
+the reference dataset. The price is less flexibility, as the encoding of each
+dataset may
+depend on all the other datasets. While the construction of compressed data
+structures for
+multiple datasets requires dedicated algorithms and often also significant
+computational
+resources, we can easily distribute the construction of relative data
+structures to multiple
+systems, as well as add and remove datasets.
+
+Persistent data structures preserve the state of the data structure before
+each operation.
+Relative data structures can be seen as a special case of persistent data
+structures
+that preserves only the initial and the final state, with more emphasis on
+space-e"ciency.
+Also, while research on persistent data structures concentrates on structures
+that can be
+dynamically updated, my emphasis is on static data structures that are smaller
+and faster
+to use.
+\fi
+
+
+\section{Background}
+
+A \emph{string} $S[1,n] = s_{1} \dotso s_{n}$ is a sequence of
+\emph{characters} over an \emph{alphabet} $\Sigma = \set{1, \dotsc, \sigma}$.
+For indexing purposes, we often consider \emph{text} strings $T[1,n]$ that are
+terminated by an \emph{endmarker} $T[n] = \$ = 0$ not occurring elsewhere in
+the text. \emph{Binary} sequences are sequences over the alphabet $\set{0,1}$.
+If $B[1,n]$ is a binary sequence, its \emph{complement} is binary sequence
+$\complement{B}[1,n]$, with $\complement{B}[i] = 1 - B[i]$.
+
+For any binary sequence $B[1,n]$, we define the \emph{subsequence} $S[B]$ of
+string $S[1,n]$ as the concatenation of characters $s_{i}$ with $B[i] = 1$.
+The complement $\complement{S}[B]$ of subsequence $S[B]$ is the subsequence
+$S[\complement{B}]$. Contiguous subsequences $S[i,j]$ are called
+\emph{substrings}. Substrings of the form $S[1,j]$ and $S[i,n]$, $i,j \in
+[1,n]$, are called \emph{prefixes} and \emph{suffixes}, respectively. We
+define the \emph{lexicographic order} among strings in the usual way.
+
+\subsection{Full-text indexes}
+
+The \emph{suffix tree} (\ST)~\cite{Weiner1973} of text $T$ is a trie
+containing the suffixes of $T$, with unary paths compacted into single edges.
+Because every internal nodes has degree at least two, there can be at most
+$2n-1$ nodes, and the suffix tree can be stored in $\Oh(n \log n)$ bits. In
+practice, this is at least $10n$ bytes for small texts~\cite{Kurtz1999}, and
+more for large texts as the pointers grow larger. If $v$ is a node of a suffix
+tree, we write $\pi(v)$ to denote the concatenation of the labels of the path
+from the root to node $v$.
+
+\emph{Suffix arrays} (\SA)~\cite{Manber1993} were introduced as a
+space-efficient alternative to suffix trees. The suffix array $\mSA[1,n]$ of
+text $T$ is an array of pointers to the suffixes of the text in lexicographic
+order. In its basic form, the suffix array requires only $n \log n$ bits in
+addition to the text, but its functionality is more limited than that of the
+suffix tree. In addition to the suffix array, many algorithms also use the
+\emph{inverse suffix array} $\mISA[1,n]$, with $\mSA[\mISA[i]] = i$ for all
+$i$.
+
+Let $\mlcp(S_{1}, S_{2})$ be the length of the \emph{longest common prefix}
+(\LCP) of strings $S_{1}$ and $S_{2}$. The \LCP{}
+\emph{array}~\cite{Manber1993} $\mLCP[1,n]$ of text $T$ stores the \LCP{}
+lengths for lexicographically adjacent suffixes of $T$ as $\mLCP[i] =
+\mlcp(T[\mSA[i-1],n], T[\mSA[i],n])$. Let $v$ be an internal node of the
+suffix tree, $\ell = \abs{\pi(v)}$ the \emph{string depth} of node $v$, and
+$\mSA[sp,ep]$ the corresponding suffix array interval. The following
+properties hold for the \LCP{} \emph{interval} $\mLCP[sp,ep]$: i) $\mLCP[sp] <
+\ell$; ii) $\mLCP[i] \ge \ell$ for all $sp < i \le ep$; iii) $\mLCP[i] = \ell$
+for at least one $sp < i \le ep$; and iv) $\mLCP[ep+1] <
+\ell$~\cite{Abouelhoda2004}.
+
+Abouelhoda et al.~\cite{Abouelhoda2004} showed how traversals on the suffix
+tree could be simulated using the suffix array, the \LCP{} array, and a
+representation of the suffix tree topology based on \LCP{} intervals, paving
+way for more space-efficient suffix tree representations.
+
+\subsection{Compressed text indexes}
+
+Data structures supporting \rank{} and \select{} queries over sequences are
+the main building block of compressed text indexes. If $S$ is a sequence, we
+define $\mrank_{c}(S,i)$ to be the number of occurrences of character $c$ in
+prefix $S[1,i]$, while $\mselect_{c}(S,j)$ is the position of the occurrence
+of rank $j$ in sequence $S$. A \emph{bitvector} is a representation of a
+binary sequence $B$ supporting fast \rank{} and \select{} queries.
+\emph{Wavelet trees} (\WT)~\cite{Grossi2003} use bitvectors to support \rank{}
+and \select{} on general strings.
+
+The \emph{Burrows-Wheeler transform} (\BWT)~\cite{Burrows1994} is a reversible
+permutation $\mBWT[1,n]$ of text $T$. It is defined as $\mBWT[i] = T[\mSA[i] -
+1]$ (with $\mBWT[i] = T[n]$, if $\SA[i] = 1$). Originally intended for data
+compression, the Burrows-Wheeler transform has been widely used in
+space-efficient text indexes, because it shares the combinatorial structure of
+the suffix tree and the suffix array.
+
+Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with
+$\mSA[\mLF(i)] = n$, if $\mSA[i] = 1$). We can compute it as $\mLF(i) =
+\mC[\mBWT[i]] + \mrank_{\mBWT[i]}(\mBWT, i)$, where $\mC[c]$ is the number of
+occurrences of characters with lexicographical values smaller than $c$ in
+\BWT. The inverse function of \LF{} is $\mPsi$, with $\mPsi(i) =
+\mselect_{c}(\mBWT, i - \mC[c])$, where $c$ is the largest character value
+with $\mC[c] < i$. With functions \LF{} and $\mPsi$, we can move forward and
+backward in the text, while maintaining the lexicographic rank of the current
+suffix. If sequence $S$ is not evident from the context, we write $\mLF_{S}$
+and $\mPsi_{S}$.
+
+\emph{Compressed suffix arrays} (\CSA) \cite{Ferragina2005a,Grossi2005} are
+text indexes supporting similar functionality to the suffix array. This
+includes the following queries: i) $\mfind(P) = [sp,ep]$ determines the
+lexicographic range of suffixes starting with \emph{pattern} $P[1,\ell]$; ii)
+$\mlocate(sp,ep) = \mSA[sp,ep]$ returns the starting positions of these
+suffixes; and iii) $\mextract(i,j) = T[i,j]$ extracts substrings of the text.
+In practice, the \find{} performance of compressed suffix arrays can be
+competitive with suffix arrays, while \locate{} queries are orders of
+magnitude slower~\cite{Ferragina2009a}. Typical index sizes are less than the
+size of the uncompressed text.
+
+The \emph{FM-index} (\FMI) \cite{Ferragina2005a} is a common type of
+compressed suffix array. A typical implementation stores the \BWT{} in a
+wavelet tree \cite{Grossi2003}. The index implements \find{} queries via a
+process called \emph{backward search}. Let $[sp,ep]$ be the lexicographic
+range of the suffixes of the text that start with suffix $P[i+1,\ell]$ of the
+pattern. We can find the range matching suffix $P[i,\ell]$ with a
+generalization of function \LF{} as
+$$
+\mLF([sp,ep],P[i]) =
+[\mC[P[i]] + \mrank_{P[i]}(\mBWT, sp-1) + 1,
+\mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
+$$
+
+We support \locate{} queries by \emph{sampling} some suffix array pointers. If
+we want to determine a value $\mSA[i]$ that has not been sampled, we can
+compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer
+found by iterating \LF{} $k$ times, starting from position $i$. Given
+\emph{sample interval} $d$, the samples can be chosen in \emph{suffix order},
+sampling $\mSA[i]$ at positions divisible by $d$, or in \emph{text order},
+sampling $T[i]$ at positions divisible by $d$ and marking the sampled \SA{}
+positions in a bitvector. Suffix-order sampling requires less space, often
+resulting in better time/space trade-offs in practice, while text-order
+sampling guarantees better worst-case performance. We also sample some \ISA{}
+pointers for \extract{} queries. To extract $T[i,j]$, we find the nearest
+sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with
+function \LF.
+
+\begin{table}
+\centering{}
+\caption{Typical compressed suffix tree operations.}\label{table:cst
+operations}
+
+\begin{tabular}{ll}
+\hline
+\noalign{\smallskip}
+\textbf{Operation}  & \textbf{Description} \\
+\noalign{\smallskip}
+\hline
+\noalign{\smallskip}
+$\mRoot()$          & The root of the tree. \\
+$\mLeaf(v)$         & Is node $v$ a leaf? \\
+$\mAncestor(v,w)$   & Is node $v$ is an ancestor of node $w$? \\
+\noalign{\smallskip}
+$\mCount(v)$        & Number of leaves in the subtree with $v$ as the root. \\
+$\mLocate(v)$       & Pointer to the suffix corresponding to leaf $v$. \\
+\noalign{\smallskip}
+$\mParent(v)$       & The parent of node $v$. \\
+$\mFChild(v)$       & The first child of node $v$ in alphabetic order. \\
+$\mNSibling(v)$     & The next sibling of node $v$ in alphabetic order. \\
+$\mLCA(v,w)$        & The lowest common ancestor of nodes $v$ and $w$. \\
+\noalign{\smallskip}
+$\mSDepth(v)$       & \emph{String depth}: Length $\ell = \abs{\pi(v)}$ of the
+label from the root to node $v$. \\
+$\mTDepth(v)$       & \emph{Tree depth}: The depth of node $v$ in the suffix
+tree. \\
+$\mLAQ_{S}(v,d)$    & The highest ancestor of node $v$ with string depth at
+least $d$. \\
+$\mLAQ_{T}(v,d)$    & The ancestor of node $v$ with tree depth $d$. \\
+\noalign{\smallskip}
+$\mSLink(v)$        & Suffix link: Node $w$ such that $\pi(v) = c \pi(w)$ for
+a character $c \in \Sigma$. \\
+$\mSLink^{k}(v)$    & Suffix link iterated $k$ times. \\
+\noalign{\smallskip}
+$\mChild(v,c)$      & The child of node $v$ with edge label starting with
+character $c$. \\
+$\mLetter(v,i)$     & The character $\pi(v)[i]$. \\
+\noalign{\smallskip}
+\hline
+\end{tabular}
+\end{table}
+
+\emph{Compressed suffix trees} (\CST) \cite{Sadakane2007} are compressed text
+indexes supporting the full functionality of a suffix tree (see
+Table~\ref{table:cst operations}). They combine a compressed suffix array, a
+compressed representation of the \LCP{} array, and a compressed representation
+of suffix tree topology. For the \LCP{} array, there are several common
+representations:
+\begin{itemize}
+\item \LCPbyte{} \cite{Abouelhoda2004} stores the \LCP{} array as a byte
+array. If $\mLCP[i] < 255$, the \LCP{} value is stored in the byte array.
+Larger values are marked with a $255$ in the byte array and stored separately.
+Because many texts produce small \LCP{} values, \LCPbyte{} usually requires
+$n$ to $1.5n$ bytes of space.
+\item We can store the \LCP{} array by using variable-length codes. \LCPdac{}
+uses \emph{directly addressable codes} \cite{Brisaboa2009} for the purpose,
+resulting in a structure that is typically somewhat smaller and somewhat
+slower than \LCPbyte.
+\item The \emph{permuted} \LCP{} (\PLCP) \emph{array} \cite{Sadakane2007}
+$\mPLCP[1,n]$ is the \LCP{} array stored in text order and used as $\mLCP[i] =
+\mPLCP[\mSA[i]]$. Because $\mPLCP[i+1] \ge \mPLCP[i]-1$, the array can be
+stored as a bitvector of length $2n$ in $2n+\oh(n)$ bits. If the text is
+repetitive, run-length encoding can be used to compress the bitvector to take
+even less space \cite{Fischer2009a}. Because accessing \PLCP{} uses \locate,
+it is much slower than the above two encodings.
+\end{itemize}
+
+Suffix tree topology representations are the main differences between the
+various \CST{} proposals. While the compressed suffix arrays and \LCP{} arrays
+are interchangeable, tree representation determines how various suffix tree
+operations are implemented. There are three main families of compressed suffix
+trees:
+\begin{itemize}
+\item \emph{Sadakane's compressed suffix tree} (\CSTsada) \cite{Sadakane2007}
+uses a \emph{balanced parentheses} representation for the tree. Each node is
+encoded as an opening parenthesis, followed by the encodings of its children
+and a closing parenthesis. This can be encoded as a bitvector of length $2n'$,
+where $n'$ is the number of nodes, requiring up to $4n+\oh(n)$ bits.
+\CSTsada{} tends to be larger and faster than the other compressed suffix
+trees \cite{Gog2011a,Abeliuk2013}.
+\item The \emph{fully compressed suffix tree} (\FCST) of Russo et
+al.~\cite{Russo2011,Navarro2014a} aims to use as little space as possible. It
+does not require an \LCP{} array at all, and stores a balanced parentheses
+representation for a sampled subset of suffix tree nodes in $\oh(n)$ bits.
+Unsampled nodes are retrieved by following suffix links. \FCST{} is smaller
+and much slower than the other compressed suffix trees
+\cite{Russo2011,Abeliuk2013}.
+\item Fischer et al.~\cite{Fischer2009a} proposed an intermediate
+representation, \CSTnpr, based on \LCP{} intervals. Tree navigation is handled
+by searching for the values defining the \LCP{} intervals. \emph{Range minimum
+queries} $\mrmq(sp,ep)$ find the leftmost minimal value in $\mLCP[sp,ep]$,
+while \emph{next/previous smaller value} queries $\mnsv(i)$/$\mpsv(i)$ find
+the next/previous \LCP{} value smaller than $\mLCP[i]$. After the improvements
+by various authors \cite{Ohlebusch2009,Ohlebusch2010,Gog2011a,Abeliuk2013},
+the \CSTnpr{} is perhaps the most practical compressed suffix tree.
+\end{itemize}
+
+For typical texts and component choices, the size of compressed suffix trees
+ranges from the $1.5n$ to $3n$ bytes of \CSTsada{} to the $0.5n$ to $n$ bytes
+of \FCST{} \cite{Gog2011a,Abeliuk2013}. There are also some \CST{} variants
+for repetitive texts, such as versioned document collections and collections
+of individual genomes. Abeliuk et al.~\cite{Abeliuk2013} developed a variant
+of \CSTnpr{} that can sometimes be smaller than $n$ bits, while achieving
+similar performance as the \FCST. Navarro and Ordóñez \cite{Navarro2014} used
+grammar-based compression for the tree representation of \CSTsada. The
+resulting compressed suffix tree (\GCT) requires slightly more space than the
+\CSTnpr{} of Abeliuk et al., while being closer to the non-repetitive
+\CSTsada{} and \CSTnpr{} in performance.
+
+\subsection{Relative Lempel-Ziv}\label{sect:rlz}
+
+\emph{Relative Lempel-Ziv} (\RLZ) parsing \cite{Kuruppu2010} compresses
+\emph{target} sequence $S$ relative to \emph{reference} sequence $R$. The
+target sequence is represented as a concatenation of $z$ \emph{phrases} $w_{i}
+= (p_{i}, \ell_{i}, c_{i})$, where $p_{i}$ is the starting position of the
+phrase in the reference, $\ell_{i}$ is the length of the copied substring, and
+$c_{i}$ is the \emph{mismatching} character. If phrase $w_{i}$ starts from
+position $p'$ in the target, then $S[p',p'+\ell_{i}-1] =
+R[p_{i},p_{i}+\ell_{i}-1]$ and $S[p'+\ell_{i}] = c_{i}$.
+
+The shortest \RLZ{} parsing of the target sequence can be found in
+(essentially) linear time. The algorithm builds a \CSA{} for the reverse of
+the reference sequence, and then parses the target sequence greedily by using
+backward searching. If the edit distance between the reference and the target
+is $s$, we need at most $s$ phrases to represent the target sequence. On the
+other hand, because the relative order of the phrases can be different in
+sequences $R$ and $S$, the edit distance can be much larger than the number of
+phrases in the shortest \RLZ{} parsing.
+
+In a straightforward implementation, the \emph{phrase pointers} $p_{i}$ and
+the mismatching characters $c_{i}$ can be stored in arrays $W_{p}$ and
+$W_{c}$. These arrays take $z \log \abs{R}$ bits and $z \log \sigma$ bits,
+respectively. To support random access in the target sequence, we can encode
+phrase lengths as bitvector $W_{\ell}$ of length $\abs{S}$ \cite{Kuruppu2010}.
+We set $W_{\ell}[j] = 1$, if $S[j]$ is the first character of a phrase. The
+bitvector requires $z \log \frac{n}{z} + \Oh(z)$ bits, if we use the
+\sdarray{} representation \cite{Okanohara2007}. To extract $S[j]$, we first
+determine the phrase $w_{i}$, with $i = \mrank_{1}(W_{\ell}, j)$. If
+$W_{\ell}[j+1] = 1$, we return the mismatching character $W_{c}[i]$. Otherwise
+we determine the phrase offset with a \select{} query, and return character
+$R[W_{p}[i] + j - \mselect_{1}(W_{\ell}, i)]$.
+
+The \select{} query can be avoided by using \emph{relative pointers} instead
+of absolute pointers \cite{Ferrada2014}. By setting $W_{p}[i] = p_{i} -
+\mselect_{1}(W_{\ell}, i)$, the general case simplifies to $S[j] = R[W_{p}[i]
++ j]$. If most of the differences between the reference and the target
+sequence are single-character \emph{substitutions}, $p_{i+1}$ will often be
+$p_{i} + \ell_{i} + 1$. This corresponds to $W_{p}[i+1] = W_{p}[i]$ with
+relative pointers, making \emph{run-length encoding} the pointer array
+worthwhile.
+
+
+
+\section{Relative FM-index}
+
+The \emph{relative FM-index} (\RFM) \cite{Belazzougui2014} is a compressed
+suffix array of a sequence relative to the \CSA{} of another sequence. We
+write $\mRFM(S \mid R)$ to denote the relative FM-index of target sequence $S$
+relative to reference sequence $R$. The index is based on approximating the
+\emph{longest common subsequence} (\LCS) of $\mBWT(R)$ and $\mBWT(S)$, and
+storing several structures based on the common subsequence. Given a
+representation of $\mBWT(R)$ supporting \rank{} and \select{}, we can use the
+relative index $\mRFM(S \mid R)$ to simulate \rank{} and \select{} on
+$\mBWT(S)$.
+
+\subsection{Basic index}
+
+Assume that we have found a long common subsequence of sequences $X$ and $Y$.
+We call positions $X[i]$ and $Y[j]$ \emph{lcs-positions}, if they are in the
+common subsequence. If $B_{X}$ and $B_{Y}$ are the binary sequences marking
+the common subsequence ($X[\select_1(B_{X},i)] = Y[\select_1(B_{Y},i)]$), we can map between the
+corresponding lcs-positions in the two sequences with \rank{} and \select{}
+operations. If $X[i]$ is an lcs-position, the corresponding position in
+sequence $Y$ is $Y[\mselect_{1}(B_{Y}, \mrank_{1}(B_{X}, i))]$. We denote this
+pair of \emph{lcs-bitvectors} $\mLCS(X,Y)$.
+
+In its most basic form, the relative FM-index $\mRFM(S \mid R)$ only supports
+\find{} queries by simulating \rank{} queries on $\mBWT(S)$. It does this by
+storing $\mLCS(\BWT(R),\BWT(S))$ and the complements $\mCS(\mBWT(R))$ and
+$\mCS(\mBWT(S))$ of the common subsequence. The lcs-bitvectors are compressed
+using \emph{entropy-based compression} \cite{Raman2007}, while the complements
+are stored in similar structures as the reference $\mBWT(R)$.
+
+To compute $\mrank_{c}(\mBWT(S), i)$, we first determine the number of
+lcs-positions in $\mBWT(S)$ up to position $S[i]$ with $k =
+\mrank_{1}(B_{\mBWT(S)}, i)$. Then we find the lcs-position $k$ in $\mBWT(R)$
+with $j = \mselect_{1}(B_{\mBWT(R)}, k)$. With these positions, we can compute
+$$
+\mrank_{c}(\mBWT(S), i) = \mrank_{c}(\mBWT(R), j) - \mrank_{c}(\mCS(\mBWT(R)),
+j-k) + \mrank_{c}(\mCS(\mBWT(S)), i-k).
+$$
+
+\subsection{Relative select}
+
+We can implement the entire functionality of a compressed suffix array with
+\rank{} queries on the \BWT. However, if we use the \CSA{} in a compressed
+suffix tree, we also need \select{} queries to support \emph{forward
+searching} with $\mPsi$ and $\mChild$ queries. We can always implement
+\select{} queries by binary searching with \rank{} queries, but the result
+will be much slower than \rank{} queries.
+
+A faster alternative to support \select{} queries in the relative FM-index
+is to build a \emph{relative select} structure \rselect{}~\cite{Boucher2015}.
+Let $\mF(X)$ be a sequence consisting of the characters of sequence $X$ in
+sorted order. Alternatively, $\mF(X)$ is a sequence such that $\mF(X)[i] =
+\mBWT(X)[\mPsi(i)]$. The relative select structure consists of bitvectors
+$\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and
+$B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array
+$\mC(\mLCS)$ for the common subsequence.
+
+To compute $\mselect_{c}(\mBWT(S), i)$, we first determine how many of
+the first $i$ occurrences of character $c$ are lcs-positions with $k =
+\mrank_{1}(B_{\mF(S)}, \mC(\mBWT(S))[c] + i) - \mC(\mLCS)[c]$. Then we check
+from bit $B_{\mF(S)}[\mC(\mBWT(S))[c] + i]$ whether the occurrence we are
+looking for is an lcs-position or not. If it is,
+we find the position in $\mBWT(R)$ by computing $j = \mselect_{c}(\mBWT(R),
+\mselect_{1}(B_{\mF(R)}, \mC(\mLCS)[c] + k))$, and then map $j$ to
+$\mselect_{c}(\mBWT(S), i)$ by using $\mLCS(\mBWT(R), \mBWT(S))$. Otherwise we
+find the occurrence in $\mCS(\mBWT(S))$ with $j = \mselect_{c}(\mCS(\mBWT(S)),
+i-k)$, and return $\mselect_{c}(\mBWT(S), i) = \mselect_{0}(B_{\mBWT(S)}, j)$.
+
+\subsection{Full functionality}
+
+If we want the relative FM-index to support \locate{} and \extract{} queries,
+we cannot build it from any common subsequence of $\mBWT(R)$ and $\mBWT(S)$.
+We need a \emph{bwt-invariant subsequence} \cite{Belazzougui2014}, where the
+relative order of the characters is the same in both the original sequences
+and their Burrows-Wheeler transforms.
+
+\begin{definition}\label{def:bwt-invariant}
+Let $X$ be a common subsequence of $\mBWT(R)$ and $\mBWT(S)$, and let
+$\mBWT(R)[i_{R}]$ and $\mBWT(S)[i_{S}]$ be the lcs-positions corresponding to
+$X[i]$. Subsequence X is bwt-invariant if
+$$
+\mSA(R)[i_{R}] < \mSA(R)[j_{R}] \iff \mSA(S)[i_{S}] < \mSA(S)[j_{S}]
+$$
+for all positions $i, j \in \set{1, \dotsc, \abs{X}}$.
+\end{definition}
+
+In addition to the structures already mentioned, the full relative FM-index
+has another pair of lcs-bitvectors, $\mLCS(R,S)$, which marks the
+bwt-invariant subsequence in the original sequences. If $\mBWT(R)[i_{R}]$ and
+$\mBWT(S)[i_{S}]$ are lcs-positions, we set $B_{R}[\mSA(R)[i_{R}]-1] = 1$ and
+$B_{S}[\mSA(S)[i_{S}]-1] = 1$.\footnote{For simplicity, we assume that the
+endmarker is not a part of the bwt-invariant subsequence. Hence $\mSA[i] > 1$
+for all lcs-positions $\mBWT[i]$.} 
+
+To compute the answer to a $\mlocate(i)$ query, we start by iterating
+$\mBWT(S)$ backwards with \LF{} queries, until we find an lcs-position
+$\mBWT(S)[i']$ after $k$ steps. Then we map position $i'$ to the corresponding
+position $j'$ in $\mBWT(R)$ by using $\mLCS(\mBWT(R),\mBWT(S))$. Finally we
+determine $\mSA(R)[j']$ with a \locate{} query in the reference index, and map
+the result to $\mSA(S)[i']$ by using $\mLCS(R,S)$.\footnote{If $\mBWT(S)[i']$
+and $\mBWT(R)[j']$ are lcs-positions, the corresponding lcs-positions in the
+original sequences are $S[\mSA(S)[i']-1]$ and $R[\mSA(R)[j']-1]$.} The result
+of the $\mlocate(i)$ query is $\mSA(S)[i']+k$.
+
+The $\mISA(S)[i]$ access required for \extract{} queries is supported in a
+similar way. We find the lcs-position $S[i+k]$ for the smallest $k \ge 0$, and
+map it to the corresponding position $R[j]$ by using $\mLCS(R,S)$. Then we
+determine $\mISA(R)[j+1]$ by using the reference index, and map it back to
+$\mISA(S)[i+k+1]$ with $\mLCS(\mBWT(R),\mBWT(S))$. Finally we iterate
+$\mBWT(S)$ backwards $k+1$ steps with \LF{} queries to find $\mISA(S)[i]$.
+
+If the target sequence contains long
+\emph{insertions} not present in the reference, we may also want to include
+some \SA{} and \ISA{} samples for querying those regions.
+
+\subsection{Finding bwt-invariant subsequence}
+
+With the basic relative FM-index, we approximate the longest common
+subsequence of $\mBWT(R)$ and $\mBWT(S)$ by partitioning the \BWT{}s according
+to lexicographic contexts, finding the longest common subsequence for each
+pair of substrings in the partitioning, and concatenating the results. The
+algorithm is fast and easy to parallelize, and quite space-efficient. As such,
+\RFM{} construction is practical, having been tested with datasets of hundreds
+of gigabytes in size.
+
+To find a bwt-invariant subsequence, we start by \emph{matching} each suffix
+of the reference sequence with the lexicographically nearest suffixes of the
+target sequence. Unlike in the original algorithm \cite{Belazzougui2014}, we
+only match suffixes that are lexicographically adjacent in the \emph{mutual
+suffix array} of the two sequences.
+
+\begin{definition}
+Let $R$ and $S$ be two sequences, and let $\mSA = \mSA(RS)$ and $\mISA =
+\mISA(RS)$. The \emph{left match} of suffix $R[i,\abs{R}]$ is the suffix
+$S[\mSA[\mISA[i]-1] - \abs{R}, \abs{S}]$, if $\mISA[i] > 1$ and
+$\mSA[\mISA[i]-1]$ points to a suffix of $S$ ($\mSA[\mISA[i]-1] > \abs{R}$).
+The \emph{right match} of suffix $R[i,\abs{R}]$ is the suffix
+$S[\mSA[\mISA[i]+1] - \abs{R}, \abs{S}]$, if $\mISA[i] < \abs{RS}$ and
+$\mSA[\mISA[i]+1]$ points to a suffix of $S$.
+\end{definition}
+
+Instead of using the mutual suffix array, we can use $\mCSA(R)$, $\mCSA(S)$,
+and the \emph{merging bitvector} $B_{R,S}$ of length $\abs{RS}$. We set
+$B_{R,S}[i] = 1$, if $\mSA(RS)[i]$ points to a suffix of $S$. We can build the
+merging bitvector in $\Oh(\abs{S} \cdot t_{\mLF})$ time, where $t_{\mLF}$ is
+the time required for an \LF{} query, by extracting $S$ from $\mCSA(S)$ and
+backward searching for it in $\mCSA(R)$ \cite{Siren2009}. Suffix
+$R[i,\abs{R}]$ has a left (right) match, if $B_{R,S}[\mselect_{0}(B_{R,S},
+\mISA(R)[i])-1] = 1$ ($B_{R,S}[\mselect_{0}(B_{R,S}, \mISA(R)[i])+1] = 1)$).
+
+Our next step is building the \emph{match arrays} $\mleft$ and $\mright$,
+which correspond to the arrays $A[\cdot][2]$ and $A[\cdot][1]$ in the original
+algorithm. This is done by traversing $\mCSA(R)$ backwards from
+$\mISA(R)[\abs{R}] = 1$ with \LF{} queries and following the left and the
+right matches of the current suffix. During the traversal, we maintain
+invariant $j = \mSA(R)[i]$ with $(i,j) \leftarrow (\mLF_{R}(i), j-1)$. If
+suffix $R[i,\abs{R}]$ has a left (right) match, we use shorthand $l(i) =
+\mrank_{1}(B_{R,S}, \mselect_{0}(B_{R,S}, i)-1)$ ($r(i) = \mrank_{1}(B_{R,S},
+\mselect_{0}(B_{R,S}, i)+1)$) to refer to its position in $\mCSA(S)$.
+
+We say that suffixes $R[i,\abs{R}]$ and $R[i+1,\abs{R}]$ have the same left
+match, if $l(i) = \mLF_{S}(l(i+1))$. Let $R[i,\abs{R}]$ to $R[i+\ell,\abs{R}]$
+be a maximal run of suffixes having the same left match, with suffixes
+$R[i,\abs{R}]$ to $R[i+\ell-1,\abs{R}]$ starting with the same characters as
+their left matches.\footnote{The first character of a suffix can be determined
+by using the $\mC$ array.} We find the left match of suffix $R[i,\abs{R}]$ as
+$i' = \mSA(S)[l(i)]$ by using $\mCSA(S)$, and set $\mleft[i,i+\ell-1] =
+[i',i'+\ell-1]$. The right match array $\mright$ is built in a similar way.
+
+The match arrays require $2\abs{R} \log \abs{S}$ bits of space. If sequences
+$R$ and $S$ are similar, the runs in the arrays tend to be long. Hence we can
+run-length encode the match arrays to save space. The traversal takes
+$\Oh(\abs{R} \cdot (t_{\mLF} + t_{\mrank} + t_{\mselect}) + rd \cdot
+t_{\mLF})$ time, where $t_{\mrank}$ and $t_{\mselect}$ denote the time
+required by \rank{} and \select{} operations, $r$ is the number of runs in the
+two arrays, and $d$ is the suffix array sample interval in
+$\mCSA(S)$.\footnote{The time bound assumes text order sampling.}
+
+The final step is finding the longest increasing subsequence $X$ of arrays
+$\mleft$ and $\mright$, which corresponds to a common subsequence of $R$ and
+$S$. More precisely, we want to find a binary sequence $B_{R}[1,\abs{R}]$,
+which marks the common subsequence in $R$, and an integer sequence $X$, which
+contains the positions of the common subsequence in $S$. The goal is to make
+sequence $X$ strictly increasing and as long as possible, with
+$X[\mrank_{1}(B_{R}, i)]$ being either $\mleft[i]$ or $\mright[i]$. This can
+be done in $\Oh(\abs{R} \log \abs{R})$ time with $\Oh(\abs{R} \log \abs{R})$
+bits of additional working space with a straightforward modification of the
+dynamic programming algorithm for finding the longest increasing subsequence.
+While the dynamic programming tables can be run-length encoded, the time and
+space savings are negligible or even non-existent in practice.
+
+As sequence $X$ is strictly increasing, we can convert it into binary sequence
+$B_{S}[1,\abs{S}]$, marking the values in sequence $X$ with \onebit{}s.
+Afterwards, we can consider binary sequences $B_{R}$ and $B_{S}$ as the
+lcs-bitvectors $\mLCS(R,S)$. Because every suffix of $R$ starts with the same
+character as its matches stored in the $\mleft$ and $\mright$ arrays,
+subsequences $R[B_{R}]$ and $S[B_{S}]$ are identical. As each suffix
+$R[i,\abs{R}]$ with $B_{R}[i] = 1$ is paired with its left match or right
+match in sequence $S$, no other suffix of $R$ or $S$ is lexicographically
+between the two paired suffixes.
+
+For any $i$, let $i_{R} = \mselect_{1}(B_{R}, i)$ and $i_{S} =
+\mselect_{1}(B_{S}, i)$ be the lcs-positions of rank $i$. Then,
+$$
+\mISA(R)[i_{R}] < \mISA(R)[j_{R}] \iff \mISA(S)[i_{S}] < \mISA(S)[j_{S}]
+$$
+for any $i,j \le \abs{X}$, which is equivalent to the condition in
+Definition~\ref{def:bwt-invariant}. We can convert $\mLCS(R,S)$ to
+$\mLCS(\mBWT(R),\mBWT(S))$ in $\Oh((\abs{R}+\abs{S}) \cdot t_{\mLF})$ time by
+traversing $\mCSA(R)$ and $\mCSA(S)$ backwards. The resulting subsequence of
+$\mBWT(R)$ and $\mBWT(S)$ is bwt-invariant.
+
+Note that the full relative FM-index is more limited than the basic index,
+because it does not handle \emph{substring moves} very well. Let $R = xy$ and
+$S = yx$, for two random sequences $x$ and $y$ of length $n/2$ each. Because
+$\mBWT(R)$ and $\mBWT(S)$ are very similar, we can expect to find a common
+subsequence of length almost $n$. On the other hand, the length of the longest
+bwt-invariant subsequence is around $n/2$, because we can either pair the
+suffixes of $x$ or the suffixes of $y$ in $R$ and $S$, but not both.
+
+
+
+\section{Relative compressed suffix tree}
+
+The \emph{relative compressed suffix tree} (\RCST) is a \CSTnpr{} of the
+target sequence relative to a \CST{} of the reference sequence. It consists of
+two major components: the relative FM-index with full functionality and the
+\emph{relative} \LCP{} (\RLCP) \emph{array}. The optional relative select
+structure can be generated or loaded from disk to speed up algorithms based on
+forward searching. The \RLCP{} array is based on \RLZ{} parsing, while the
+support for \nsv/\psv/\rmq{} queries is based on a minima tree over the
+phrases.
+
+\subsection{Relative \LCP{} array}
+
+Given \LCP{} array $\mLCP[1,n]$, we define the \emph{differential} \LCP{}
+\emph{array} $\mDLCP[1,n]$ as $\mDLCP[1] = \mLCP[1]$ and $\mDLCP[i] = \mLCP[i]
+- \mLCP[i-1]$ for $i > 1$. If $\mBWT[i,j] = c^{j+1-i}$ for some $c \in
+\Sigma$, then $\mLCP[\mLF(i)+1,\mLF(j)]$ is the same as $\mLCP[i+1,j]$, with
+each value incremented by $1$ \cite{Fischer2009a}. This means
+$\mDLCP[\mLF(i)+2,\mLF(j)] = \mDLCP[i+2,j]$, making the \DLCP{} array of a
+repetitive text compressible with grammar-based compression
+\cite{Abeliuk2013}.
+
+We make a similar observation in the relative setting. If target sequence $S$
+is similar to the reference sequence $T$, then their \LCP{} arrays should also
+be similar. If there are long identical ranges $\mLCP(R)[i,i+k] =
+\mLCP(S)[j,j+k]$, the corresponding \DLCP{} ranges $\mDLCP(R)[i+1,i+k]$ and
+$\mDLCP(S)[j+1,j+k]$ are also identical. Hence we can use \RLZ{} parsing to
+compress either the original \LCP{} array or the \DLCP{} array.
+
+While the identical ranges are a bit longer in the \LCP{} array, we opt to
+compress the \DLCP{} array, because it behaves better when there are long
+repetitions in the sequences. In particular, assembled genomes often have long
+runs of character $N$, which correspond to regions of very large \LCP{}
+values. If the runs are longer in the target sequence than in the reference
+sequence, the \RLZ{} parsing of the \LCP{} array will have many phrases
+containing only the mismatching character. The corresponding ranges in the
+\DLCP{} array typically consist of values $\set{-1, 0, 1}$, making them much
+easier to compress.
+
+We create an \RLZ{} parsing of $\mDLCP(S)$ relative to $\mDLCP(R)$, while
+using $\mLCP(R)$ as the reference afterwards. The reference is stored in a
+structure we call \slarray, which is very similar to \LCPbyte.
+\cite{Abouelhoda2004}. Small values $\mLCP(R)[i] < 255$ are stored in a byte
+array, while large values $\mLCP(R)[i] \ge 255$ are marked with a $255$ in the
+byte array and stored separately. To quickly find the large values, we also
+build a $\mrank_{255}$ structure over the byte array. The \slarray{} provides
+reasonably fast random access and very fast sequential access to the
+underlying array.
+
+The \RLZ{} parsing produces a sequence of phrases $w_{i} = (p_{i}, \ell_{i},
+c_{i})$ (see Section~\ref{sect:rlz}). Because some queries involve
+decompressing an entire phrase, we limit the maximum phrase length to $1024$.
+We use absolute phrase pointers, as the run-length encoding of relative
+pointers does not work too well with the \DLCP{} array, and because we need
+access to the beginning of the phrase anyway. Phrase lengths are encoded in
+the $W_{\ell}$ bitvector in the usual way. We convert the mismatching \DLCP{}
+values $c_{i}$ into absolute \LCP{} values in the mismatch array $W_{c}$, and
+store them as an \slarray. The mismatching values are used as \emph{absolute
+samples} for the differential encoding.
+
+To access $\mLCP(S)[j]$, we determine phrase $w_{i}$ as usual, and check
+whether we should return the mismatch $W_{c}[j]$. If not, we determine the
+starting position $s_{i} = \mselect_{1}(W_{\ell}, i)$ of the phrase in the
+reference. Now we can compute the solution as
+\begin{align*}
+\mLCP(S)[j] &= W_{c}[i-1] + \sum_{k = W_{p}[i]}^{W_{p}[i]+j-s_{i}}
+(\mLCP(R)[k] - \mLCP(R)[k-1]) \\
+&= W_{c}[i-1] + \mLCP(R)[W_{p}[i]+j-s_{i}] - \mLCP(R)[W_{p}[i]-1],
+\end{align*}
+where $W_{c}[0] = \mLCP(R)[0] = 0$. After finding $\mLCP(S)[j]$, accessing
+$\mLCP(S)[j-1]$ and $\mLCP(S)[j+1]$ is fast, as long as we do not cross phrase
+boundaries.
+
+\subsection{Supporting \nsv/\psv/\rmq{} queries}
+
+Suffix tree topology can be inferred from the \LCP{} array with range minimum
+queries (\rmq) and next/previous smaller value (\nsv/\psv) queries
+\cite{Fischer2009a}. Some tree operations can be implemented more efficiently
+if we also support \emph{next/previous smaller or equal value} (\nsev/\psev)
+queries \cite{Abeliuk2013}. Query $\mnsev(i)$ ($\mpsev(i)$) finds the next
+(previous) value smaller than or equal to $\mLCP[i]$.
+
+In order to support the queries, we build a $4$-ary \emph{minima tree} over
+the phrases of the \RLZ{} parsing. Each leaf node stores the smallest \LCP{}
+value in the corresponding phrase, while each internal node stores the
+smallest value in the subtree. Internal nodes are created and stored in a
+levelwise fashion, so that each internal node, except perhaps the rightmost
+one of its level, has $4$ children.
+
+We encode the minima tree as two arrays. The smallest \LCP{} values are
+stored in $M_{\mLCP}$, which we encode as an \slarray. Plain array $M_{L}$
+stores the starting offset of each level in $M_{\mLCP}$, with the leaves
+stored starting from offset $M_{L}[1] = 1$. If $i$ is a minima tree node
+located at level $j$, the corresponding minimum value is $M_{\mLCP}[i]$, the
+parent of the node is $M_{L}[j+1] + (i - M_{L}[j]) / 4$, and its first child
+is $M_{L}[j-1] + 4 \cdot (i - M_{L}[j])$.
+
+A range minimum query $\mrmq(sp,ep)$ starts by finding the minimal range of
+phrases $w_{l}, \dotsc, w_{r}$ covering the query and the maximal range of
+phrases $w_{l'}, \dotsc, w_{r'}$ contained in the query (note $l \le l' \le
+l+1$ and $r-1 \le r' \le r$). Then we use the
+minima tree to find the leftmost minimum value $j = M_{\mLCP}[k]$ in
+$M_{\mLCP}[l',r']$, and find the leftmost occurrence $\mLCP[i] = j$ in phrase
+$w_{k}$. If $l < l'$ and $M_{\mLCP}[l] \le j$, we decompress phrase $w_{l}$
+and find the leftmost minimum value $\mLCP[i'] = j'$ (with $i' \ge sp$) in the
+phrase. If $j' \le j$, we update $(i,j) \leftarrow (i',j')$. Finally we check
+phrase $w_{r}$ in a similar way, if $r > r'$ and $M_{\mLCP}[r] < j$. The answer
+to the range minimum query is $\mLCP[i] = j$, so we return
+$(i,j)$.\footnote{The definition of the query only calls for the leftmost
+minimum position $i$. We also return $\mLCP[i] = j$, because suffix tree
+operations often need it.} Finally, the particular case where no phrase is
+contained in $[sp,ep]$ is handled by sequentially scanning one or two phrases
+in $\LCP$.
+
+The remaining queries are all similar to each other. In order to answer query
+$\mnsv(i)$, we start by finding the phrase $w_{k}$ containing position $i$,
+and then determining $\mLCP[i]$. Next we scan the rest of the phrase to see
+whether there is a smaller value $\mLCP[j] < \mLCP[i]$ later in the phrase. If
+so, we return $(j,\mLCP[j])$. Otherwise we traverse the minima tree to find
+the smallest $k' > k$ with $M_{\mLCP}[k'] < \mLCP[i]$. Finally we decompress
+phrase $w_{k'}$, find the leftmost position $j$ with $\mLCP[j] < \mLCP[i]$,
+and return $(j,\mLCP[j])$.
+
+
+\section{Experiments}
+
+We have implemented the relative compressed suffix tree in C++, extending the
+old relative FM-index implementation.\footnote{The implementation is available
+at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based
+on the \emph{Succinct Data Structure Library (SDSL) 2.0}~\cite{Gog2014b}. Some
+parts of the implementation have been parallelized using \emph{OpenMP} and the
+\emph{libstdc++ parallel mode}.
+
+We used the SDSL implementation of the \emph{succinct suffix array} (\SSA{})
+\cite{Ferragina2007a,Maekinen2005} as our reference \CSA{} and our baseline
+index. \SSA{} encodes the Burrows-Wheeler transform as a \emph{Huffman-shaped
+wavelet tree}, combining very fast queries with size close to the
+\emph{order\nobreakdash-$0$ empirical entropy}. These properties make it the
+index of choice for DNA sequences \cite{Ferragina2009a}. Due to the long runs
+of character $N$, \emph{fixed block compression boosting}
+\cite{Kaerkkaeinen2011} could reduce index size without significantly
+increasing query times. Unfortunately there is no implementation capable of
+handling multi-gigabyte datasets available.
+
+We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample
+intervals were $17$ for \SA{} and $64$ for \ISA. In \RFM, we used sample
+interval $257$ for \SA{} and $512$ for \ISA{} to handle the regions that do
+not exist in the reference. The sample intervals for suffix order sampling
+were primes due to the long runs of character $N$ in the assembled genomes. If
+the number of long runs of character $N$ in the indexed sequence is even, the
+lexicographic ranks of almost all suffixes in half of the runs are odd, and
+those runs are almost completely unsampled. This can be avoided by making the
+sample interval and the number of runs \emph{relatively prime}.
+
+The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu
+12.04 with Linux kernel 2.6.32. For most experiments, we used cluster nodes
+with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some
+index construction jobs may have run on nodes with two 12-core AMD Opteron
+6174 processors and 80 or 128 gigabytes of memory. All query experiments were
+run single-threaded with no other jobs in the same node. Index construction
+used 8 parallel threads, but there may have been other jobs running on the
+same nodes at the same time.
+
+As our primary target sequence, we used the \emph{maternal haplotypes} of the
+\emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the
+target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37
+assembly} of the \emph{human reference
+genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}}
+Because NA12878 is female, we also created a reference sequence without the
+chromosome~Y.
+
+In the following, a basic FM-index is an index supporting only \find{}
+queries, while a full index also supports \locate{} and \extract{} queries.
+
+\subsection{Indexes and their sizes}
+
+Table~\ref{table:construction} lists the resource requirements for building
+the relative indexes, assuming that we have already built the corresponding
+non-relative structures for the sequences. As a comparison, building an
+FM-index for a human genome typically takes 16--17 minutes and 25--26
+gigabytes of memory. While the construction of the basic \RFM{} index is
+highly optimized, the other construction algorithms are just the first
+implementations.
+
+The construction times for the relative \CST{} do not include the time
+required for indexing the \DLCP{} array of the reference sequence. While this
+takes another two hours, it only needs to be done once for every reference
+sequence. Building the optional \rselect{} structures takes 9--10 minutes and
+around $\abs{R} + \abs{S}$ bits of working space in addition to \RFM{} and
+\rselect.
+
+\begin{table}
+\caption{Sequence lengths and resources used by index construction for NA12878
+relative to the human reference genome with and without chromosome~Y. Approx
+and Inv denote the approximate \LCS{} and the bwt-invariant subsequence.
+Sequence lengths are in millions of base pairs, while construction resources
+are in minutes of wall clock time and gigabytes of
+memory.}\label{table:construction}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cccc|cc|cc|cc}
+\hline
+ &
+\multicolumn{4}{c|}{\textbf{Sequence length}} &
+\multicolumn{2}{c|}{\textbf{\RFM{} (basic)}} &
+\multicolumn{2}{c|}{\textbf{\RFM{} (full)}} &
+\multicolumn{2}{c}{\textbf{\RCST}} \\
+\textbf{ChrY} &
+\textbf{Reference} & \textbf{Target} & \textbf{Approx} & \textbf{Inv} &
+\textbf{Time} & \textbf{Space} &
+\textbf{Time} & \textbf{Space} &
+\textbf{Time} & \textbf{Space} \\
+\hline
+yes & 3096M & 3036M & 2992M & 2980M & 2.35 min & 4.96 GB & 238 min & 83.7 GB &
+379 min & 99.0 GB \\
+no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & 214 min & 82.3 GB &
+398 min & 97.2 GB \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+The sizes of the final indexes are listed in Table~\ref{table:indexes}. While
+a basic \RFM{} index is 5\nobreakdash--6 times smaller than a basic \SSA, the
+full \RFM{} is 4.4\nobreakdash--5 times smaller than the full \SSA. The
+\RLCP{} array is about twice as large as the full \RFM{} index, increasing the
+total size of the \RCST{} to 3.2\nobreakdash--4.3 bits per character. The
+optional relative select structure is almost as large as the basic \RFM{}
+index. As the relative structures are significantly larger relative to a male
+reference than relative to a female reference, keeping a separate female
+reference seems worthwhile, if there are more than a few female genomes among
+the target sequences.
+
+\begin{table}
+\caption{Various indexes for NA12878 relative to the human reference genome
+with and without chromosome~Y. Index sizes are in megabytes and in bits per
+character.}\label{table:indexes}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc|cccc}
+\hline
+ &
+\multicolumn{2}{c|}{\textbf{\SSA}} &
+\multicolumn{2}{c|}{\textbf{\RFM}} &
+\multicolumn{4}{c}{\textbf{\RCST}} \\
+\textbf{ChrY} &
+\textbf{Basic} & \textbf{Full} &
+\textbf{Basic} & \textbf{Full} &
+\textbf{\RFM} & \textbf{\RLCP} & \textbf{Total} & \textbf{\rselect} \\
+\hline
+\multirow{2}{*}{yes} &  1090 MB &  1953 MB &   218 MB &   447 MB &   447 MB &
+1100 MB &  1547 MB &   190 MB \\
+                     & 3.01 bpc & 5.42 bpc & 0.60 bpc & 1.23 bpc & 1.23 bpc &
+3.04 bpc & 4.27 bpc & 0.52 bpc \\
+\hline
+\multirow{2}{*}{no}  &  1090 MB &  1953 MB &   181 MB &   395 MB &   395 MB &
+750 MB &  1145 MB &   163 MB \\
+                     & 3.01 bpc & 5.42 bpc & 0.50 bpc & 1.09 bpc & 1.09 bpc &
+2.07 bpc & 3.16 bpc & 0.45 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Tables~\ref{table:rfm components} and~\ref{table:rlcp components} list
+the sizes of the individual components of the relative FM-index and the
+\RLCP{} array. Including the chromosome~Y in the reference increases the sizes
+of almost all relative components, with the exception of $\mCS(\mBWT(S))$ and
+$\mLCS(R,S)$. In the first case, the common subsequence still covers
+approximately the same positions in $\mBWT(S)$ as before. In the second case,
+chromosome~Y appears in bitvector $B_{R}$ as a long run of \zerobit{}s, which
+compresses well. The components of a full \RFM{} index are slightly larger
+than the corresponding components of a basic \RFM{} index, because the
+bwt-invariant subsequence is slightly shorter than the approximate longest
+common subsequence (see Table~\ref{table:construction}).
+
+\begin{table}
+\caption{Breakdown of component sizes in the \RFM{} index for NA12878 relative
+to the human reference genome with and without chromosome~Y in bits per
+character.}\label{table:rfm components}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc}
+\hline
+ & \multicolumn{2}{c|}{\textbf{Basic \RFM}} & \multicolumn{2}{c}{\textbf{Full
+\RFM}} \\
+\textbf{ChrY} & \textbf{yes} & \textbf{no} & \textbf{yes} & \textbf{no} \\
+\hline
+\textbf{\RFM}              & \textbf{0.60 bpc} & \textbf{0.50 bpc} &
+\textbf{1.23 bpc} & \textbf{1.09 bpc} \\
+$\mCS(\mBWT(R))$           &          0.11 bpc &          0.04 bpc &
+0.12 bpc &          0.05 bpc \\
+$\mCS(\mBWT(S))$           &          0.04 bpc &          0.04 bpc &
+0.05 bpc &          0.05 bpc \\
+$\mLCS(\mBWT(R),\mBWT(S))$ &          0.45 bpc &          0.42 bpc &
+0.52 bpc &          0.45 bpc \\
+$\mLCS(R,S)$               &                -- &                -- &
+0.35 bpc &          0.35 bpc \\
+\SA{} samples              &                -- &                -- &
+0.12 bpc &          0.12 bpc \\
+\ISA{} samples             &                -- &                -- &
+0.06 bpc &          0.06 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Breakdown of component sizes in the \RLCP{} array for NA12878
+relative to the human reference genome with and without chromosome~Y in bits
+per character. The components are phrase pointers, phrase boundaries in the
+target \LCP{} array, mismatching characters, and the minima
+tree.}\label{table:rlcp components}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cccc|c}
+\hline
+\textbf{ChrY} & $\mathbf{W_{p}}$  & $\mathbf{W_{\ell}}$ & $\mathbf{W_{c}}$ &
+$\mathbf{M_{\mLCP}}$ & \textbf{Total} \\
+\hline
+yes & 1.44 bpc & 0.34 bpc & 0.54 bpc & 0.71 bpc & 3.04 bpc \\
+no  & 1.11 bpc & 0.27 bpc & 0.30 bpc & 0.39 bpc & 2.07 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Query times}
+
+Average query times for the basic queries can be seen in Tables~\ref{table:rfm
+queries} and~\ref{table:rlcp queries}. For \LF{} and \Psiop{} queries
+with the full \SSA{}, the full \RFM, and the full \RFM{} augmented with
+\rselect, the results are similar to the earlier ones with basic indexes
+\cite{Boucher2015}. Random access to the \RLCP{} array is about 20 times
+slower than to the \LCP{} array. The \LCP{} array provides sequential access
+iterators, which are much faster than using random access sequentially. The
+\RLCP{} array does not have such iterators, because subsequent phrases are
+often copied from different parts of the reference. However, queries based on
+the minima tree (\nsv, \psv, and \rmq) use fast sequential access to the
+\RLCP{} array inside a phrase. \SSA{} and the \LCP{} array are consistently
+slower when the reference does not contain chromosome~Y, even though the
+structures are identical in either case. This is probably a memory management
+artifact that depends on other memory allocations.
+
+\begin{table}
+\caption{Query times with \SSA{} and the \RFM{} index for NA12878 relative to
+the human reference genome with and without chromosome~Y in microseconds. The
+query times are averages over 10~million random queries.}\label{table:rfm
+queries}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc|c}
+\hline
+ & \multicolumn{2}{c|}{\textbf{\SSA}} & \multicolumn{2}{c|}{\textbf{\RFM}} &
+\textbf{\rselect} \\
+\textbf{ChrY} & \textbf{\LF} & \textbf{\Psiop} & \textbf{\LF} &
+\textbf{\Psiop} & \textbf{\Psiop} \\
+\hline
+yes & 0.560 \mus & 1.139 \mus & 3.980 \mus & 47.249 \mus & 6.277 \mus \\
+no  & 0.627 \mus & 1.563 \mus & 3.861 \mus & 55.068 \mus & 6.486 \mus \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Query times with the reference \LCP{} array and the \RLCP{} array for
+NA12878 relative to the human reference genome with and without chromosome~Y
+in microseconds. For the random queries, the query times are averages over
+100~million queries. The range lengths for \rmq{} queries were $16^{k}$ (for
+$k \ge 1$) with probability $0.5^{k}$. For sequential access, the times are
+averages per position for scanning the entire \LCP{} array.}\label{table:rlcp
+queries}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|ccccc}
+\hline
+ & \multicolumn{2}{c|}{\textbf{\LCP{} array}} &
+\multicolumn{5}{c}{\textbf{\RLCP{} array}} \\
+\textbf{ChrY} & \textbf{Random} & \textbf{Sequential} & \textbf{Random} &
+\textbf{Sequential} & \textbf{\nsv} & \textbf{\psv} & \textbf{\rmq} \\
+\hline
+yes & 0.052 \mus & 0.001 \mus & 1.096 \mus & 0.119 \mus & 1.910 \mus & 1.935
+\mus & 2.769 \mus \\
+no  & 0.070 \mus & 0.001 \mus & 1.263 \mus & 0.124 \mus & 1.801 \mus & 1.923
+\mus & 2.605 \mus \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+We also tested the \locate{} performance of the full \RFM{} index, and
+compared it to \SSA. We built \SSA{} with \SA{} sample intervals $7$, $17$,
+$31$, $61$, and $127$ for the reference and the target sequence, using only
+the reference without chromosome~Y. \ISA{} sample interval was set to the
+maximum of $64$ and the \SA{} sample interval. We then built \RFM{} for the
+target sequence, and extracted 2~million random patterns of length $32$,
+consisting of characters $ACGT$, from the target sequence. The time/space
+trade-offs for \locate{} queries with these patterns can be seen in
+Figure~\ref{fig:locate}. While the \RFM{} index was 8.6x slower than \SSA{}
+with sample interval $7$, the absolute performance difference remained almost
+constant with longer sample intervals. With sample interval $127$, \RFM{} was
+only 1.2x slower than \SSA.
+
+\begin{figure}
+\begin{center}
+\includegraphics{locate.pdf}
+\end{center}
+\caption{The \locate{} performance of \SSA{} and \RFM{} on NA12878 relative to
+the human reference genome without chromosome~Y. Index size in bits per
+character for various \SA{} sample intervals, and the time required to perform
+2~million queries of length $32$ with a total of 255~million
+occurrences.}\label{fig:locate}
+\end{figure}
+
+\subsection{Synthetic collections}
+
+In order to determine how the differences between the reference sequence and
+the target sequence affect the size of relative structures, we built \RCST{}
+for various \emph{synthetic datasets}. We took the human reference genome as
+the reference sequence, and generated synthetic target sequences with
+\emph{mutation rates} $p \in \set{0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
+0.1}$. A total of 90\% of the mutations were single-character substitutions,
+while 5\% were insertions and another 5\% deletions. The length of an
+insertion or deletion was $k \ge 1$ with probability $0.2 \cdot 0.8^{k-1}$.
+
+The results can be seen in Figure~\ref{fig:synthetic}~(left). The \RLCP{}
+array quickly grew with increasing mutation rates, peaking out at $p = 0.01$.
+At that point, the average length of an \RLZ{} phrase was comparable to what
+could be found in the \DLCP{} arrays of unrelated DNA sequences. With even
+higher mutation rates, the phrases became slightly longer due to the smaller
+average \LCP{} values. The \RFM{} index, on the other hand, remained small
+until $p = 0.003$. Afterwards, the index started to grow quickly, eventually
+overtaking the \RLCP{} array.
+
+\begin{figure}
+\begin{center}
+\includegraphics{synth.pdf}\hspace{-0.4in}\includegraphics{comp.pdf}
+\end{center}
+\caption{Index size in bits per character vs.~mutation rate for synthetic
+datasets. Left: Synthetic genomes relative to the human reference genome.
+Right: Collections of 25 synthetic sequences relative to a 20~MB
+reference.}\label{fig:synthetic}
+\end{figure}
+
+We also compared the size of the relative \CST{} to a compressed suffix tree
+for repetitive collections. While the structures are intended for different
+purposes, the comparison shows how much additional space is needed to provide
+access to the compressed suffix trees of individual datasets. We chose to skip
+the \CSTnpr{} for repetitive collections \cite{Abeliuk2013}, as its
+implementation was not stable enough. Because the implementation of \CSTsada{}
+for repetitive collections (\GCT) \cite{Navarro2014} is based on a library
+that uses signed 32\nobreakdash-bit integers internally, we had to limit the
+size of the collections to about 500 megabytes for this experiment. We
+therefore took a 20\nobreakdash-megabyte prefix of the human reference genome,
+and generated 25 synthetic sequences for each mutation rate (see above).
+
+Figure~\ref{fig:synthetic}~(right) shows the sizes of the compressed suffix
+trees. The numbers for \RCST{} include individual indexes for each of the 25
+target sequences as well as the reference data, while the numbers for \GCT{}
+are for a single index containing the 25 sequences. With low mutation rates,
+\RCST{} was not much larger than \GCT{}. The size of \RCST{} starts growing
+quickly at around $p = 0.001$, while the size of \GCT{} stabilizes at
+3\nobreakdash--4~bpc.
+
+\subsection{Suffix tree operations}
+
+In the final set of experiments, we compared the performance of \RCST{} to the
+SDSL implementations of various compressed suffix trees. We used the maternal
+haplotypes of NA12878 as the target sequence and the human reference genome
+without chromosome~Y as the reference sequence. We then built \RCST, \CSTsada,
+\CSTnpr, and \FCST{} for the target sequence. \CSTsada{} used \emph{Sadakane's
+compressed suffix array} (\CSAsada) \cite{Sadakane2003} as its \CSA, while the
+other SDSL implementations used \SSA. All SDSL compressed suffix trees used
+\PLCP{} as their \LCP{} encoding, but we also built \CSTnpr{} with \LCPbyte.
+
+We used two algorithms for the performance comparison. The first algorithm was
+\emph{depth-first traversal} of the suffix tree. We used SDSL iterators
+(\texttt{cst\_dfs\_const\_forward\_iterator}), which in turn used operations
+$\mRoot$, $\mLeaf$, $\mParent$, $\mFChild$, and $\mNSibling$. The traversal
+was generally quite fast, because the iterators cached the most recent parent
+nodes.
+
+The second algorithm was computing \emph{matching statistics}
+\cite{Chang1994}. Given sequence $S'$ of length $n'$, the goal was to find the
+longest prefix $S'[i,i+\ell_{i}-1]$ of each suffix $S'[i,n']$ occurring in
+sequence $S$. For each such prefix, we store its length $\ell_{i}$ and the
+suffix array range $\mSA(S)[sp_{i},ep_{i}]$ of its occurrences in sequence
+$S$. We computed the matching statistics with forward searching, using
+operations $\mRoot$, $\mSDepth$, $\mSLink$, $\mChild$, and $\mLetter$.
+Computing the matching statistics would probably have been faster with
+backward searching \cite{Ohlebusch2010a}, but the purpose of this experiment
+was to test a different part of the interface.
+
+We used the \emph{paternal haplotypes} of NA12878 as sequence $S'$. Because
+forward searching is much slower than tree traversal, we only computed
+matching statistics for chromosome~1. We also truncated the runs of character
+$N$ in sequence $S'$ into a single character. Because the time complexities of
+certain operations in the succinct tree representation used in SDSL depend on
+the depth of the current node, including the runs (which make the suffix tree
+extremely deep locally) would have made the SDSL suffix trees much slower than
+\RCST.
+
+The results can be seen in Table~\ref{table:cst}. \RCST{} was clearly smaller
+than \FCST, and several times smaller than the other compressed suffix trees.
+In depth-first traversal, \RCST{} was 2.2~times slower than \CSTnpr{} and
+about 8~times slower than \CSTsada. For computing matching statistics, \RCST{}
+was 2.9~times slower than \CSTsada{} and 4.7\nobreakdash--7.6~times slower
+than \CSTnpr{}. With the optional \rselect{} structure, the differences were
+reduced to 1.2~times and 2.0\nobreakdash--3.2~times, respectively. We did not
+run the full experiments with \FCST, because it was much slower than the rest.
+According to earlier results, \FCST{} is about two orders of magnitude slower
+than \CSTsada{} and \CSTnpr{} \cite{Abeliuk2013}.
+
+\begin{table}
+\caption{Compressed suffix trees for the maternal haplotypes of NA12878
+relative to the human reference genome without chromosome~Y. Component
+choices, index size in bits per character, and time in minutes for depth-first
+traversal and computing matching statistics for the paternal haplotypes of
+chromosome~1 of NA12878.}\label{table:cst}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|c|c|c}
+\hline
+\textbf{\CST} & \textbf{\CSA} & \textbf{\LCP} & \textbf{Size} &
+\textbf{Traversal} & \textbf{Matching statistics} \\
+\hline
+\CSTsada           & \CSAsada & \PLCP    & 12.33 bpc &  5 min & 315 min \\
+\CSTnpr            & \SSA     & \PLCP    & 10.79 bpc & 18 min & 195 min \\
+\CSTnpr            & \SSA     & \LCPbyte & 18.08 bpc & 18 min & 120 min \\
+\FCST              & \SSA     & \PLCP    &  4.98 bpc &     -- &      -- \\
+\RCST              & \RFM     & \RLCP    &  3.16 bpc & 39 min & 910 min \\
+\RCST{} + \rselect & \RFM     & \RLCP    &  3.61 bpc & 39 min & 389 min \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
+
+\section{Conclusions}\label{section:conclusions}
+
+\begin{itemize}
+\item conclusions
+\item other ideas: RLZ bitvectors, RLZ pointer compression
+\item analyze the similarity between LCP arrays based on edit distance
+\item Sada-RLZ: RLZ compression of tree topology and bitvector H of PLCP
+\end{itemize}
+

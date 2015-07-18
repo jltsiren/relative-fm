@@ -1,0 +1,229 @@
+
+\documentclass[a4paper,11pt]{llncs}
+\usepackage{fullpage}
+%\documentclass[10pt]{llncs}
+
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{textgreek}
+\usepackage{url}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+
+% Mathematics
+\newcommand{\set}[1]{\ensuremath{\{ #1 \}}}
+\newcommand{\abs}[1]{\ensuremath{\lvert #1 \rvert}}
+\renewcommand{\complement}[1]{\ensuremath{\overline{ #1 }}}
+
+% Suffix trees
+\newcommand{\ST}{\textsf{ST}}
+\newcommand{\CST}{\textsf{CST}}
+\newcommand{\CSTsada}{\textsf{CST\nobreakdash-Sada}}
+\newcommand{\GCT}{\textsf{GCT}}
+\newcommand{\FCST}{\textsf{FCST}}
+\newcommand{\CSTnpr}{\textsf{CST\nobreakdash-NPR}}
+\newcommand{\RCST}{\textsf{RCST}}
+
+% Suffix arrays etc.
+\newcommand{\SA}{\textsf{SA}}
+\newcommand{\ISA}{\textsf{ISA}}
+\newcommand{\BWT}{\textsf{BWT}}
+\newcommand{\CSA}{\textsf{CSA}}
+\newcommand{\FMI}{\textsf{FMI}}
+\newcommand{\SSA}{\textsf{SSA}}
+\newcommand{\CSAsada}{\textsf{CSA-Sada}}
+\newcommand{\RFM}{\textsf{RFM}}
+\newcommand{\mSA}{\ensuremath{\mathsf{SA}}}
+\newcommand{\mISA}{\ensuremath{\mathsf{ISA}}}
+\newcommand{\mBWT}{\ensuremath{\mathsf{BWT}}}
+\newcommand{\mF}{\ensuremath{\mathsf{F}}}
+\newcommand{\mCSA}{\ensuremath{\mathsf{CSA}}}
+\newcommand{\mRFM}{\ensuremath{\mathsf{RFM}}}
+
+% LCP arrays
+\newcommand{\LCP}{\textsf{LCP}}
+\newcommand{\DLCP}{\textsf{DLCP}}
+\newcommand{\PLCP}{\textsf{PLCP}}
+\newcommand{\RLCP}{\textsf{RLCP}}
+\newcommand{\LCPbyte}{\textsf{LCP\nobreakdash-byte}}
+\newcommand{\LCPdac}{\textsf{LCP\nobreakdash-dac}}
+\newcommand{\mLCP}{\ensuremath{\mathsf{LCP}}}
+\newcommand{\mDLCP}{\ensuremath{\mathsf{DLCP}}}
+\newcommand{\mPLCP}{\ensuremath{\mathsf{PLCP}}}
+\newcommand{\mRLCP}{\ensuremath{\mathsf{RLCP}}}
+
+% Other structures
+\newcommand{\WT}{\textsf{WT}}
+\newcommand{\mWT}{\ensuremath{\mathsf{WT}}}
+\newcommand{\C}{\textsf{C}}
+\newcommand{\mC}{\ensuremath{\mathsf{C}}}
+\newcommand{\RLZ}{\textsf{RLZ}}
+\newcommand{\mRLZ}{\ensuremath{\mathsf{RLZ}}}
+\newcommand{\LCS}{\textsf{LCS}}
+\newcommand{\mLCS}{\ensuremath{\mathsf{LCS}}}
+\newcommand{\mCS}{\ensuremath{\complement{\mathsf{LCS}}}}
+\newcommand{\mleft}{\ensuremath{\mathsf{left}}}
+\newcommand{\mright}{\ensuremath{\mathsf{right}}}
+\newcommand{\sdarray}{\textsf{sdarray}}
+\newcommand{\slarray}{\textsf{slarray}}
+\newcommand{\rselect}{\textsf{rselect}}
+
+% Queries
+\newcommand{\LF}{\textsf{LF}}
+\newcommand{\Psiop}{\textsf{\textPsi}}
+\newcommand{\find}{\textsf{find}}
+\newcommand{\locate}{\textsf{locate}}
+\newcommand{\extract}{\textsf{extract}}
+\newcommand{\rank}{\textsf{rank}}
+\newcommand{\select}{\textsf{select}}
+\newcommand{\nsv}{\textsf{nsv}}
+\newcommand{\nsev}{\textsf{nsev}}
+\newcommand{\psv}{\textsf{psv}}
+\newcommand{\psev}{\textsf{psev}}
+\newcommand{\rmq}{\textsf{rmq}}
+
+% Operators
+\newcommand{\mLF}{\ensuremath{\mathsf{LF}}}
+\newcommand{\mPsi}{\ensuremath{\mathsf{\Psi}}}
+\newcommand{\mfind}{\ensuremath{\mathsf{find}}}
+\newcommand{\mlocate}{\ensuremath{\mathsf{locate}}}
+\newcommand{\mextract}{\ensuremath{\mathsf{extract}}}
+\newcommand{\mrank}{\ensuremath{\mathsf{rank}}}
+\newcommand{\mselect}{\ensuremath{\mathsf{select}}}
+\newcommand{\mlcp}{\ensuremath{\mathsf{lcp}}}
+\newcommand{\mpsv}{\ensuremath{\mathsf{psv}}}
+\newcommand{\mpsev}{\ensuremath{\mathsf{psev}}}
+\newcommand{\mnsv}{\ensuremath{\mathsf{nsv}}}
+\newcommand{\mnsev}{\ensuremath{\mathsf{nsev}}}
+\newcommand{\mrmq}{\ensuremath{\mathsf{rmq}}}
+\newcommand{\Oh}{\ensuremath{\mathsf{O}}}
+\newcommand{\oh}{\ensuremath{\mathsf{o}}}
+\newcommand{\Th}{\ensuremath{\mathsf{\Theta}}}
+
+% CST operations
+\newcommand{\mRoot}{\ensuremath{\mathsf{Root}}}
+\newcommand{\mLeaf}{\ensuremath{\mathsf{Leaf}}}
+\newcommand{\mAncestor}{\ensuremath{\mathsf{Ancestor}}}
+\newcommand{\mCount}{\ensuremath{\mathsf{Count}}}
+\newcommand{\mLocate}{\ensuremath{\mathsf{Locate}}}
+\newcommand{\mParent}{\ensuremath{\mathsf{Parent}}}
+\newcommand{\mFChild}{\ensuremath{\mathsf{FChild}}}
+\newcommand{\mNSibling}{\ensuremath{\mathsf{NSibling}}}
+\newcommand{\mLCA}{\ensuremath{\mathsf{LCA}}}
+\newcommand{\mSDepth}{\ensuremath{\mathsf{SDepth}}}
+\newcommand{\mTDepth}{\ensuremath{\mathsf{TDepth}}}
+\newcommand{\mLAQ}{\ensuremath{\mathsf{LAQ}}}
+\newcommand{\mSLink}{\ensuremath{\mathsf{SLink}}}
+\newcommand{\mChild}{\ensuremath{\mathsf{Child}}}
+\newcommand{\mLetter}{\ensuremath{\mathsf{Letter}}}
+
+% Other
+\newcommand{\onebit}{$1$\nobreakdash-bit}
+\newcommand{\zerobit}{$0$\nobreakdash-bit}
+\newcommand{\mus}{\textmu{}s}
+
+
+\title{Relative Compressed Suffix Trees\thanks{This work is funded in part by:
+by Fondecyt Project 1-140796; Basal Funds FB0001, Conicyt, Chile;
+by Academy of Finland grants 258308 and 250345 (CoECGR); and by the Wellcome
+Trust grant [098051].}}
+
+\author{
+Travis Gagie\inst{1}
+\and
+Gonzalo Navarro\inst{2} %\fnmsep
+%\thanks{Funded in part by Fondecyt Project 1-140796, Chile, and Basal Funds
+%FB0001, Conicyt, Chile.}
+\and
+Simon J. Puglisi\inst{1}
+\and
+Jouni Sir\'en\inst{3} %\fnmsep
+%\thanks{Funded by the Jenny and Antti Wihuri Foundation, Finland, and Basal
+%Funds FB0001, Conicyt, Chile.}
+}
+
+\institute{
+    Department of Computer Science,
+    University of Helsinki, Finland\\
+    \email{\{gagie,puglisi\}@cs.helsinki.fi}\\[1ex]
+\and
+    Center for Biotechnology and Bioengineering, Department of Computer
+Science,
+    University of Chile, Chile\\
+    \email{gnavarro@dcc.uchile.cl}\\[1ex]
+\and
+    Wellcome Trust Sanger Institute, United Kingdom\\
+    \email{jouni.siren@sanger.ac.uk}\\[1ex]
+}
+
+\date{}
+
+
+\pagestyle{plain}
+
+\begin{document}
+
+\maketitle
+
+%\thispagestyle{empty} %for ALENEX
+%\setcounter{page}{0} %for ALENEX
+
+\begin{abstract}
+\iffalse
+This work investigates the use of mutual information between data structures
+for similar
+datasets to represent the structures in less space. If two data structures are
+similar to each
+other, one of them can probably be represented by its differences to the
+other, while still
+supporting efficient queries. Such relative data structures may find use in
+bioinformatics,
+where the genomes of individuals of the same species are very similar to each
+other.
+More formally, assume that we have similar datasets R and S. If we build data
+structure D for the datasets, we will likely see that D(R) and D(S) have low
+relative
+entropy. Given D(R), we can probably represent D(S | R) (denoting D(S)
+relative to
+dataset R) in small space, while still supporting the functionality of D
+efficiently. Then,
+given D(R) and D(S | R), we can either simulate D(S) directly, or decompress
+it for
+faster queries. A similar approach may also allow the construction of D(S) and
+D(S | R)
+efficiently, given D(R), R, and the differences between datasets S and R.
+Our work clearly has links to persistent data structures and can be thought of
+as a
+special case where only the initial state and the final state are preserved,
+the final
+state being the net result of potentially many individual modifications, all
+of which would
+be represented by a persistent data structure.
+\fi
+\end{abstract}
+
+%\newpage %for ALENEX format
+
+\input{intro}
+
+\input{background}
+
+\input{rfm}
+
+\input{rcst}
+
+\input{exper}
+
+\input{concl}
+
+%\newpage %for ALENEX format
+
+\bibliographystyle{plain}
+\bibliography{paper}
+
+\end{document}

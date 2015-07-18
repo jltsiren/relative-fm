@@ -1,0 +1,222 @@
+
+\section{Relative FM-index}
+
+The \emph{relative FM-index} (\RFM) \cite{Belazzougui2014} is a compressed
+suffix array of a sequence relative to the \CSA{} of another sequence. We
+write $\mRFM(S \mid R)$ to denote the relative FM-index of target sequence $S$
+relative to reference sequence $R$. The index is based on approximating the
+\emph{longest common subsequence} (\LCS) of $\mBWT(R)$ and $\mBWT(S)$, and
+storing several structures based on the common subsequence. Given a
+representation of $\mBWT(R)$ supporting \rank{} and \select{}, we can use the
+relative index $\mRFM(S \mid R)$ to simulate \rank{} and \select{} on
+$\mBWT(S)$.
+
+\subsection{Basic index}
+
+Assume that we have found a long common subsequence of sequences $X$ and $Y$.
+We call positions $X[i]$ and $Y[j]$ \emph{lcs-positions}, if they are in the
+common subsequence. If $B_{X}$ and $B_{Y}$ are the binary sequences marking
+the common subsequence ($X[\select_1(B_{X},i)] = Y[\select_1(B_{Y},i)]$), we can map between the
+corresponding lcs-positions in the two sequences with \rank{} and \select{}
+operations. If $X[i]$ is an lcs-position, the corresponding position in
+sequence $Y$ is $Y[\mselect_{1}(B_{Y}, \mrank_{1}(B_{X}, i))]$. We denote this
+pair of \emph{lcs-bitvectors} $\mLCS(X,Y)$.
+
+In its most basic form, the relative FM-index $\mRFM(S \mid R)$ only supports
+\find{} queries by simulating \rank{} queries on $\mBWT(S)$. It does this by
+storing $\mLCS(\BWT(R),\BWT(S))$ and the complements $\mCS(\mBWT(R))$ and
+$\mCS(\mBWT(S))$ of the common subsequence. The lcs-bitvectors are compressed
+using \emph{entropy-based compression} \cite{Raman2007}, while the complements
+are stored in similar structures as the reference $\mBWT(R)$.
+
+To compute $\mrank_{c}(\mBWT(S), i)$, we first determine the number of
+lcs-positions in $\mBWT(S)$ up to position $S[i]$ with $k =
+\mrank_{1}(B_{\mBWT(S)}, i)$. Then we find the lcs-position $k$ in $\mBWT(R)$
+with $j = \mselect_{1}(B_{\mBWT(R)}, k)$. With these positions, we can compute
+$$
+\mrank_{c}(\mBWT(S), i) = \mrank_{c}(\mBWT(R), j) - \mrank_{c}(\mCS(\mBWT(R)),
+j-k) + \mrank_{c}(\mCS(\mBWT(S)), i-k).
+$$
+
+\subsection{Relative select}
+
+We can implement the entire functionality of a compressed suffix array with
+\rank{} queries on the \BWT. However, if we use the \CSA{} in a compressed
+suffix tree, we also need \select{} queries to support \emph{forward
+searching} with $\mPsi$ and $\mChild$ queries. We can always implement
+\select{} queries by binary searching with \rank{} queries, but the result
+will be much slower than \rank{} queries.
+
+A faster alternative to support \select{} queries in the relative FM-index
+is to build a \emph{relative select} structure \rselect{}~\cite{Boucher2015}.
+Let $\mF(X)$ be a sequence consisting of the characters of sequence $X$ in
+sorted order. Alternatively, $\mF(X)$ is a sequence such that $\mF(X)[i] =
+\mBWT(X)[\mPsi(i)]$. The relative select structure consists of bitvectors
+$\mLCS(\mF(R), \mF(S))$, where $B_{\mF(R)}[i] = B_{\mBWT(R)}[\mPsi(i)]$ and
+$B_{\mF(S)}[i] = B_{\mBWT(S)}[\mPsi(i)]$, as well as the \C{} array
+$\mC(\mLCS)$ for the common subsequence.
+
+To compute $\mselect_{c}(\mBWT(S), i)$, we first determine how many of
+the first $i$ occurrences of character $c$ are lcs-positions with $k =
+\mrank_{1}(B_{\mF(S)}, \mC(\mBWT(S))[c] + i) - \mC(\mLCS)[c]$. Then we check
+from bit $B_{\mF(S)}[\mC(\mBWT(S))[c] + i]$ whether the occurrence we are
+looking for is an lcs-position or not. If it is,
+we find the position in $\mBWT(R)$ by computing $j = \mselect_{c}(\mBWT(R),
+\mselect_{1}(B_{\mF(R)}, \mC(\mLCS)[c] + k))$, and then map $j$ to
+$\mselect_{c}(\mBWT(S), i)$ by using $\mLCS(\mBWT(R), \mBWT(S))$. Otherwise we
+find the occurrence in $\mCS(\mBWT(S))$ with $j = \mselect_{c}(\mCS(\mBWT(S)),
+i-k)$, and return $\mselect_{c}(\mBWT(S), i) = \mselect_{0}(B_{\mBWT(S)}, j)$.
+
+\subsection{Full functionality}
+
+If we want the relative FM-index to support \locate{} and \extract{} queries,
+we cannot build it from any common subsequence of $\mBWT(R)$ and $\mBWT(S)$.
+We need a \emph{bwt-invariant subsequence} \cite{Belazzougui2014}, where the
+relative order of the characters is the same in both the original sequences
+and their Burrows-Wheeler transforms.
+
+\begin{definition}\label{def:bwt-invariant}
+Let $X$ be a common subsequence of $\mBWT(R)$ and $\mBWT(S)$, and let
+$\mBWT(R)[i_{R}]$ and $\mBWT(S)[i_{S}]$ be the lcs-positions corresponding to
+$X[i]$. Subsequence X is bwt-invariant if
+$$
+\mSA(R)[i_{R}] < \mSA(R)[j_{R}] \iff \mSA(S)[i_{S}] < \mSA(S)[j_{S}]
+$$
+for all positions $i, j \in \set{1, \dotsc, \abs{X}}$.
+\end{definition}
+
+In addition to the structures already mentioned, the full relative FM-index
+has another pair of lcs-bitvectors, $\mLCS(R,S)$, which marks the
+bwt-invariant subsequence in the original sequences. If $\mBWT(R)[i_{R}]$ and
+$\mBWT(S)[i_{S}]$ are lcs-positions, we set $B_{R}[\mSA(R)[i_{R}]-1] = 1$ and
+$B_{S}[\mSA(S)[i_{S}]-1] = 1$.\footnote{For simplicity, we assume that the
+endmarker is not a part of the bwt-invariant subsequence. Hence $\mSA[i] > 1$
+for all lcs-positions $\mBWT[i]$.} 
+
+To compute the answer to a $\mlocate(i)$ query, we start by iterating
+$\mBWT(S)$ backwards with \LF{} queries, until we find an lcs-position
+$\mBWT(S)[i']$ after $k$ steps. Then we map position $i'$ to the corresponding
+position $j'$ in $\mBWT(R)$ by using $\mLCS(\mBWT(R),\mBWT(S))$. Finally we
+determine $\mSA(R)[j']$ with a \locate{} query in the reference index, and map
+the result to $\mSA(S)[i']$ by using $\mLCS(R,S)$.\footnote{If $\mBWT(S)[i']$
+and $\mBWT(R)[j']$ are lcs-positions, the corresponding lcs-positions in the
+original sequences are $S[\mSA(S)[i']-1]$ and $R[\mSA(R)[j']-1]$.} The result
+of the $\mlocate(i)$ query is $\mSA(S)[i']+k$.
+
+The $\mISA(S)[i]$ access required for \extract{} queries is supported in a
+similar way. We find the lcs-position $S[i+k]$ for the smallest $k \ge 0$, and
+map it to the corresponding position $R[j]$ by using $\mLCS(R,S)$. Then we
+determine $\mISA(R)[j+1]$ by using the reference index, and map it back to
+$\mISA(S)[i+k+1]$ with $\mLCS(\mBWT(R),\mBWT(S))$. Finally we iterate
+$\mBWT(S)$ backwards $k+1$ steps with \LF{} queries to find $\mISA(S)[i]$.
+
+If the target sequence contains long
+\emph{insertions} not present in the reference, we may also want to include
+some \SA{} and \ISA{} samples for querying those regions.
+
+\subsection{Finding bwt-invariant subsequence}
+
+With the basic relative FM-index, we approximate the longest common
+subsequence of $\mBWT(R)$ and $\mBWT(S)$ by partitioning the \BWT{}s according
+to lexicographic contexts, finding the longest common subsequence for each
+pair of substrings in the partitioning, and concatenating the results. The
+algorithm is fast and easy to parallelize, and quite space-efficient. As such,
+\RFM{} construction is practical, having been tested with datasets of hundreds
+of gigabytes in size.
+
+To find a bwt-invariant subsequence, we start by \emph{matching} each suffix
+of the reference sequence with the lexicographically nearest suffixes of the
+target sequence. Unlike in the original algorithm \cite{Belazzougui2014}, we
+only match suffixes that are lexicographically adjacent in the \emph{mutual
+suffix array} of the two sequences.
+
+\begin{definition}
+Let $R$ and $S$ be two sequences, and let $\mSA = \mSA(RS)$ and $\mISA =
+\mISA(RS)$. The \emph{left match} of suffix $R[i,\abs{R}]$ is the suffix
+$S[\mSA[\mISA[i]-1] - \abs{R}, \abs{S}]$, if $\mISA[i] > 1$ and
+$\mSA[\mISA[i]-1]$ points to a suffix of $S$ ($\mSA[\mISA[i]-1] > \abs{R}$).
+The \emph{right match} of suffix $R[i,\abs{R}]$ is the suffix
+$S[\mSA[\mISA[i]+1] - \abs{R}, \abs{S}]$, if $\mISA[i] < \abs{RS}$ and
+$\mSA[\mISA[i]+1]$ points to a suffix of $S$.
+\end{definition}
+
+Instead of using the mutual suffix array, we can use $\mCSA(R)$, $\mCSA(S)$,
+and the \emph{merging bitvector} $B_{R,S}$ of length $\abs{RS}$. We set
+$B_{R,S}[i] = 1$, if $\mSA(RS)[i]$ points to a suffix of $S$. We can build the
+merging bitvector in $\Oh(\abs{S} \cdot t_{\mLF})$ time, where $t_{\mLF}$ is
+the time required for an \LF{} query, by extracting $S$ from $\mCSA(S)$ and
+backward searching for it in $\mCSA(R)$ \cite{Siren2009}. Suffix
+$R[i,\abs{R}]$ has a left (right) match, if $B_{R,S}[\mselect_{0}(B_{R,S},
+\mISA(R)[i])-1] = 1$ ($B_{R,S}[\mselect_{0}(B_{R,S}, \mISA(R)[i])+1] = 1)$).
+
+Our next step is building the \emph{match arrays} $\mleft$ and $\mright$,
+which correspond to the arrays $A[\cdot][2]$ and $A[\cdot][1]$ in the original
+algorithm. This is done by traversing $\mCSA(R)$ backwards from
+$\mISA(R)[\abs{R}] = 1$ with \LF{} queries and following the left and the
+right matches of the current suffix. During the traversal, we maintain
+invariant $j = \mSA(R)[i]$ with $(i,j) \leftarrow (\mLF_{R}(i), j-1)$. If
+suffix $R[i,\abs{R}]$ has a left (right) match, we use shorthand $l(i) =
+\mrank_{1}(B_{R,S}, \mselect_{0}(B_{R,S}, i)-1)$ ($r(i) = \mrank_{1}(B_{R,S},
+\mselect_{0}(B_{R,S}, i)+1)$) to refer to its position in $\mCSA(S)$.
+
+We say that suffixes $R[i,\abs{R}]$ and $R[i+1,\abs{R}]$ have the same left
+match, if $l(i) = \mLF_{S}(l(i+1))$. Let $R[i,\abs{R}]$ to $R[i+\ell,\abs{R}]$
+be a maximal run of suffixes having the same left match, with suffixes
+$R[i,\abs{R}]$ to $R[i+\ell-1,\abs{R}]$ starting with the same characters as
+their left matches.\footnote{The first character of a suffix can be determined
+by using the $\mC$ array.} We find the left match of suffix $R[i,\abs{R}]$ as
+$i' = \mSA(S)[l(i)]$ by using $\mCSA(S)$, and set $\mleft[i,i+\ell-1] =
+[i',i'+\ell-1]$. The right match array $\mright$ is built in a similar way.
+
+The match arrays require $2\abs{R} \log \abs{S}$ bits of space. If sequences
+$R$ and $S$ are similar, the runs in the arrays tend to be long. Hence we can
+run-length encode the match arrays to save space. The traversal takes
+$\Oh(\abs{R} \cdot (t_{\mLF} + t_{\mrank} + t_{\mselect}) + rd \cdot
+t_{\mLF})$ time, where $t_{\mrank}$ and $t_{\mselect}$ denote the time
+required by \rank{} and \select{} operations, $r$ is the number of runs in the
+two arrays, and $d$ is the suffix array sample interval in
+$\mCSA(S)$.\footnote{The time bound assumes text order sampling.}
+
+The final step is finding the longest increasing subsequence $X$ of arrays
+$\mleft$ and $\mright$, which corresponds to a common subsequence of $R$ and
+$S$. More precisely, we want to find a binary sequence $B_{R}[1,\abs{R}]$,
+which marks the common subsequence in $R$, and an integer sequence $X$, which
+contains the positions of the common subsequence in $S$. The goal is to make
+sequence $X$ strictly increasing and as long as possible, with
+$X[\mrank_{1}(B_{R}, i)]$ being either $\mleft[i]$ or $\mright[i]$. This can
+be done in $\Oh(\abs{R} \log \abs{R})$ time with $\Oh(\abs{R} \log \abs{R})$
+bits of additional working space with a straightforward modification of the
+dynamic programming algorithm for finding the longest increasing subsequence.
+While the dynamic programming tables can be run-length encoded, the time and
+space savings are negligible or even non-existent in practice.
+
+As sequence $X$ is strictly increasing, we can convert it into binary sequence
+$B_{S}[1,\abs{S}]$, marking the values in sequence $X$ with \onebit{}s.
+Afterwards, we can consider binary sequences $B_{R}$ and $B_{S}$ as the
+lcs-bitvectors $\mLCS(R,S)$. Because every suffix of $R$ starts with the same
+character as its matches stored in the $\mleft$ and $\mright$ arrays,
+subsequences $R[B_{R}]$ and $S[B_{S}]$ are identical. As each suffix
+$R[i,\abs{R}]$ with $B_{R}[i] = 1$ is paired with its left match or right
+match in sequence $S$, no other suffix of $R$ or $S$ is lexicographically
+between the two paired suffixes.
+
+For any $i$, let $i_{R} = \mselect_{1}(B_{R}, i)$ and $i_{S} =
+\mselect_{1}(B_{S}, i)$ be the lcs-positions of rank $i$. Then,
+$$
+\mISA(R)[i_{R}] < \mISA(R)[j_{R}] \iff \mISA(S)[i_{S}] < \mISA(S)[j_{S}]
+$$
+for any $i,j \le \abs{X}$, which is equivalent to the condition in
+Definition~\ref{def:bwt-invariant}. We can convert $\mLCS(R,S)$ to
+$\mLCS(\mBWT(R),\mBWT(S))$ in $\Oh((\abs{R}+\abs{S}) \cdot t_{\mLF})$ time by
+traversing $\mCSA(R)$ and $\mCSA(S)$ backwards. The resulting subsequence of
+$\mBWT(R)$ and $\mBWT(S)$ is bwt-invariant.
+
+Note that the full relative FM-index is more limited than the basic index,
+because it does not handle \emph{substring moves} very well. Let $R = xy$ and
+$S = yx$, for two random sequences $x$ and $y$ of length $n/2$ each. Because
+$\mBWT(R)$ and $\mBWT(S)$ are very similar, we can expect to find a common
+subsequence of length almost $n$. On the other hand, the length of the longest
+bwt-invariant subsequence is around $n/2$, because we can either pair the
+suffixes of $x$ or the suffixes of $y$ in $R$ and $S$, but not both.
+
+

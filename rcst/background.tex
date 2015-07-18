@@ -1,0 +1,277 @@
+
+\section{Background}
+
+A \emph{string} $S[1,n] = s_{1} \dotso s_{n}$ is a sequence of
+\emph{characters} over an \emph{alphabet} $\Sigma = \set{1, \dotsc, \sigma}$.
+For indexing purposes, we often consider \emph{text} strings $T[1,n]$ that are
+terminated by an \emph{endmarker} $T[n] = \$ = 0$ not occurring elsewhere in
+the text. \emph{Binary} sequences are sequences over the alphabet $\set{0,1}$.
+If $B[1,n]$ is a binary sequence, its \emph{complement} is binary sequence
+$\complement{B}[1,n]$, with $\complement{B}[i] = 1 - B[i]$.
+
+For any binary sequence $B[1,n]$, we define the \emph{subsequence} $S[B]$ of
+string $S[1,n]$ as the concatenation of characters $s_{i}$ with $B[i] = 1$.
+The complement $\complement{S}[B]$ of subsequence $S[B]$ is the subsequence
+$S[\complement{B}]$. Contiguous subsequences $S[i,j]$ are called
+\emph{substrings}. Substrings of the form $S[1,j]$ and $S[i,n]$, $i,j \in
+[1,n]$, are called \emph{prefixes} and \emph{suffixes}, respectively. We
+define the \emph{lexicographic order} among strings in the usual way.
+
+\subsection{Full-text indexes}
+
+The \emph{suffix tree} (\ST)~\cite{Weiner1973} of text $T$ is a trie
+containing the suffixes of $T$, with unary paths compacted into single edges.
+Because every internal nodes has degree at least two, there can be at most
+$2n-1$ nodes, and the suffix tree can be stored in $\Oh(n \log n)$ bits. In
+practice, this is at least $10n$ bytes for small texts~\cite{Kurtz1999}, and
+more for large texts as the pointers grow larger. If $v$ is a node of a suffix
+tree, we write $\pi(v)$ to denote the concatenation of the labels of the path
+from the root to node $v$.
+
+\emph{Suffix arrays} (\SA)~\cite{Manber1993} were introduced as a
+space-efficient alternative to suffix trees. The suffix array $\mSA[1,n]$ of
+text $T$ is an array of pointers to the suffixes of the text in lexicographic
+order. In its basic form, the suffix array requires only $n \log n$ bits in
+addition to the text, but its functionality is more limited than that of the
+suffix tree. In addition to the suffix array, many algorithms also use the
+\emph{inverse suffix array} $\mISA[1,n]$, with $\mSA[\mISA[i]] = i$ for all
+$i$.
+
+Let $\mlcp(S_{1}, S_{2})$ be the length of the \emph{longest common prefix}
+(\LCP) of strings $S_{1}$ and $S_{2}$. The \LCP{}
+\emph{array}~\cite{Manber1993} $\mLCP[1,n]$ of text $T$ stores the \LCP{}
+lengths for lexicographically adjacent suffixes of $T$ as $\mLCP[i] =
+\mlcp(T[\mSA[i-1],n], T[\mSA[i],n])$. Let $v$ be an internal node of the
+suffix tree, $\ell = \abs{\pi(v)}$ the \emph{string depth} of node $v$, and
+$\mSA[sp,ep]$ the corresponding suffix array interval. The following
+properties hold for the \LCP{} \emph{interval} $\mLCP[sp,ep]$: i) $\mLCP[sp] <
+\ell$; ii) $\mLCP[i] \ge \ell$ for all $sp < i \le ep$; iii) $\mLCP[i] = \ell$
+for at least one $sp < i \le ep$; and iv) $\mLCP[ep+1] <
+\ell$~\cite{Abouelhoda2004}.
+
+Abouelhoda et al.~\cite{Abouelhoda2004} showed how traversals on the suffix
+tree could be simulated using the suffix array, the \LCP{} array, and a
+representation of the suffix tree topology based on \LCP{} intervals, paving
+way for more space-efficient suffix tree representations.
+
+\subsection{Compressed text indexes}
+
+Data structures supporting \rank{} and \select{} queries over sequences are
+the main building block of compressed text indexes. If $S$ is a sequence, we
+define $\mrank_{c}(S,i)$ to be the number of occurrences of character $c$ in
+prefix $S[1,i]$, while $\mselect_{c}(S,j)$ is the position of the occurrence
+of rank $j$ in sequence $S$. A \emph{bitvector} is a representation of a
+binary sequence $B$ supporting fast \rank{} and \select{} queries.
+\emph{Wavelet trees} (\WT)~\cite{Grossi2003} use bitvectors to support \rank{}
+and \select{} on general strings.
+
+The \emph{Burrows-Wheeler transform} (\BWT)~\cite{Burrows1994} is a reversible
+permutation $\mBWT[1,n]$ of text $T$. It is defined as $\mBWT[i] = T[\mSA[i] -
+1]$ (with $\mBWT[i] = T[n]$, if $\SA[i] = 1$). Originally intended for data
+compression, the Burrows-Wheeler transform has been widely used in
+space-efficient text indexes, because it shares the combinatorial structure of
+the suffix tree and the suffix array.
+
+Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with
+$\mSA[\mLF(i)] = n$, if $\mSA[i] = 1$). We can compute it as $\mLF(i) =
+\mC[\mBWT[i]] + \mrank_{\mBWT[i]}(\mBWT, i)$, where $\mC[c]$ is the number of
+occurrences of characters with lexicographical values smaller than $c$ in
+\BWT. The inverse function of \LF{} is $\mPsi$, with $\mPsi(i) =
+\mselect_{c}(\mBWT, i - \mC[c])$, where $c$ is the largest character value
+with $\mC[c] < i$. With functions \LF{} and $\mPsi$, we can move forward and
+backward in the text, while maintaining the lexicographic rank of the current
+suffix. If sequence $S$ is not evident from the context, we write $\mLF_{S}$
+and $\mPsi_{S}$.
+
+\emph{Compressed suffix arrays} (\CSA) \cite{Ferragina2005a,Grossi2005} are
+text indexes supporting similar functionality to the suffix array. This
+includes the following queries: i) $\mfind(P) = [sp,ep]$ determines the
+lexicographic range of suffixes starting with \emph{pattern} $P[1,\ell]$; ii)
+$\mlocate(sp,ep) = \mSA[sp,ep]$ returns the starting positions of these
+suffixes; and iii) $\mextract(i,j) = T[i,j]$ extracts substrings of the text.
+In practice, the \find{} performance of compressed suffix arrays can be
+competitive with suffix arrays, while \locate{} queries are orders of
+magnitude slower~\cite{Ferragina2009a}. Typical index sizes are less than the
+size of the uncompressed text.
+
+The \emph{FM-index} (\FMI) \cite{Ferragina2005a} is a common type of
+compressed suffix array. A typical implementation stores the \BWT{} in a
+wavelet tree \cite{Grossi2003}. The index implements \find{} queries via a
+process called \emph{backward search}. Let $[sp,ep]$ be the lexicographic
+range of the suffixes of the text that start with suffix $P[i+1,\ell]$ of the
+pattern. We can find the range matching suffix $P[i,\ell]$ with a
+generalization of function \LF{} as
+$$
+\mLF([sp,ep],P[i]) =
+[\mC[P[i]] + \mrank_{P[i]}(\mBWT, sp-1) + 1,
+\mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
+$$
+
+We support \locate{} queries by \emph{sampling} some suffix array pointers. If
+we want to determine a value $\mSA[i]$ that has not been sampled, we can
+compute it as $\mSA[i] = \mSA[j]+k$, where $\mSA[j]$ is a sampled pointer
+found by iterating \LF{} $k$ times, starting from position $i$. Given
+\emph{sample interval} $d$, the samples can be chosen in \emph{suffix order},
+sampling $\mSA[i]$ at positions divisible by $d$, or in \emph{text order},
+sampling $T[i]$ at positions divisible by $d$ and marking the sampled \SA{}
+positions in a bitvector. Suffix-order sampling requires less space, often
+resulting in better time/space trade-offs in practice, while text-order
+sampling guarantees better worst-case performance. We also sample some \ISA{}
+pointers for \extract{} queries. To extract $T[i,j]$, we find the nearest
+sampled pointer after $\mISA[j]$, and traverse backwards to $T[i]$ with
+function \LF.
+
+\begin{table}
+\centering{}
+\caption{Typical compressed suffix tree operations.}\label{table:cst
+operations}
+
+\begin{tabular}{ll}
+\hline
+\noalign{\smallskip}
+\textbf{Operation}  & \textbf{Description} \\
+\noalign{\smallskip}
+\hline
+\noalign{\smallskip}
+$\mRoot()$          & The root of the tree. \\
+$\mLeaf(v)$         & Is node $v$ a leaf? \\
+$\mAncestor(v,w)$   & Is node $v$ is an ancestor of node $w$? \\
+\noalign{\smallskip}
+$\mCount(v)$        & Number of leaves in the subtree with $v$ as the root. \\
+$\mLocate(v)$       & Pointer to the suffix corresponding to leaf $v$. \\
+\noalign{\smallskip}
+$\mParent(v)$       & The parent of node $v$. \\
+$\mFChild(v)$       & The first child of node $v$ in alphabetic order. \\
+$\mNSibling(v)$     & The next sibling of node $v$ in alphabetic order. \\
+$\mLCA(v,w)$        & The lowest common ancestor of nodes $v$ and $w$. \\
+\noalign{\smallskip}
+$\mSDepth(v)$       & \emph{String depth}: Length $\ell = \abs{\pi(v)}$ of the
+label from the root to node $v$. \\
+$\mTDepth(v)$       & \emph{Tree depth}: The depth of node $v$ in the suffix
+tree. \\
+$\mLAQ_{S}(v,d)$    & The highest ancestor of node $v$ with string depth at
+least $d$. \\
+$\mLAQ_{T}(v,d)$    & The ancestor of node $v$ with tree depth $d$. \\
+\noalign{\smallskip}
+$\mSLink(v)$        & Suffix link: Node $w$ such that $\pi(v) = c \pi(w)$ for
+a character $c \in \Sigma$. \\
+$\mSLink^{k}(v)$    & Suffix link iterated $k$ times. \\
+\noalign{\smallskip}
+$\mChild(v,c)$      & The child of node $v$ with edge label starting with
+character $c$. \\
+$\mLetter(v,i)$     & The character $\pi(v)[i]$. \\
+\noalign{\smallskip}
+\hline
+\end{tabular}
+\end{table}
+
+\emph{Compressed suffix trees} (\CST) \cite{Sadakane2007} are compressed text
+indexes supporting the full functionality of a suffix tree (see
+Table~\ref{table:cst operations}). They combine a compressed suffix array, a
+compressed representation of the \LCP{} array, and a compressed representation
+of suffix tree topology. For the \LCP{} array, there are several common
+representations:
+\begin{itemize}
+\item \LCPbyte{} \cite{Abouelhoda2004} stores the \LCP{} array as a byte
+array. If $\mLCP[i] < 255$, the \LCP{} value is stored in the byte array.
+Larger values are marked with a $255$ in the byte array and stored separately.
+Because many texts produce small \LCP{} values, \LCPbyte{} usually requires
+$n$ to $1.5n$ bytes of space.
+\item We can store the \LCP{} array by using variable-length codes. \LCPdac{}
+uses \emph{directly addressable codes} \cite{Brisaboa2009} for the purpose,
+resulting in a structure that is typically somewhat smaller and somewhat
+slower than \LCPbyte.
+\item The \emph{permuted} \LCP{} (\PLCP) \emph{array} \cite{Sadakane2007}
+$\mPLCP[1,n]$ is the \LCP{} array stored in text order and used as $\mLCP[i] =
+\mPLCP[\mSA[i]]$. Because $\mPLCP[i+1] \ge \mPLCP[i]-1$, the array can be
+stored as a bitvector of length $2n$ in $2n+\oh(n)$ bits. If the text is
+repetitive, run-length encoding can be used to compress the bitvector to take
+even less space \cite{Fischer2009a}. Because accessing \PLCP{} uses \locate,
+it is much slower than the above two encodings.
+\end{itemize}
+
+Suffix tree topology representations are the main differences between the
+various \CST{} proposals. While the compressed suffix arrays and \LCP{} arrays
+are interchangeable, tree representation determines how various suffix tree
+operations are implemented. There are three main families of compressed suffix
+trees:
+\begin{itemize}
+\item \emph{Sadakane's compressed suffix tree} (\CSTsada) \cite{Sadakane2007}
+uses a \emph{balanced parentheses} representation for the tree. Each node is
+encoded as an opening parenthesis, followed by the encodings of its children
+and a closing parenthesis. This can be encoded as a bitvector of length $2n'$,
+where $n'$ is the number of nodes, requiring up to $4n+\oh(n)$ bits.
+\CSTsada{} tends to be larger and faster than the other compressed suffix
+trees \cite{Gog2011a,Abeliuk2013}.
+\item The \emph{fully compressed suffix tree} (\FCST) of Russo et
+al.~\cite{Russo2011,Navarro2014a} aims to use as little space as possible. It
+does not require an \LCP{} array at all, and stores a balanced parentheses
+representation for a sampled subset of suffix tree nodes in $\oh(n)$ bits.
+Unsampled nodes are retrieved by following suffix links. \FCST{} is smaller
+and much slower than the other compressed suffix trees
+\cite{Russo2011,Abeliuk2013}.
+\item Fischer et al.~\cite{Fischer2009a} proposed an intermediate
+representation, \CSTnpr, based on \LCP{} intervals. Tree navigation is handled
+by searching for the values defining the \LCP{} intervals. \emph{Range minimum
+queries} $\mrmq(sp,ep)$ find the leftmost minimal value in $\mLCP[sp,ep]$,
+while \emph{next/previous smaller value} queries $\mnsv(i)$/$\mpsv(i)$ find
+the next/previous \LCP{} value smaller than $\mLCP[i]$. After the improvements
+by various authors \cite{Ohlebusch2009,Ohlebusch2010,Gog2011a,Abeliuk2013},
+the \CSTnpr{} is perhaps the most practical compressed suffix tree.
+\end{itemize}
+
+For typical texts and component choices, the size of compressed suffix trees
+ranges from the $1.5n$ to $3n$ bytes of \CSTsada{} to the $0.5n$ to $n$ bytes
+of \FCST{} \cite{Gog2011a,Abeliuk2013}. There are also some \CST{} variants
+for repetitive texts, such as versioned document collections and collections
+of individual genomes. Abeliuk et al.~\cite{Abeliuk2013} developed a variant
+of \CSTnpr{} that can sometimes be smaller than $n$ bits, while achieving
+similar performance as the \FCST. Navarro and Ordóñez \cite{Navarro2014} used
+grammar-based compression for the tree representation of \CSTsada. The
+resulting compressed suffix tree (\GCT) requires slightly more space than the
+\CSTnpr{} of Abeliuk et al., while being closer to the non-repetitive
+\CSTsada{} and \CSTnpr{} in performance.
+
+\subsection{Relative Lempel-Ziv}\label{sect:rlz}
+
+\emph{Relative Lempel-Ziv} (\RLZ) parsing \cite{Kuruppu2010} compresses
+\emph{target} sequence $S$ relative to \emph{reference} sequence $R$. The
+target sequence is represented as a concatenation of $z$ \emph{phrases} $w_{i}
+= (p_{i}, \ell_{i}, c_{i})$, where $p_{i}$ is the starting position of the
+phrase in the reference, $\ell_{i}$ is the length of the copied substring, and
+$c_{i}$ is the \emph{mismatching} character. If phrase $w_{i}$ starts from
+position $p'$ in the target, then $S[p',p'+\ell_{i}-1] =
+R[p_{i},p_{i}+\ell_{i}-1]$ and $S[p'+\ell_{i}] = c_{i}$.
+
+The shortest \RLZ{} parsing of the target sequence can be found in
+(essentially) linear time. The algorithm builds a \CSA{} for the reverse of
+the reference sequence, and then parses the target sequence greedily by using
+backward searching. If the edit distance between the reference and the target
+is $s$, we need at most $s$ phrases to represent the target sequence. On the
+other hand, because the relative order of the phrases can be different in
+sequences $R$ and $S$, the edit distance can be much larger than the number of
+phrases in the shortest \RLZ{} parsing.
+
+In a straightforward implementation, the \emph{phrase pointers} $p_{i}$ and
+the mismatching characters $c_{i}$ can be stored in arrays $W_{p}$ and
+$W_{c}$. These arrays take $z \log \abs{R}$ bits and $z \log \sigma$ bits,
+respectively. To support random access in the target sequence, we can encode
+phrase lengths as bitvector $W_{\ell}$ of length $\abs{S}$ \cite{Kuruppu2010}.
+We set $W_{\ell}[j] = 1$, if $S[j]$ is the first character of a phrase. The
+bitvector requires $z \log \frac{n}{z} + \Oh(z)$ bits, if we use the
+\sdarray{} representation \cite{Okanohara2007}. To extract $S[j]$, we first
+determine the phrase $w_{i}$, with $i = \mrank_{1}(W_{\ell}, j)$. If
+$W_{\ell}[j+1] = 1$, we return the mismatching character $W_{c}[i]$. Otherwise
+we determine the phrase offset with a \select{} query, and return character
+$R[W_{p}[i] + j - \mselect_{1}(W_{\ell}, i)]$.
+
+The \select{} query can be avoided by using \emph{relative pointers} instead
+of absolute pointers \cite{Ferrada2014}. By setting $W_{p}[i] = p_{i} -
+\mselect_{1}(W_{\ell}, i)$, the general case simplifies to $S[j] = R[W_{p}[i]
++ j]$. If most of the differences between the reference and the target
+sequence are single-character \emph{substitutions}, $p_{i+1}$ will often be
+$p_{i} + \ell_{i} + 1$. This corresponds to $W_{p}[i+1] = W_{p}[i]$ with
+relative pointers, making \emph{run-length encoding} the pointer array
+worthwhile.
+
+
