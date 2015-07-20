@@ -30,6 +30,10 @@ using namespace relative;
 
 //------------------------------------------------------------------------------
 
+//#define STORE_PLAIN_DLCP
+
+//------------------------------------------------------------------------------
+
 int
 main(int argc, char** argv)
 {
@@ -59,6 +63,30 @@ main(int argc, char** argv)
     SLArray lcp; lcp.load(input); input.close();
     std::cout << "LCP size: " << lcp.size() << std::endl;
     double megabytes = lcp.size() / MEGABYTE_DOUBLE;
+
+#ifdef STORE_PLAIN_DLCP
+    {
+      std::vector<int32_t> dlcp_plain(lcp.size(), 0);
+      int32_t prev = 0;
+      for(uint64_t i = 1; i < dlcp_plain.size(); i++)
+      {
+        int32_t curr = lcp[i];
+        dlcp_plain[i] = curr - prev;
+        prev = curr;
+      }
+      std::string dlcp_name = base_name + DLCP_EXTENSION;
+      std::ofstream out(dlcp_name.c_str(), std::ios_base::binary);
+      if(out)
+      {
+        out.write((char*)(dlcp_plain.data()), dlcp_plain.size() * sizeof(int32_t));
+        out.close();
+      }
+      else
+      {
+        std::cerr << "index_dlcp: Cannot open DLCP file " << dlcp_name << std::endl;
+      }
+    }
+#endif
 
     int_vector<0> dlcp; dlcp.width(lcp.large.width() + 2);
     differentialArray<SLArray, DiffEncoderNZ>(lcp, dlcp, true);
