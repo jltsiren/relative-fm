@@ -6,7 +6,7 @@
 *.pdf
 
 relative.log
-rcst.log
+paper.log
 
 align_bwts
 build_bwt
