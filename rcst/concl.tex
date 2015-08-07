@@ -1,10 +1,8 @@
 
-\section{Conclusions}\label{section:conclusions}
+\section{Discussion}\label{section:discussion}
 
-\begin{itemize}
-\item conclusions
-\item other ideas: RLZ bitvectors, RLZ pointer compression
-\item analyze the similarity between LCP arrays based on edit distance
-\item Sada-RLZ: RLZ compression of tree topology and bitvector H of PLCP
-\end{itemize}
+We have proposed a new kind of compressed suffix trees for repetitive sequence collections. Our relative \CST{} compresses the suffix tree of an individual sequence relative to the suffix tree of a reference sequence. When the sequences are similar enough, a collection of \RCST{}s is almost as small as the compressed suffix trees that have been designed to store repetitive collections space-efficiently in a single tree. On the other hand, the \RCST{} is almost as fast as the largest and fastest \CST{} representations.
 
+While our \RCST{} implementation provides competitive time/space trade-offs, there is still much room for improvement. Most importantly, some of the construction algorithms require significant amounts of time and memory. In many places, we have chosen simple and fast implementation options, even though there could be alternatives that require significantly less space without being too much slower. We also do not know how the edit distance between the reference sequence and the target sequence affects the size of the \RLCP{} array.
+
+Our relative \CST{} is a relative version of the \CSTnpr. The obvious alternative would be a relative \CSTsada, using \RLZ{} compressed bitvectors for suffix tree topology and \PLCP. Based on our preliminary experiments, the main obstacle is the compression of phrase pointers. Relative pointers work well, when most differences between the reference and the target are single-character substitutions. As suffix sorting multiplies the differences and transforms substitutions into insertions and deletions, we need new compression schemes for the pointers.

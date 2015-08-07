@@ -173,37 +173,23 @@ Science,
 %\setcounter{page}{0} %for ALENEX
 
 \begin{abstract}
-\iffalse
-This work investigates the use of mutual information between data structures
-for similar
-datasets to represent the structures in less space. If two data structures are
-similar to each
-other, one of them can probably be represented by its differences to the
-other, while still
-supporting efficient queries. Such relative data structures may find use in
-bioinformatics,
-where the genomes of individuals of the same species are very similar to each
-other.
-More formally, assume that we have similar datasets R and S. If we build data
-structure D for the datasets, we will likely see that D(R) and D(S) have low
-relative
-entropy. Given D(R), we can probably represent D(S | R) (denoting D(S)
-relative to
-dataset R) in small space, while still supporting the functionality of D
-efficiently. Then,
-given D(R) and D(S | R), we can either simulate D(S) directly, or decompress
-it for
-faster queries. A similar approach may also allow the construction of D(S) and
-D(S | R)
-efficiently, given D(R), R, and the differences between datasets S and R.
-Our work clearly has links to persistent data structures and can be thought of
-as a
-special case where only the initial state and the final state are preserved,
-the final
-state being the net result of potentially many individual modifications, all
-of which would
-be represented by a persistent data structure.
-\fi
+Suffix trees are one of the most versatile data structures in stringology,
+with many applications in bioinformatics. Their main drawback is their size,
+which can be tens of times larger than the input sequence. Much effort has
+been put into reducing the space usage, leading ultimately to compressed
+suffix trees. These compressed data structures can efficiently simulate the
+suffix tree, while using several times more space than a compressed
+representation of the sequence.
+In this work, we take a new approach to compressed suffix trees for repetitive
+sequence collections, such as collections of individual genomes. When the
+individual sequences are similar, their suffix trees should also be similar.
+We compress the individual suffix trees relative to the suffix tree of a
+reference sequence. These relative compressed suffix trees provide competitive
+time/space trade-offs, being almost as small as the smallest compressed suffix
+trees for repetitive collections, and almost as fast as the largest and
+fastest compressed suffix trees. Unlike the existing compressed suffix trees
+for repetitive collections, our relative compressed suffix trees provide
+access to the suffix trees of individual sequences.
 \end{abstract}
 
 %\newpage %for ALENEX format
