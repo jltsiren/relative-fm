@@ -178,18 +178,16 @@ with many applications in bioinformatics. Their main drawback is their size,
 which can be tens of times larger than the input sequence. Much effort has
 been put into reducing the space usage, leading ultimately to compressed
 suffix trees. These compressed data structures can efficiently simulate the
-suffix tree, while using several times more space than a compressed
-representation of the sequence.
+suffix tree, while using space proportional to a compressed representation of
+the sequence.
 In this work, we take a new approach to compressed suffix trees for repetitive
-sequence collections, such as collections of individual genomes. When the
-individual sequences are similar, their suffix trees should also be similar.
-We compress the individual suffix trees relative to the suffix tree of a
-reference sequence. These relative compressed suffix trees provide competitive
+sequence collections, such as collections of individual genomes. We compress
+the suffix trees of individual sequences relative to the suffix tree of a
+reference sequence. These relative data structures provide competitive
 time/space trade-offs, being almost as small as the smallest compressed suffix
 trees for repetitive collections, and almost as fast as the largest and
-fastest compressed suffix trees. Unlike the existing compressed suffix trees
-for repetitive collections, our relative compressed suffix trees provide
-access to the suffix trees of individual sequences.
+fastest compressed suffix trees. They also provide access to the suffix trees
+of individual sequences, instead of storing all sequences in the same tree.
 \end{abstract}
 
 %\newpage %for ALENEX format

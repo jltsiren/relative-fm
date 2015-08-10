@@ -22,10 +22,10 @@ repetitive text compressible with grammar-based compression
 \cite{Abeliuk2013}.
 
 We make a similar observation in the relative setting. If target sequence $S$
-is similar to the reference sequence $T$, then their \LCP{} arrays should also
-be similar. If there are long identical ranges $\mLCP(R)[i,i+k] =
-\mLCP(S)[j,j+k]$, the corresponding \DLCP{} ranges $\mDLCP(R)[i+1,i+k]$ and
-$\mDLCP(S)[j+1,j+k]$ are also identical. Hence we can use \RLZ{} parsing to
+is similar to the reference sequence $R$, then their \LCP{} arrays should also
+be similar. If there are long identical ranges $\mLCP_{R}[i,i+k] =
+\mLCP_{S}[j,j+k]$, the corresponding \DLCP{} ranges $\mDLCP_{R}[i+1,i+k]$ and
+$\mDLCP_{S}[j+1,j+k]$ are also identical. Hence we can use \RLZ{} parsing to
 compress either the original \LCP{} array or the \DLCP{} array.
 
 While the identical ranges are a bit longer in the \LCP{} array, we opt to
@@ -34,15 +34,15 @@ repetitions in the sequences. In particular, assembled genomes often have long
 runs of character $N$, which correspond to regions of very large \LCP{}
 values. If the runs are longer in the target sequence than in the reference
 sequence, the \RLZ{} parsing of the \LCP{} array will have many phrases
-containing only the mismatching character. The corresponding ranges in the
+containing only the mismatch character. The corresponding ranges in the
 \DLCP{} array typically consist of values $\set{-1, 0, 1}$, making them much
 easier to compress.
 
-We create an \RLZ{} parsing of $\mDLCP(S)$ relative to $\mDLCP(R)$, while
-using $\mLCP(R)$ as the reference afterwards. The reference is stored in a
+We create an \RLZ{} parsing of $\mDLCP_{S}$ relative to $\mDLCP_{R}$, while
+using $\mLCP_{R}$ as the reference afterwards. The reference is stored in a
 structure we call \slarray, which is very similar to \LCPbyte.
-\cite{Abouelhoda2004}. Small values $\mLCP(R)[i] < 255$ are stored in a byte
-array, while large values $\mLCP(R)[i] \ge 255$ are marked with a $255$ in the
+\cite{Abouelhoda2004}. Small values $\mLCP_{R}[i] < 255$ are stored in a byte
+array, while large values $\mLCP_{R}[i] \ge 255$ are marked with a $255$ in the
 byte array and stored separately. To quickly find the large values, we also
 build a $\mrank_{255}$ structure over the byte array. The \slarray{} provides
 reasonably fast random access and very fast sequential access to the
@@ -56,27 +56,27 @@ pointers does not work too well with the \DLCP{} array, and because we need
 access to the beginning of the phrase anyway. Phrase lengths are encoded in
 the $W_{\ell}$ bitvector in the usual way. We convert the mismatching \DLCP{}
 values $c_{i}$ into absolute \LCP{} values in the mismatch array $W_{c}$, and
-store them as an \slarray. The mismatching values are used as \emph{absolute
+store it as an \slarray. The mismatch values are used as \emph{absolute
 samples} for the differential encoding.
 
-To access $\mLCP(S)[j]$, we determine phrase $w_{i}$ as usual, and check
+To access $\mLCP_{S}[j]$, we determine the phrase $w_{i}$ as usual, and check
 whether we should return the mismatch $W_{c}[j]$. If not, we determine the
 starting position $s_{i} = \mselect_{1}(W_{\ell}, i)$ of the phrase in the
 reference. Now we can compute the solution as
 \begin{align*}
-\mLCP(S)[j] &= W_{c}[i-1] + \sum_{k = W_{p}[i]}^{W_{p}[i]+j-s_{i}}
-(\mLCP(R)[k] - \mLCP(R)[k-1]) \\
-&= W_{c}[i-1] + \mLCP(R)[W_{p}[i]+j-s_{i}] - \mLCP(R)[W_{p}[i]-1],
+\mLCP_{S}[j] &= W_{c}[i-1] + \sum_{k = W_{p}[i]}^{W_{p}[i]+j-s_{i}}
+(\mLCP_{R}[k] - \mLCP_{R}[k-1]) \\
+&= W_{c}[i-1] + \mLCP_{R}[W_{p}[i]+j-s_{i}] - \mLCP_{R}[W_{p}[i]-1],
 \end{align*}
-where $W_{c}[0] = \mLCP(R)[0] = 0$. After finding $\mLCP(S)[j]$, accessing
-$\mLCP(S)[j-1]$ and $\mLCP(S)[j+1]$ is fast, as long as we do not cross phrase
+where $W_{c}[0] = \mLCP_{R}[0] = 0$. After finding $\mLCP_{S}[j]$, accessing
+$\mLCP_{S}[j-1]$ and $\mLCP_{S}[j+1]$ is fast, as long as we do not cross phrase
 boundaries.
 
 \subsection{Supporting \nsv/\psv/\rmq{} queries}
 
 Suffix tree topology can be inferred from the \LCP{} array with range minimum
 queries (\rmq) and next/previous smaller value (\nsv/\psv) queries
-\cite{Fischer2009a}. Some tree operations can be implemented more efficiently
+\cite{Fischer2009a}. Some suffix tree operations are more efficient,
 if we also support \emph{next/previous smaller or equal value} (\nsev/\psev)
 queries \cite{Abeliuk2013}. Query $\mnsev(i)$ ($\mpsev(i)$) finds the next
 (previous) value smaller than or equal to $\mLCP[i]$.
@@ -98,7 +98,7 @@ is $M_{L}[j-1] + 4 \cdot (i - M_{L}[j])$.
 
 A range minimum query $\mrmq(sp,ep)$ starts by finding the minimal range of
 phrases $w_{l}, \dotsc, w_{r}$ covering the query and the maximal range of
-phrases $w_{l'}, \dotsc, w_{r'}$ contained in the query (note $l \le l' \le
+phrases $w_{l'}, \dotsc, w_{r'}$ contained in the query (note that $l \le l' \le
 l+1$ and $r-1 \le r' \le r$). Then we use the
 minima tree to find the leftmost minimum value $j = M_{\mLCP}[k]$ in
 $M_{\mLCP}[l',r']$, and find the leftmost occurrence $\mLCP[i] = j$ in phrase
