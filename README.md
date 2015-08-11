@@ -30,6 +30,15 @@ These programs are technical and/or obsolete:
 
 "Base name" is the name of the input file, "ref" is the base name of the reference sequence, "seq" is the base name of a target sequence, and "paper" refers to the RCST paper in subdirectory `rcst`. When different structures are stored on disk, extensions that depend on the type of the structure are appended to the base name.
 
+## Datasets
+
+The following datasets have been used in the articles based on the relative FM-index:
+
+* The 1000 Genomes Project version of the GRCh37 assembly of the [human reference genome](ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/).
+* The genome of a [Han Chinese individual](ftp://public.genomics.org.cn/BGI/yanhuang/fa/) from the YanHuang project.
+* The genome of the 1000 Genomes Project [individual NA12878](http://sv.gersteinlab.org/NA12878_diploid/).
+* Read set `ERR019904_1` of the 1000 Genomes Project [individual HG00122](ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/HG00122/sequence_read/).
+
 ## Todo
 
 * RLZ pointer encoding:
