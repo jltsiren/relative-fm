@@ -73,7 +73,7 @@ If we want the relative FM-index to support \locate{} and \extract{} queries,
 we cannot build it from any common subsequence of $\mBWT_{R}$ and $\mBWT_{S}$.
 We need a \emph{bwt-invariant subsequence} \cite{Belazzougui2014}, where the
 relative order of the characters is the same in both the original sequences
-and their Burrows-Wheeler transforms.
+and in their Burrows-Wheeler transforms.
 
 \begin{definition}\label{def:bwt-invariant}
 Let $X$ be a common subsequence of $\mBWT_{R}$ and $\mBWT_{S}$, and let
@@ -114,7 +114,7 @@ If the target sequence contains long
 \emph{insertions} not present in the reference, we may also want to include
 some \SA{} and \ISA{} samples for querying those regions.
 
-\subsection{Finding bwt-invariant subsequence}
+\subsection{Finding a bwt-invariant subsequence}
 
 With the basic relative FM-index, we approximate the longest common
 subsequence of $\mBWT_{R}$ and $\mBWT_{S}$ by partitioning the \BWT{}s according
@@ -126,7 +126,7 @@ of gigabytes in size.
 
 To find a bwt-invariant subsequence, we start by \emph{matching} each suffix
 of the reference sequence with the lexicographically nearest suffixes of the
-target sequence. Unlike in the original algorithm \cite{Belazzougui2014}, we
+target sequence. In contrast to the original algorithm \cite{Belazzougui2014}, we
 only match suffixes that are lexicographically adjacent in the \emph{mutual
 suffix array} of the two sequences.
 

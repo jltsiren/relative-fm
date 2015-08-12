@@ -7,7 +7,7 @@ A serious problem that hampers its wider use on large genome sequences is its
 size, which may be 10--20 bytes per character. In addition, the non-local
 access patterns required by most interesting problems solved with suffix trees
 complicate secondary-memory deployments. This problem has led to numerous
-efforts to reduce the size of suffix trees by representing them as a sets of
+efforts to reduce the size of suffix trees by representing them as sets of
 \emph{compressed data structures} \cite{Sadakane2007,Fischer2009a,Ohlebusch2009,Ohlebusch2010,Russo2011,Gog2011a,Abeliuk2013,Navarro2014a}, leading to
 \emph{compressed suffix trees} (\CST). Currently, the smallest
 \CST{} is the so-called \emph{fully-compressed suffix tree} (\FCST)
@@ -48,7 +48,7 @@ the space to 1--2~bpc (albeit with operation times in the milliseconds)
 \cite{Abeliuk2013}, or to 2--3~bpc with operation times in the microseconds
 \cite{Navarro2014}. For example, using 2~bpc, our 1000 genomes could be handled
 with just 3 servers with 256~GB of memory. We note, however, that these \CST{}s index
-the whole collection and not individual sequences, which makes a difference on
+the whole collection and not individual sequences, which makes a difference in
 the types of queries that can be answered. This also makes a distributed
 implementation less obviously scalable.
 
@@ -61,11 +61,11 @@ collection is, the smaller the grammar becomes. Rather than compressing the text
 the current \CST{}s for repetitive collections \cite{Abeliuk2013,Navarro2014}
 apply grammar-based compression on the data structures that simulate the suffix tree.
 Grammar-based compression yields relatively easy direct access to the compressed
-sequence \cite{BLRSRW15}. This makes it attractive compared to Lempel-Ziv
-compression \cite{ZL77}, despite the latter generally achieving less space.
+sequence \cite{BLRSRW15}, which makes it attractive compared to Lempel-Ziv
+compression \cite{ZL77}, despite the latter generally using less space.
 
 Lempel-Ziv compression cuts the collection into \emph{phrases}, each of which
-has already appeared before. To extract the content of a phrase, one may have
+has already appeared earlier in the collection. To extract the content of a phrase, one may have
 to recursively extract the content at that earlier position, in a possibly long
 chain of indirections.
 So far, the indexes built on Lempel-Ziv compression \cite{KN13} or on
@@ -82,14 +82,14 @@ sequence}. This enables immediate access for the symbols inside any copied
 phrase (as no transitive referencing exists) and, at least if a good reference
 sequence has been found, offers compression competitive with the
 classical Lempel-Ziv. In our case, taking any random genome per species as the
-references is good enough; more sophisticated techniques have been studied
+reference is good enough; more sophisticated techniques have been studied
 \cite{KPZ11}. Structures for direct access \cite{DG11,Ferrada2014}
 and even for pattern matching \cite{DJSS14,Belazzougui2014} have been developed
 on top of \RLZ.
 
 In this paper, we develop a \CST{} by augmenting the \emph{relative FM-index}
 \cite{Belazzougui2014} with structures based on \RLZ.
-On a collection of human genomes, we obtain as little as 3~bpc and operate
+On a collection of human genomes, we achieve as little as 3~bpc and operate
 within microseconds. This performance is comparable to that of a previous \CST{}
 for this scenario \cite{Navarro2014}, but our \CST{}s have a different
 functionality. We have a separate \CST{} for each sequence, instead of a single

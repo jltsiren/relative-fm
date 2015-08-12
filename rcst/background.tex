@@ -53,7 +53,7 @@ for at least one $sp < i \le ep$; and iv) $\mLCP[ep+1] <
 Abouelhoda et al.~\cite{Abouelhoda2004} showed how traversals on the suffix
 tree could be simulated using the suffix array, the \LCP{} array, and a
 representation of the suffix tree topology based on lcp-intervals, paving
-way for more space-efficient suffix tree representations.
+the way for more space-efficient suffix tree representations.
 
 \subsection{Compressed text indexes}
 
@@ -191,7 +191,7 @@ even less space \cite{Fischer2009a}. Because accessing \PLCP{} uses \locate,
 it is much slower than the above two encodings.
 \end{itemize}
 
-Suffix tree topology representations are the main differences between the
+Suffix tree topology representations are the main difference between the
 various \CST{} proposals. While the compressed suffix arrays and the \LCP{} arrays
 are interchangeable, the tree representation determines how various suffix tree
 operations are implemented. There are three main families of compressed suffix
@@ -257,7 +257,7 @@ In a straightforward implementation, the \emph{phrase pointers} $p_{i}$ and
 the mismatch characters $c_{i}$ can be stored in arrays $W_{p}$ and
 $W_{c}$. These arrays take $z \log \abs{R}$ bits and $z \log \sigma$ bits,
 respectively. To support random access to the target sequence, we can encode
-phrase lengths as bitvector $W_{\ell}$ of length $\abs{S}$ \cite{Kuruppu2010}.
+phrase lengths as a bitvector $W_{\ell}$ of length $\abs{S}$ \cite{Kuruppu2010}.
 We set $W_{\ell}[j] = 1$, if $S[j]$ is the first character of a phrase. The
 bitvector requires $z \log \frac{n}{z} + \Oh(z)$ bits, if we use the
 \sdarray{} representation \cite{Okanohara2007}. To extract $S[j]$, we first
