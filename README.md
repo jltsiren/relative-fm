@@ -39,7 +39,7 @@ The following datasets have been used in the articles based on the relative FM-i
 * The genome of the 1000 Genomes Project individual NA12878: http://sv.gersteinlab.org/NA12878_diploid/
 * Read set `ERR019904_1` of the 1000 Genomes Project individual HG00122: ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data/HG00122/sequence_read/
 
-## Todo
+## Future development
 
 * RLZ pointer encoding:
   * Absolute pointers require a lot of space.
@@ -54,10 +54,6 @@ The following datasets have been used in the articles based on the relative FM-i
   * Specialized `getComplement()` for `RLSequence`.
   * Could it be more space-efficient to store the leaf values in the RLCP minimum tree relative to their parents?
   * RLZ parsing that streams the text from disk.
-* Alternate solutions:
-  * RLCP based on LCP instead of DLCP can be smaller.
-  * `hyb_vector` could work well in LCS bitvectors, once it supports select queries.
-  * Finding bwt-invariant subsequences using SA instead of CSA.
 * Implementation:
   * Use class-specific `size_type` instead of `uint64_t` when possible.
   * Add copy constructors, assignment operators etc. to the classes.
@@ -68,6 +64,15 @@ The following datasets have been used in the articles based on the relative FM-i
 * RLZ bitvector:
   * Not all structures are required for all queries. Try moving them to rank/select support structures.
   * Implement full decompression.
+* Alternative solutions:
+  * RLCP based on LCP instead of DLCP can be smaller.
+  * `hyb_vector` could work well in LCS bitvectors, once it supports select queries.
+  * Gap encoded / run-length encoded bitvectors with Huffman coded gap lengths could be useful somewhere (see Nicola Prezza: A Compressed-Gap Data-Aware Measure for Indexable Dictionaries).
+  * Finding bwt-invariant subsequences using SA instead of CSA.
+  * A basic RFM index for *S* can be build directly by backward searching for *S* in the reference index.
+  * RFM index relative to GCSA.
+  * Relative CST-Sada: RLZ bitvectors for suffix tree topology and PLCP.
+  * A relative version of the rabge min-max tree used in the CST-npr for repetitive collections (see Andrés Abeliuk, Rodrigo Cánovas, and Gonzalo Navarro: Practical Compressed Suffix Trees).
 
 ## References
 
