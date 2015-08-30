@@ -1,0 +1,423 @@
+
+\section{Experiments}
+
+We have implemented the relative compressed suffix tree in C++, extending the
+old relative FM-index implementation.\footnote{The implementation is available
+at \url{https://github.com/jltsiren/relative-fm}.} The implementation is based
+on the \emph{Succinct Data Structure Library (SDSL) 2.0}~\cite{Gog2014b}. Some
+parts of the implementation have been parallelized using \emph{OpenMP} and the
+\emph{libstdc++ parallel mode}.
+
+We used the SDSL implementation of the \emph{succinct suffix array} (\SSA{})
+\cite{Ferragina2007a,Maekinen2005} as our reference \CSA{} and our baseline
+index. \SSA{} encodes the Burrows-Wheeler transform as a \emph{Huffman-shaped
+wavelet tree}, combining very fast queries with size close to the
+\emph{order\nobreakdash-$0$ empirical entropy}. These properties make it the
+index of choice for DNA sequences \cite{Ferragina2009a}. Due to the long runs
+of character $N$, \emph{fixed block compression boosting}
+\cite{Kaerkkaeinen2011} could reduce index size without significantly
+increasing query times. Unfortunately there is no implementation capable of
+handling multi-gigabyte datasets available.
+
+We sampled \SA{} in suffix order and \ISA{} in text order. In \SSA, the sample
+intervals were $17$ for \SA{} and $64$ for \ISA. In \RFM, we used sample
+interval $257$ for \SA{} and $512$ for \ISA{} to handle the regions that do
+not exist in the reference. The sample intervals for suffix order sampling
+were primes due to the long runs of character $N$ in the assembled genomes. If
+the number of long runs of character $N$ in the indexed sequence is even, the
+lexicographic ranks of almost all suffixes in half of the runs are odd, and
+those runs are almost completely unsampled. This can be avoided by making the
+sample interval and the number of runs \emph{relatively prime}.
+
+The experiments were run on a computer cluster running LSF 9.1.1.1 on Ubuntu
+12.04 with Linux kernel 2.6.32. For most experiments, we used cluster nodes
+with two 16-core AMD Opteron 6378 processors and 256 gigabytes of memory. Some
+index construction jobs may have run on nodes with two 12-core AMD Opteron
+6174 processors and 80 or 128 gigabytes of memory. All query experiments were
+run single-threaded with no other jobs in the same node. Index construction
+used 8 parallel threads, but there may have been other jobs running on the
+same nodes at the same time.
+
+As our primary target sequence, we used the \emph{maternal haplotypes} of the
+\emph{1000 Genomes Project individual NA12878}~\cite{Rozowsky2011}. As the
+target sequence, we used the 1000 Genomes Project version of the \emph{GRCh37
+assembly} of the \emph{human reference
+genome}.\footnote{\url{ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/}}
+Because NA12878 is female, we also created a reference sequence without the
+chromosome~Y.
+
+In the following, a basic FM-index is an index supporting only \find{}
+queries, while a full index also supports \locate{} and \extract{} queries.
+
+\subsection{Indexes and their sizes}
+
+Table~\ref{table:construction} lists the resource requirements for building
+the relative indexes, assuming that we have already built the corresponding
+non-relative structures for the sequences. As a comparison, building an
+FM-index for a human genome typically takes 16--17 minutes and 25--26
+gigabytes of memory. While the construction of the basic \RFM{} index is
+highly optimized, the other construction algorithms are just the first
+implementations.
+
+The construction times for the relative \CST{} do not include the time
+required for indexing the \DLCP{} array of the reference sequence. While this
+takes another two hours, it only needs to be done once for every reference
+sequence. Building the optional \rselect{} structures takes 9--10 minutes and
+around $\abs{R} + \abs{S}$ bits of working space in addition to \RFM{} and
+\rselect.
+
+\begin{table}
+\caption{Sequence lengths and resources used by index construction for NA12878
+relative to the human reference genome with and without chromosome~Y. Approx
+and Inv denote the approximate \LCS{} and the bwt-invariant subsequence.
+Sequence lengths are in millions of base pairs, while construction resources
+are in minutes of wall clock time and gigabytes of
+memory.}\label{table:construction}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cccc|cc|cc|cc}
+\hline
+ &
+\multicolumn{4}{c|}{\textbf{Sequence length}} &
+\multicolumn{2}{c|}{\textbf{\RFM{} (basic)}} &
+\multicolumn{2}{c|}{\textbf{\RFM{} (full)}} &
+\multicolumn{2}{c}{\textbf{\RCST}} \\
+\textbf{ChrY} &
+\textbf{Reference} & \textbf{Target} & \textbf{Approx} & \textbf{Inv} &
+\textbf{Time} & \textbf{Space} &
+\textbf{Time} & \textbf{Space} &
+\textbf{Time} & \textbf{Space} \\
+\hline
+yes & 3096M & 3036M & 2992M & 2980M & 2.35 min & 4.96 GB & 238 min & 83.7 GB &
+379 min & 99.0 GB \\
+no  & 3036M & 3036M & 2991M & 2980M & 2.28 min & 4.86 GB & 214 min & 82.3 GB &
+398 min & 97.2 GB \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+The sizes of the final indexes are listed in Table~\ref{table:indexes}. While
+the basic \RFM{} index is 5\nobreakdash--6 times smaller than the basic \SSA, the
+full \RFM{} is 4.4\nobreakdash--5 times smaller than the full \SSA. The
+\RLCP{} array is about twice as large as the full \RFM{} index, increasing the
+total size of the \RCST{} to 3.2\nobreakdash--4.3 bits per character. The
+optional relative select structure is almost as large as the basic \RFM{}
+index. As the relative structures are significantly larger relative to a male
+reference than relative to a female reference, keeping a separate female
+reference seems worthwhile, if there are more than a few female genomes among
+the target sequences.
+
+\begin{table}
+\caption{Various indexes for NA12878 relative to the human reference genome
+with and without chromosome~Y. Index sizes are in megabytes and in bits per
+character.}\label{table:indexes}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc|cccc}
+\hline
+ &
+\multicolumn{2}{c|}{\textbf{\SSA}} &
+\multicolumn{2}{c|}{\textbf{\RFM}} &
+\multicolumn{4}{c}{\textbf{\RCST}} \\
+\textbf{ChrY} &
+\textbf{Basic} & \textbf{Full} &
+\textbf{Basic} & \textbf{Full} &
+\textbf{\RFM} & \textbf{\RLCP} & \textbf{Total} & \textbf{\rselect} \\
+\hline
+\multirow{2}{*}{yes} &  1090 MB &  1953 MB &   218 MB &   447 MB &   447 MB &
+1100 MB &  1547 MB &   190 MB \\
+                     & 3.01 bpc & 5.42 bpc & 0.60 bpc & 1.23 bpc & 1.23 bpc &
+3.04 bpc & 4.27 bpc & 0.52 bpc \\
+\hline
+\multirow{2}{*}{no}  &  1090 MB &  1953 MB &   181 MB &   395 MB &   395 MB &
+750 MB &  1145 MB &   163 MB \\
+                     & 3.01 bpc & 5.42 bpc & 0.50 bpc & 1.09 bpc & 1.09 bpc &
+2.07 bpc & 3.16 bpc & 0.45 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+Tables~\ref{table:rfm components} and~\ref{table:rlcp components} list
+the size of the individual components of the relative FM-index and the
+\RLCP{} array. Including the chromosome~Y in the reference increases the sizes
+of almost all relative components, with the exception of $\mCS(\mBWT_{S})$ and
+$\mLCS(R,S)$. In the first case, the common subsequence still covers
+approximately the same positions in $\mBWT_{S}$ as before. In the second case,
+chromosome~Y appears in bitvector $B_{R}$ as a long run of \zerobit{}s, which
+compresses well. The components of a full \RFM{} index are slightly larger
+than the corresponding components of a basic \RFM{} index, because the
+bwt-invariant subsequence is slightly shorter than the approximate longest
+common subsequence (see Table~\ref{table:construction}).
+
+\begin{table}
+\caption{Breakdown of component sizes in the \RFM{} index for NA12878 relative
+to the human reference genome with and without chromosome~Y in bits per
+character.}\label{table:rfm components}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc}
+\hline
+ & \multicolumn{2}{c|}{\textbf{Basic \RFM}} & \multicolumn{2}{c}{\textbf{Full
+\RFM}} \\
+\textbf{ChrY} & \textbf{yes} & \textbf{no} & \textbf{yes} & \textbf{no} \\
+\hline
+\textbf{\RFM}              & \textbf{0.60 bpc} & \textbf{0.50 bpc} &
+\textbf{1.23 bpc} & \textbf{1.09 bpc} \\
+$\mCS(\mBWT_{R})$           &          0.11 bpc &          0.04 bpc &
+0.12 bpc &          0.05 bpc \\
+$\mCS(\mBWT_{S})$           &          0.04 bpc &          0.04 bpc &
+0.05 bpc &          0.05 bpc \\
+$\mLCS(\mBWT_{R},\mBWT_{S})$ &          0.45 bpc &          0.42 bpc &
+0.52 bpc &          0.45 bpc \\
+$\mLCS(R,S)$               &                -- &                -- &
+0.35 bpc &          0.35 bpc \\
+\SA{} samples              &                -- &                -- &
+0.12 bpc &          0.12 bpc \\
+\ISA{} samples             &                -- &                -- &
+0.06 bpc &          0.06 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Breakdown of component sizes in the \RLCP{} array for NA12878
+relative to the human reference genome with and without chromosome~Y in bits
+per character. The components are phrase pointers, phrase boundaries in the
+target \LCP{} array, mismatch characters, and the minima
+tree.}\label{table:rlcp components}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cccc|c}
+\hline
+\textbf{ChrY} & $\mathbf{W_{p}}$  & $\mathbf{W_{\ell}}$ & $\mathbf{W_{c}}$ &
+$\mathbf{M_{\mLCP}}$ & \textbf{Total} \\
+\hline
+yes & 1.44 bpc & 0.34 bpc & 0.54 bpc & 0.71 bpc & 3.04 bpc \\
+no  & 1.11 bpc & 0.27 bpc & 0.30 bpc & 0.39 bpc & 2.07 bpc \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Query times}
+
+Average query times for the basic operations can be seen in Tables~\ref{table:rfm
+queries} and~\ref{table:rlcp queries}. For \LF{} and \Psiop{} queries
+with the full \SSA{}, the full \RFM, and the full \RFM{} augmented with
+\rselect, the results are similar to the earlier ones with basic indexes
+\cite{Boucher2015}. Random access to the \RLCP{} array is about 20 times
+slower than to the \LCP{} array. The \LCP{} array provides sequential access
+iterators, which are much faster than using random access sequentially. The
+\RLCP{} array does not have such iterators, because subsequent phrases are
+often copied from different parts of the reference. However, queries based on
+the minima tree (\nsv, \psv, and \rmq) use fast sequential access to the
+\RLCP{} array inside a phrase. \SSA{} and the \LCP{} array are consistently
+slower when the reference does not contain chromosome~Y, even though the
+structures are identical in either case. This is probably a memory management
+artifact that depends on other memory allocations.
+
+\begin{table}
+\caption{Query times with \SSA{} and the \RFM{} index for NA12878 relative to
+the human reference genome with and without chromosome~Y in microseconds. The
+query times are averages over 10~million random queries.}\label{table:rfm
+queries}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|cc|c}
+\hline
+ & \multicolumn{2}{c|}{\textbf{\SSA}} & \multicolumn{2}{c|}{\textbf{\RFM}} &
+\textbf{\rselect} \\
+\textbf{ChrY} & \textbf{\LF} & \textbf{\Psiop} & \textbf{\LF} &
+\textbf{\Psiop} & \textbf{\Psiop} \\
+\hline
+yes & 0.560 \mus & 1.139 \mus & 3.980 \mus & 47.249 \mus & 6.277 \mus \\
+no  & 0.627 \mus & 1.563 \mus & 3.861 \mus & 55.068 \mus & 6.486 \mus \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}
+\caption{Query times with the reference \LCP{} array and the \RLCP{} array for
+NA12878 relative to the human reference genome with and without chromosome~Y
+in microseconds. For the random queries, the query times are averages over
+100~million queries. The range lengths for the \rmq{} queries were $16^{k}$ (for
+$k \ge 1$) with probability $0.5^{k}$. For sequential access, the times are
+averages per position for scanning the entire \LCP{} array.}\label{table:rlcp
+queries}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|ccccc}
+\hline
+ & \multicolumn{2}{c|}{\textbf{\LCP{} array}} &
+\multicolumn{5}{c}{\textbf{\RLCP{} array}} \\
+\textbf{ChrY} & \textbf{Random} & \textbf{Sequential} & \textbf{Random} &
+\textbf{Sequential} & \textbf{\nsv} & \textbf{\psv} & \textbf{\rmq} \\
+\hline
+yes & 0.052 \mus & 0.001 \mus & 1.096 \mus & 0.119 \mus & 1.910 \mus & 1.935
+\mus & 2.769 \mus \\
+no  & 0.070 \mus & 0.001 \mus & 1.263 \mus & 0.124 \mus & 1.801 \mus & 1.923
+\mus & 2.605 \mus \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+We also tested the \locate{} performance of the full \RFM{} index, and
+compared it to \SSA. We built \SSA{} with \SA{} sample intervals $7$, $17$,
+$31$, $61$, and $127$ for the reference and the target sequence, using only
+the reference without chromosome~Y. \ISA{} sample interval was set to the
+maximum of $64$ and the \SA{} sample interval. We then built \RFM{} for the
+target sequence, and extracted 2~million random patterns of length $32$,
+consisting of characters $ACGT$, from the target sequence. The time/space
+trade-offs for \locate{} queries with these patterns can be seen in
+Figure~\ref{fig:locate}. While the \RFM{} index was 8.6x slower than \SSA{}
+with sample interval $7$, the absolute performance difference remained almost
+constant with longer sample intervals. With sample interval $127$, \RFM{} was
+only 1.2x slower than \SSA.
+
+\begin{figure}
+\begin{center}
+\includegraphics{locate.pdf}
+\end{center}
+\caption{The \locate{} performance of \SSA{} and \RFM{} on NA12878 relative to
+the human reference genome without chromosome~Y. Index size in bits per
+character for various \SA{} sample intervals, and the time required to perform
+2~million queries of length $32$ with a total of 255~million
+occurrences.}\label{fig:locate}
+\end{figure}
+
+\subsection{Synthetic collections}
+
+In order to determine how the differences between the reference sequence and
+the target sequence affect the size of relative structures, we built \RCST{}
+for various \emph{synthetic datasets}. We took the human reference genome as
+the reference sequence, and generated synthetic target sequences with
+\emph{mutation rates} $p \in \set{0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03,
+0.1}$. A total of 90\% of the mutations were single-character substitutions,
+while 5\% were insertions and another 5\% deletions. The length of an
+insertion or deletion was $k \ge 1$ with probability $0.2 \cdot 0.8^{k-1}$.
+
+The results can be seen in Figure~\ref{fig:synthetic}~(left). The \RLCP{}
+array quickly grew with increasing mutation rates, peaking out at $p = 0.01$.
+At that point, the average length of an \RLZ{} phrase was comparable to what
+could be found in the \DLCP{} arrays of unrelated DNA sequences. With even
+higher mutation rates, the phrases became slightly longer due to the smaller
+average \LCP{} values. The \RFM{} index, on the other hand, remained small
+until $p = 0.003$. Afterwards, the index started to grow quickly, eventually
+overtaking the \RLCP{} array.
+
+\begin{figure}
+\begin{center}
+\includegraphics{synth.pdf}\hspace{-0.4in}\includegraphics{comp.pdf}
+\end{center}
+\caption{Index size in bits per character vs.~mutation rate for synthetic
+datasets. Left: Synthetic genomes relative to the human reference genome.
+Right: Collections of 25 synthetic sequences relative to a 20~MB
+reference.}\label{fig:synthetic}
+\end{figure}
+
+We also compared the size of the relative \CST{} to a compressed suffix tree
+for repetitive collections. While the structures are intended for different
+purposes, the comparison shows how much additional space is needed to provide
+access to the compressed suffix trees of individual datasets. We chose to skip
+the \CSTnpr{} for repetitive collections \cite{Abeliuk2013}, as its
+implementation was not stable enough. Because the implementation of \CSTsada{}
+for repetitive collections (\GCT) \cite{Navarro2014} is based on a library
+that uses signed 32\nobreakdash-bit integers internally, we had to limit the
+size of the collections to about 500 megabytes for this experiment. We
+therefore took a 20\nobreakdash-megabyte prefix of the human reference genome,
+and generated 25 synthetic sequences for each mutation rate (see above).
+
+Figure~\ref{fig:synthetic}~(right) shows the sizes of the compressed suffix
+trees. The numbers for \RCST{} include individual indexes for each of the 25
+target sequences as well as the reference data, while the numbers for \GCT{}
+are for a single index containing the 25 sequences. With low mutation rates,
+\RCST{} was not much larger than \GCT{}. The size of \RCST{} starts growing
+quickly at around $p = 0.001$, while the size of \GCT{} stabilizes at
+3\nobreakdash--4~bpc.
+
+\subsection{Suffix tree operations}
+
+In the final set of experiments, we compared the performance of \RCST{} to the
+SDSL implementations of various compressed suffix trees. We used the maternal
+haplotypes of NA12878 as the target sequence and the human reference genome
+without chromosome~Y as the reference sequence. We then built \RCST, \CSTsada,
+\CSTnpr, and \FCST{} for the target sequence. \CSTsada{} used \emph{Sadakane's
+compressed suffix array} (\CSAsada) \cite{Sadakane2003} as its \CSA, while the
+other SDSL implementations used \SSA. All SDSL compressed suffix trees used
+\PLCP{} as their \LCP{} encoding, but we also built \CSTnpr{} with \LCPbyte.
+
+We used two algorithms for the performance comparison. The first algorithm was
+\emph{depth-first traversal} of the suffix tree. We used SDSL iterators
+(\texttt{cst\_dfs\_const\_forward\_iterator}), which in turn used operations
+$\mRoot$, $\mLeaf$, $\mParent$, $\mFChild$, and $\mNSibling$. The traversal
+was generally quite fast, because the iterators cached the most recent parent
+nodes.
+
+The second algorithm was computing \emph{matching statistics}
+\cite{Chang1994}. Given sequence $S'$ of length $n'$, the goal was to find the
+longest prefix $S'[i,i+\ell_{i}-1]$ of each suffix $S'[i,n']$ occurring in
+sequence $S$. For each such prefix, we store its length $\ell_{i}$ and the
+suffix array range $\mSA_{S}[sp_{i},ep_{i}]$ of its occurrences in sequence
+$S$. We computed the matching statistics with forward searching, using
+operations $\mRoot$, $\mSDepth$, $\mSLink$, $\mChild$, and $\mLetter$.
+Computing the matching statistics would probably have been faster with
+backward searching \cite{Ohlebusch2010a}, but the purpose of this experiment
+was to test a different part of the interface.
+
+We used the \emph{paternal haplotypes} of NA12878 as sequence $S'$. Because
+forward searching is much slower than tree traversal, we only computed
+matching statistics for chromosome~1. We also truncated the runs of character
+$N$ in sequence $S'$ into a single character. Because the time complexities of
+certain operations in the succinct tree representation used in SDSL depend on
+the depth of the current node, including the runs (which make the suffix tree
+extremely deep locally) would have made the SDSL suffix trees much slower than
+\RCST.
+
+The results can be seen in Table~\ref{table:cst}. \RCST{} was clearly smaller
+than \FCST, and several times smaller than the other compressed suffix trees.
+In depth-first traversal, \RCST{} was 2.2~times slower than \CSTnpr{} and
+about 8~times slower than \CSTsada. For computing matching statistics, \RCST{}
+was 2.9~times slower than \CSTsada{} and 4.7\nobreakdash--7.6~times slower
+than \CSTnpr{}. With the optional \rselect{} structure, the differences were
+reduced to 1.2~times and 2.0\nobreakdash--3.2~times, respectively. We did not
+run the full experiments with \FCST, because it was much slower than the rest.
+According to earlier results, \FCST{} is about two orders of magnitude slower
+than \CSTsada{} and \CSTnpr{} \cite{Abeliuk2013}.
+
+\begin{table}
+\caption{Compressed suffix trees for the maternal haplotypes of NA12878
+relative to the human reference genome without chromosome~Y. Component
+choices, index size in bits per character, and time in minutes for depth-first
+traversal and computing matching statistics for the paternal haplotypes of
+chromosome~1 of NA12878.}\label{table:cst}
+\setlength{\extrarowheight}{2pt}
+\setlength{\tabcolsep}{3pt}
+\begin{center}
+\begin{tabular}{c|cc|c|c|c}
+\hline
+\textbf{\CST} & \textbf{\CSA} & \textbf{\LCP} & \textbf{Size} &
+\textbf{Traversal} & \textbf{Matching statistics} \\
+\hline
+\CSTsada           & \CSAsada & \PLCP    & 12.33 bpc &  5 min & 315 min \\
+\CSTnpr            & \SSA     & \PLCP    & 10.79 bpc & 18 min & 195 min \\
+\CSTnpr            & \SSA     & \LCPbyte & 18.08 bpc & 18 min & 120 min \\
+\FCST              & \SSA     & --       &  4.98 bpc &     -- &      -- \\
+\RCST              & \RFM     & \RLCP    &  3.16 bpc & 39 min & 910 min \\
+\RCST{} + \rselect & \RFM     & \RLCP    &  3.61 bpc & 39 min & 389 min \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+
