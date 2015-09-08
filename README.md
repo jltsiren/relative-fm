@@ -81,7 +81,8 @@ Proc. SPIRE 2014, Springer LNCS 8799, pp. 52-65, Ouro Preto, Brazil, October 20-
 [DOI: 10.1007/978-3-319-11918-2_6](http://dx.doi.org/10.1007/978-3-319-11918-2_6)
 
 Christina Boucher, Alexander Bowe, Travis Gagie, Giovanni Manzini, and Jouni Sirén: **Relative Select**.
-Accepted to SPIRE 2015.
+Proc. SPIRE 2015, Springer LNCS 9309, pp. 149-155, London, UK, September 1-3, 2015.
+[DOI: 10.1007/978-3-319-23826-5_15](http://dx.doi.org/10.1007/978-3-319-23826-5_15)
 
 Travis Gagie, Gonzalo Navarro, Simon J. Puglisi, and Jouni Sirén: **Relative Compressed Suffix Trees**.
 [arXiv:1508.02550](http://arxiv.org/abs/1508.02550)
