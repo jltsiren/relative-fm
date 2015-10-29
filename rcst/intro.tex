@@ -46,7 +46,7 @@ and adding a few new characters. When repetitiveness is considered, much higher
 compression rates can be obtained in compressed suffix trees. For example, it is possible to reduce
 the space to 1--2~bpc (albeit with operation times in the milliseconds)
 \cite{Abeliuk2013}, or to 2--3~bpc with operation times in the microseconds
-\cite{Navarro2014}. For example, using 2~bpc, our 1000 genomes could be handled
+\cite{Navarro2015}. For example, using 2~bpc, our 1000 genomes could be handled
 with just 3 servers with 256~GB of memory. We note, however, that these \CST{}s index
 the whole collection and not individual sequences, which makes a difference in
 the types of queries that can be answered. This also makes a distributed
@@ -58,7 +58,7 @@ repetitiveness, where similar texts may be found far away in the text
 collection.} In the first case \cite{KY00,CLLPPSS05} one finds a context-free
 grammar that generates (only) the text collection. The more repetitive the
 collection is, the smaller the grammar becomes. Rather than compressing the text directly,
-the current \CST{}s for repetitive collections \cite{Abeliuk2013,Navarro2014}
+the current \CST{}s for repetitive collections \cite{Abeliuk2013,Navarro2015}
 apply grammar-based compression on the data structures that simulate the suffix tree.
 Grammar-based compression yields relatively easy direct access to the compressed
 sequence \cite{BLRSRW15}, which makes it attractive compared to Lempel-Ziv
@@ -91,7 +91,7 @@ In this paper, we develop a \CST{} by augmenting the \emph{relative FM-index}
 \cite{Belazzougui2014} with structures based on \RLZ.
 On a collection of human genomes, we achieve as little as 3~bpc and operate
 within microseconds. This performance is comparable to that of a previous \CST{}
-for this scenario \cite{Navarro2014}, but our \CST{}s have a different
+for this scenario \cite{Navarro2015}, but our \CST{}s have a different
 functionality. We have a separate \CST{} for each sequence, instead of a single
 \CST{} for their concatenation. Depending on the application, one kind of \CST{} or
 the other is necessary.
