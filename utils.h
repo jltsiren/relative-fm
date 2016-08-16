@@ -76,7 +76,6 @@ extern const std::string LCP_EXTENSION;               // .lcp
 extern const std::string DLCP_EXTENSION;              // .dlcp
 extern const std::string DLCP_INDEX_EXTENSION;        // .dlcp_index
 extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;  // \0ACGNT
-extern const std::string ROPEBWT_ALPHABET;            // \0ACGTN
 
 //------------------------------------------------------------------------------
 
@@ -129,7 +128,7 @@ std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
 
 //------------------------------------------------------------------------------
 
-enum LoadMode { mode_plain, mode_native, mode_ropebwt, mode_ropebwt2 };
+enum LoadMode { mode_plain, mode_native };
 
 template<class IntegerType>
 inline size_type

@@ -56,11 +56,11 @@ public:
   typedef RankStructure seq_type;
 
   // This constructor has been specialized for SimpleFM<RLSequence>.
-  explicit SimpleFM(const std::string& base_name, LoadMode mode = mode_plain)
+  explicit SimpleFM(const std::string& base_name, bool native_format = false)
   {
     this->sa_sample_rate = 0; this->isa_sample_rate = 0;
 
-    if(mode == mode_native)
+    if(native_format)
     {
       std::string filename = base_name + NATIVE_BWT_EXTENSION;
       std::ifstream in(filename.c_str(), std::ios_base::binary);
@@ -70,16 +70,6 @@ public:
         return;
       }
       this->bwt.load(in); in.close();
-    }
-    else if(mode == mode_ropebwt)
-    {
-      std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt" << std::endl;
-      return;
-    }
-    else if(mode == mode_ropebwt2)
-    {
-      std::cerr << "SimpleFM::SimpleFM(): Invalid sequence type for mode_ropebwt2" << std::endl;
-      return;
     }
     else
     {

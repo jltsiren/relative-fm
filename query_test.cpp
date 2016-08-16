@@ -24,9 +24,6 @@
 */
 
 #include "relative_fm.h"
-#include "rlz_fm.h"
-#include "rlz_vector.h"
-#include "sequence.h"
 
 using namespace relative;
 
@@ -39,29 +36,19 @@ template<class ReferenceBWTType, class SequenceType>
 void testIndex(std::string ref_name, std::string seq_name,
   std::string name, std::vector<std::string>& patterns, size_type chars, size_type tags);
 
-const size_type SEQ_UNKNOWN    = 0;
-const size_type SEQ_WT_PLAIN   = 1;
-const size_type SEQ_WT_RRR     = 2;
-const size_type SEQ_WT_RLZ     = 3;
-const size_type SEQ_RLSEQUENCE = 4;
-const size_type SEQ_REPRESENTATIONS = 5; // Largest representation identifier + 1.
+const size_type SEQ_UNKNOWN         = 0;
+const size_type SEQ_WT_PLAIN        = 1;
+const size_type SEQ_WT_RRR          = 2;
+const size_type SEQ_REPRESENTATIONS = 3; // Largest representation identifier + 1.
 
 const size_type TAG_BUILD_INDEXES   = 0x01;
-const size_type TAG_PLAIN_FORMAT    = 0x02;
-const size_type TAG_NATIVE_FORMAT   = 0x04;
-const size_type TAG_ROPEBWT_FORMAT  = 0x08;
-const size_type TAG_ROPEBWT2_FORMAT = 0x10;
+const size_type TAG_NATIVE_FORMAT   = 0x02;
 const size_type TAG_LOCATE          = 0x20;
 const size_type TAG_VERIFY          = 0x40;
-
-const size_type ROPEBWT_TAG_MASK = TAG_ROPEBWT_FORMAT | TAG_ROPEBWT2_FORMAT;
-const size_type MODE_TAG_MASK = TAG_NATIVE_FORMAT | TAG_ROPEBWT_FORMAT | TAG_ROPEBWT2_FORMAT;
 
 size_type seqRepresentation(char_type type);
 std::string indexName(size_type representation);
 std::string indexName(size_type ref_representation, size_type seq_representation);
-
-LoadMode getMode(size_type tags, bool print);
 
 //------------------------------------------------------------------------------
 
@@ -72,33 +59,32 @@ main(int argc, char** argv)
   {
     std::cerr << "Usage: query_test [indexes|tags] ref seq patterns" << std::endl;
     std::cerr << std::endl;
+
     std::cerr << "Index type is identified by a string, where X is the representation for" << std::endl;
     std::cerr << "sequences in the index, and Y is the representation in the reference." << std::endl;
     std::cerr << "Tags toggle an option for all subsequent indexes." << std::endl;
     std::cerr << std::endl;
+
     std::cerr << "Index types:" << std::endl;
     std::cerr << "  sX   SimpleFM" << std::endl;
     std::cerr << "  rYX  RelativeFM" << std::endl;
-    std::cerr << "  lY   RLZFM" << std::endl;
-    // FIXME Different encodings are currently not supported for RLZFM.
     std::cerr << std::endl;
+
     std::cerr << "Tags:" << std::endl;
     std::cerr << "  b    Build relative indexes (default: off)" << std::endl;
     std::cerr << "  p    Load SimpleFMs in plain format (default: on)" << std::endl;
     std::cerr << "  n    Load SimpleFMs in native format (default: off)" << std::endl;
-    std::cerr << "  1    Load SimpleFMs in ropebwt format (default: off)" << std::endl;
-    std::cerr << "  2    Load SimpleFMs in ropebwt2 format (default: off)" << std::endl;
+    std::cerr << "  f    Execute find() queries (default: on)" << std::endl;
     std::cerr << "  L    Execute locate() queries (default: off)" << std::endl;
     std::cerr << "  V    Verify the results of locate() using extract() (default: off)" << std::endl;
     // FIXME Add an option to write the built index?
     std::cerr << std::endl;
+
     std::cerr << "Sequence representations:" << std::endl;
     std::cerr << "  p    Plain bitvectors in a wavelet tree" << std::endl;
     std::cerr << "  r    RRR bitvectors in a wavelet tree" << std::endl;
-    std::cerr << "  l    RLZ bitvectors in a wavelet tree (only for SimpleFM)" << std::endl;
-    std::cerr << "  R    RLSequence" << std::endl;
     std::cerr << std::endl;
-    // FIXME RLZ bitvectors may need native format for both ref and seq.
+
     return 1;
   }
   int ref_arg = argc - 3, seq_arg = argc - 2, pat_arg = argc - 1;
@@ -117,8 +103,7 @@ main(int argc, char** argv)
   std::cout << std::endl;
   std::cout << std::endl;
 
-  size_type tags = TAG_PLAIN_FORMAT;
-  LoadMode mode = mode_plain;
+  size_type tags = 0;
   for(int i = 1; i < ref_arg; i++)
   {
     size_type ref_enc = 0, seq_enc = 0;
@@ -132,44 +117,14 @@ main(int argc, char** argv)
       {
       case SEQ_WT_PLAIN:
         {
-          SimpleFM<> seq(argv[seq_arg], mode);
+          SimpleFM<> seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
       case SEQ_WT_RRR:
         {
-          SimpleFM<sdsl::wt_huff<sdsl::rrr_vector<63> > > seq(argv[seq_arg], mode);
+          SimpleFM<sdsl::wt_huff<sdsl::rrr_vector<63> > > seq(argv[seq_arg], tags & TAG_NATIVE_FORMAT);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
-        }
-        break;
-      case SEQ_WT_RLZ:
-        {
-          SimpleFM<> ref(argv[ref_arg], mode);
-          SimpleFM<sdsl::wt_huff<rlz_vector> > seq(argv[seq_arg], mode);
-          sdsl::bit_vector::rank_1_type b_r(&(ref.bwt.bv));
-          sdsl::bit_vector::select_1_type b_s1(&(ref.bwt.bv));
-          sdsl::bit_vector::select_0_type b_s0(&(ref.bwt.bv));
-          {
-            rlz_vector& temp = const_cast<rlz_vector&>(seq.bwt.bv);
-            temp.compress(ref.bwt.bv, b_r, b_s1, b_s0);
-          }
-          testIndex(indexName(seq_enc), seq, patterns, chars, tags);
-        }
-        break;
-      case SEQ_RLSEQUENCE:
-        {
-          SimpleFM<RLSequence> seq(argv[seq_arg], mode);
-          testIndex(indexName(seq_enc), seq, patterns, chars, tags);
-          if(mode == mode_ropebwt2)
-          {
-            size_type hash_value = seq.bwt.hash(seq.alpha);
-            std::cerr << "BWT imported from ropebwt2 (hash value " << hash_value << ")" << std::endl;
-            for(size_type c = 0; c < seq.alpha.sigma; c++)
-            {
-              std::cerr << "  Character " << c << " (" << (char)(seq.alpha.comp2char[c])
-                        << "), count " << (seq.alpha.C[c + 1] - seq.alpha.C[c]) << std::endl;
-            }
-          }
         }
         break;
       default:
@@ -189,9 +144,6 @@ main(int argc, char** argv)
       case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
         testIndex<bwt_type, sdsl::wt_huff<sdsl::rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
-      case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
-        testIndex<bwt_type, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
 
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_WT_PLAIN:
         testIndex<sdsl::wt_huff<sdsl::rrr_vector<63> >, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
@@ -199,47 +151,12 @@ main(int argc, char** argv)
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
         testIndex<sdsl::wt_huff<sdsl::rrr_vector<63> >, sdsl::wt_huff<sdsl::rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
-      case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
-        testIndex<sdsl::wt_huff<sdsl::rrr_vector<63> >, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-
-      case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_PLAIN:
-        testIndex<RLSequence, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-      case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
-        testIndex<RLSequence, sdsl::wt_huff<sdsl::rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
-      case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
-        testIndex<RLSequence, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
-        break;
 
       default:
         std::cerr << "query_test: Invalid index type: " << argv[i] << std::endl;
         break;
       }
       break;  // RelativeFM
-
-    // RLZFM
-    case 'l':
-      {
-        SimpleFM<> ref(argv[ref_arg], mode);
-        if(tags & TAG_BUILD_INDEXES)
-        {
-          SimpleFM<> seq(argv[seq_arg], mode);
-          if(tags & ROPEBWT_TAG_MASK)
-          {
-            ref.alpha.assign(ROPEBWT_ALPHABET); seq.alpha.assign(ROPEBWT_ALPHABET);
-          }
-          RLZFM rlz(ref, seq);
-          testIndex("RLZFM", rlz, patterns, chars, tags);
-        }
-        else
-        {
-          RLZFM seq(ref, argv[seq_arg]);
-          testIndex("RLZFM", seq, patterns, chars, tags);
-        }
-      }
-      break;  // RLZFM
 
     // Tags and the default case.
     case 'b':
@@ -249,25 +166,23 @@ main(int argc, char** argv)
       std::cout << std::endl;
       break;
     case 'p':
-      tags &= ~MODE_TAG_MASK; tags |= TAG_PLAIN_FORMAT;
-      mode = getMode(tags, true);
+      tags &= ~TAG_NATIVE_FORMAT;
+      std::cout << "Loading indexes in plain format." << std::endl;
+      std::cout << std::endl;
       break;
     case 'n':
-      tags &= ~MODE_TAG_MASK; tags |= TAG_NATIVE_FORMAT;
-      mode = getMode(tags, true);
+      tags |= TAG_NATIVE_FORMAT;
+      std::cout << "Loading indexes in native format." << std::endl;
+      std::cout << std::endl;
       break;
-    case '1':
-      tags &= ~MODE_TAG_MASK; tags |= TAG_ROPEBWT_FORMAT;
-      mode = getMode(tags, true);
-      break;
-    case '2':
-      tags &= ~MODE_TAG_MASK; tags |= TAG_ROPEBWT2_FORMAT;
-      mode = getMode(tags, true);
+    case 'f':
+      tags &= ~TAG_LOCATE;
+      std::cout << "Executing find() queries." << std::endl;
+      std::cout << std::endl;
       break;
     case 'L':
-      tags ^= TAG_LOCATE;
-      if(tags & TAG_LOCATE) { std::cout << "Executing locate() queries." << std::endl; }
-      else { std::cout << "Executing find() queries." << std::endl; }
+      tags |= TAG_LOCATE;
+      std::cout << "Executing locate() queries." << std::endl;
       std::cout << std::endl;
       break;
     case 'V':
@@ -296,11 +211,6 @@ template<class Index>
 void
 testIndex(std::string name, Index& index, std::vector<std::string>& patterns, size_type chars, size_type tags)
 {
-  if(tags & ROPEBWT_TAG_MASK)
-  {
-    index.alpha.assign(ROPEBWT_ALPHABET);
-  }
-
   bool locate = tags & TAG_LOCATE, verify = tags & TAG_VERIFY;
   if(!locate) { verify = false; }
   if(locate && !(index.supportsLocate(true))) { locate = false; }
@@ -377,15 +287,12 @@ void
 testIndex(std::string ref_name, std::string seq_name,
   std::string name, std::vector<std::string>& patterns, size_type chars, size_type tags)
 {
-  LoadMode mode = getMode(tags, false);
-  SimpleFM<ReferenceBWTType> ref(ref_name, mode);
-  if(tags & ROPEBWT_TAG_MASK) { ref.alpha.assign(ROPEBWT_ALPHABET); }
+  SimpleFM<ReferenceBWTType> ref(ref_name, tags & TAG_NATIVE_FORMAT);
 
   if(tags & TAG_BUILD_INDEXES)
   {
-    align_parameters parameters; parameters.sorted_alphabet = !(tags & ROPEBWT_TAG_MASK);
-    SimpleFM<ReferenceBWTType> seq(seq_name, mode);
-    if(tags & ROPEBWT_TAG_MASK) { seq.alpha.assign(ROPEBWT_ALPHABET); }
+    align_parameters parameters;
+    SimpleFM<ReferenceBWTType> seq(seq_name, tags & TAG_NATIVE_FORMAT);
     RelativeFM<ReferenceBWTType, SequenceType> rfm(ref, seq, parameters);
     testIndex(name, rfm, patterns, chars, tags);
   }
@@ -403,8 +310,6 @@ seqRepresentation(char_type type)
   {
     case 'p': return SEQ_WT_PLAIN;
     case 'r': return SEQ_WT_RRR;
-    case 'l': return SEQ_WT_RLZ;
-    case 'R': return SEQ_RLSEQUENCE;
   }
   return SEQ_UNKNOWN;
 }
@@ -416,8 +321,6 @@ encodingName(size_type representation)
   {
     case SEQ_WT_PLAIN:   return "plain";
     case SEQ_WT_RRR:     return "rrr";
-    case SEQ_WT_RLZ:     return "rlz";
-    case SEQ_RLSEQUENCE: return "rle";
   }
   return "unknown";
 }
@@ -429,8 +332,6 @@ indexName(size_type representation)
   {
     case SEQ_WT_PLAIN:   return "SimpleFM<plain>";
     case SEQ_WT_RRR:     return "SimpleFM<rrr>";
-    case SEQ_WT_RLZ:     return "SimpleFM<rlz>";
-    case SEQ_RLSEQUENCE: return "SimpleFM<rle>";
   }
   return "Unknown";
 }
@@ -439,32 +340,6 @@ std::string
 indexName(size_type ref_representation, size_type seq_representation)
 {
   return "RFM<" + encodingName(ref_representation) + "," + encodingName(seq_representation) + ">";
-}
-
-std::string
-modeName(LoadMode mode)
-{
-  if(mode == mode_plain) { return "plain"; }
-  else if(mode == mode_native) { return "native"; }
-  else if(mode == mode_ropebwt) { return "ropebwt"; }
-  else if(mode == mode_ropebwt2) { return "ropebwt2"; }
-  else { return "unknown"; }
-}
-
-LoadMode
-getMode(size_type tags, bool print)
-{
-  LoadMode mode = mode_plain;
-  if(tags & TAG_NATIVE_FORMAT) { mode = mode_native; }
-  else if(tags & TAG_ROPEBWT_FORMAT) { mode = mode_ropebwt; }
-  else if(tags & TAG_ROPEBWT2_FORMAT) { mode = mode_ropebwt2; }
-
-  if(print)
-  {
-    std::cout << "Loading SimpleFMs in " << modeName(mode) << " format." << std::endl;
-    std::cout << std::endl;
-  }
-  return mode;
 }
 
 //------------------------------------------------------------------------------

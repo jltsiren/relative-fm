@@ -23,13 +23,12 @@ OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(PARA
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
-LIBOBJS=relative_fm.o rlz_vector.o rlz_fm.o rlz.o utils.o sequence.o support.o relative_lcp.o
+LIBOBJS=relative_fm.o rlz.o utils.o support.o relative_lcp.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
 LIBS=-L$(LIB_DIR) -lsdsl -ldivsufsort -ldivsufsort64
-PROGRAMS=align_bwts build_bwt query_test test_rlz build_rlzfm index_dlcp verify mutate cst_traverse cst_compare
-EXTRA=lcs
+PROGRAMS=align_bwts build_bwt query_test index_dlcp verify mutate cst_traverse cst_compare
 
 all: $(PROGRAMS)
 
@@ -43,12 +42,6 @@ build_bwt:build_bwt.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
 query_test:query_test.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
-
-test_rlz:test_rlz.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
-
-build_rlzfm:build_rlzfm.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
 index_dlcp:index_dlcp.o $(LIBOBJS)
@@ -66,15 +59,5 @@ cst_traverse:cst_traverse.o $(LIBOBJS)
 cst_compare:cst_compare.o $(LIBOBJS)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
 
-lcs:lcs.cpp
-	$(MY_CXX) -O3 -o $@ $<
-
-package:
-	mkdir relative-fm
-	cp $(SOURCES) $(HEADERS) Makefile targz README LICENSE relative-fm
-	./targz relative-fm
-	rm relative-fm/*
-	rmdir relative-fm
-
 clean:
-	rm -f $(PROGRAMS) $(OBJS) $(EXTRA)
+	rm -f $(PROGRAMS) $(OBJS)

@@ -28,14 +28,12 @@
 
 #include "relative_fm.h"
 #include "relative_lcp.h"
-#include "sequence.h"
 
 using namespace relative;
 
 //------------------------------------------------------------------------------
 
-template<class BWTType>
-void mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mode, bool lcp);
+void mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp);
 
 //------------------------------------------------------------------------------
 
@@ -54,7 +52,6 @@ main(int argc, char** argv)
     std::cerr << "  -l N  Partition by patterns of length up to N (default "
               << align_parameters::MAX_LENGTH << ")" << std::endl;
     std::cerr << "  -p    Preallocate buffers for LCS computation" << std::endl;
-    std::cerr << "  -r    BWTs were built with ropebwt2" << std::endl;
 
     std::cerr << "  -i    Find a BWT-invariant subsequence that supports SA/ISA samples" << std::endl;
     std::cerr << "  -L    Build also the relative LCP array" << std::endl;
@@ -62,11 +59,10 @@ main(int argc, char** argv)
     return 1;
   }
 
-  LoadMode mode = mode_plain;
   align_parameters parameters;
   bool lcp = false;
   int c = 0;
-  while((c = getopt(argc, argv, "b:d:l:priL")) != -1)
+  while((c = getopt(argc, argv, "b:d:l:piL")) != -1)
   {
     switch(c)
     {
@@ -78,8 +74,6 @@ main(int argc, char** argv)
       parameters.max_length = atol(optarg); break;
     case 'p':
       parameters.preallocate = true; break;
-    case 'r':
-      mode = mode_ropebwt2; parameters.sorted_alphabet = false; break;
     case 'i':
       parameters.invariant = true;
       if(parameters.sa_sample_rate == align_parameters::SA_SAMPLE_RATE)
@@ -111,7 +105,6 @@ main(int argc, char** argv)
   std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
   std::cout << std::endl;
   std::cout << "Algorithm: " << (parameters.invariant ? "invariant" : "partitioning") << std::endl;
-  std::cout << "Input format: " << (mode == mode_ropebwt2 ? "ropebwt2" : "plain") << std::endl;
   if(parameters.sa_sample_rate != 0)
   {
     std::cout << "SA sample rate: " << parameters.sa_sample_rate << std::endl;
@@ -131,8 +124,7 @@ main(int argc, char** argv)
   std::cout << "Reference: " << argv[optind] << std::endl;
   std::cout << std::endl;
 
-  if(mode == mode_ropebwt2) { mainLoop<RLSequence>(argc - optind, argv + optind, parameters, mode, lcp); }
-  else { mainLoop<bwt_type>(argc - optind, argv + optind, parameters, mode, lcp); }
+  mainLoop(argc - optind, argv + optind, parameters, lcp);
 
   double memory = inMegabytes(memoryUsage());
   std::cout << "Memory usage: " << memory << " MB" << std::endl;
@@ -143,13 +135,11 @@ main(int argc, char** argv)
 
 //------------------------------------------------------------------------------
 
-template<class BWTType>
 void
-mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mode, bool lcp)
+mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp)
 {
   std::string ref_name = argv[0];
-  SimpleFM<BWTType> ref(ref_name, mode);
-  if(mode == mode_ropebwt2) { ref.alpha.assign(ROPEBWT_ALPHABET); }
+  SimpleFM<bwt_type> ref(ref_name);
   ref.reportSize(true);
   RelativeLCP::lcp_type ref_lcp;
   RelativeLCP::index_type ref_index;
@@ -165,10 +155,9 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
   {
     std::string seq_name = argv[arg];
     std::cout << "Target: " << seq_name << std::endl;
-    SimpleFM<BWTType> seq(seq_name, mode);
-    if(mode == mode_ropebwt2) { seq.alpha.assign(ROPEBWT_ALPHABET); }
+    SimpleFM<bwt_type> seq(seq_name);
     double start = readTimer();
-    RelativeFM<BWTType> rel(ref, seq, parameters, true);
+    RelativeFM<bwt_type> rel(ref, seq, parameters, true);
     double seconds = readTimer() - start;
     std::cout << "Index built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;

@@ -43,7 +43,6 @@ const std::string LCP_EXTENSION = ".lcp";
 const std::string DLCP_EXTENSION = ".dlcp";
 const std::string DLCP_INDEX_EXTENSION = ".dlcp_index";
 const std::string SIMPLE_FM_DEFAULT_ALPHABET("\0ACGNT", 6);
-const std::string ROPEBWT_ALPHABET("\0ACGTN", 6);
 
 //------------------------------------------------------------------------------
 
