@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -45,26 +45,26 @@ using namespace relative;
 
 
 // For bitvector RLZ tests.
-const uint64_t RLZ_SIZE = 128 * MEGABYTE;
+const size_type RLZ_SIZE = 128 * MEGABYTE;
 
 // For string RLZ tests.
-const uint64_t STRING_SIZE = 128 * MEGABYTE;
-const uint64_t STRING_ALPHABET = 4;
+const size_type STRING_SIZE = 128 * MEGABYTE;
+const size_type STRING_ALPHABET = 4;
 
 // For bitvector tests.
-const uint64_t BV_SIZE = 1024 * MEGABYTE;
+const size_type BV_SIZE = 1024 * MEGABYTE;
 
 // For wavelet tree tests.
-const uint64_t WT_SIZE = 128 * MEGABYTE;
-const uint8_t  WT_ALPHABET = 4;
+const size_type WT_SIZE = 128 * MEGABYTE;
+const size_type WT_ALPHABET = 4;
 
 // For all tests.
-const uint64_t CORRECTNESS_QUERIES = 100000;
-const uint64_t TIMING_QUERIES = 10000000;
-const uint64_t TOTAL_TIME_TO_NANOSECS = 100; // 10^9 / TIMING_QUERIES
+const size_type CORRECTNESS_QUERIES = 100000;
+const size_type TIMING_QUERIES = 10000000;
+const size_type TOTAL_TIME_TO_NANOSECS = 100; // 10^9 / TIMING_QUERIES
 
 // Bitvector generation parameters.
-const uint64_t EXTRA_SIZE = 1024; // Some extra space to avoid problems in text generation.
+const size_type EXTRA_SIZE = 1024; // Some extra space to avoid problems in text generation.
 const double   EXTENSION_PROB = 0.3;
 
 void testRLZ(int argc, char** argv);
@@ -111,11 +111,11 @@ main(int argc, char** argv)
 
 //------------------------------------------------------------------------------
 
-bit_vector generateReference(std::mt19937_64& rng, uint64_t size);
-bit_vector generateVariant(std::mt19937_64& rng, const bit_vector& reference, double mutation_rate);
+sdsl::bit_vector generateReference(std::mt19937_64& rng, size_type size);
+sdsl::bit_vector generateVariant(std::mt19937_64& rng, const sdsl::bit_vector& reference, double mutation_rate);
 
-int_vector<8> generateReference(std::mt19937_64& rng, uint64_t size, uint8_t alphabet_size);
-int_vector<8> generateVariant(std::mt19937_64& rng, const int_vector<8>& reference, double mutation_rate);
+sdsl::int_vector<8> generateReference(std::mt19937_64& rng, size_type size, size_type alphabet_size);
+sdsl::int_vector<8> generateVariant(std::mt19937_64& rng, const sdsl::int_vector<8>& reference, double mutation_rate);
 
 inline double probability(std::mt19937_64& rng)
 {
@@ -123,9 +123,9 @@ inline double probability(std::mt19937_64& rng)
 }
 
 template<class A, class B, class C, class D>
-uint64_t totalSize(const A& a, const B& b, const C& c, const D& d)
+size_type totalSize(const A& a, const B& b, const C& c, const D& d)
 {
-  return size_in_bytes(a) + size_in_bytes(b) + size_in_bytes(c) + size_in_bytes(d);
+  return sdsl::size_in_bytes(a) + sdsl::size_in_bytes(b) + sdsl::size_in_bytes(c) + sdsl::size_in_bytes(d);
 }
 
 void
@@ -140,21 +140,21 @@ testRLZ(int argc, char** argv)
     double prob = atof(argv[arg]);
     std::cout << "Mutation rate: " << prob << std::endl;
 
-    bit_vector reference = generateReference(rng, RLZ_SIZE);
-    bit_vector text = generateVariant(rng, reference, prob);
+    sdsl::bit_vector reference = generateReference(rng, RLZ_SIZE);
+    sdsl::bit_vector text = generateVariant(rng, reference, prob);
     std::cout << "Reference length " << reference.size() << ", text length " << text.size() << "." << std::endl;
 
-    std::vector<uint64_t> starts, lengths;
-    bit_vector mismatches;
+    std::vector<size_type> starts, lengths;
+    sdsl::bit_vector mismatches;
     double start_time = readTimer();
     relativeLZSuccinct(text, reference, starts, lengths, mismatches);
     double seconds = readTimer() - start_time;
     std::cout << "Parsing took " << seconds << " seconds, " << inMegabytes(memoryUsage()) << " MB." << std::endl;
 
-    uint64_t errors = 0;
-    for(uint64_t phrase = 0, text_pos = 0; phrase < starts.size(); phrase++)
+    size_type errors = 0;
+    for(size_type phrase = 0, text_pos = 0; phrase < starts.size(); phrase++)
     {
-      for(uint64_t ref_pos = starts[phrase]; ref_pos < starts[phrase] + lengths[phrase] - 1; text_pos++, ref_pos++)
+      for(size_type ref_pos = starts[phrase]; ref_pos < starts[phrase] + lengths[phrase] - 1; text_pos++, ref_pos++)
       {
         if(text[text_pos] != reference[ref_pos]) { errors++; }
       }
@@ -180,32 +180,32 @@ testString(int argc, char** argv)
     double prob = atof(argv[arg]);
     std::cout << "Mutation rate: " << prob << std::endl;
 
-    int_vector<8> reference = generateReference(rng, STRING_SIZE, STRING_ALPHABET);
-    int_vector<8> text = generateVariant(rng, reference, prob);
+    sdsl::int_vector<8> reference = generateReference(rng, STRING_SIZE, STRING_ALPHABET);
+    sdsl::int_vector<8> text = generateVariant(rng, reference, prob);
     std::cout << "Reference length " << reference.size() << ", text length " << text.size() << "." << std::endl;
 
-    std::vector<uint64_t> starts, lengths;
-    int_vector<8> mismatches;
+    std::vector<size_type> starts, lengths;
+    sdsl::int_vector<8> mismatches;
     double start_time = readTimer();
     relativeLZ(text, reference, starts, lengths, mismatches);
     double seconds = readTimer() - start_time;
     std::cout << "Parsing took " << seconds << " seconds, " << inMegabytes(memoryUsage()) << " MB." << std::endl;
 
-    uint64_t errors = 0;
-    for(uint64_t phrase = 0, text_pos = 0; phrase < starts.size(); phrase++)
+    size_type errors = 0;
+    for(size_type phrase = 0, text_pos = 0; phrase < starts.size(); phrase++)
     {
-      for(uint64_t ref_pos = starts[phrase]; ref_pos < starts[phrase] + lengths[phrase] - 1; text_pos++, ref_pos++)
+      for(size_type ref_pos = starts[phrase]; ref_pos < starts[phrase] + lengths[phrase] - 1; text_pos++, ref_pos++)
       {
         if(text[text_pos] != reference[ref_pos])
         {
-          std::cout << "Phrase " << phrase << ", text[" << text_pos << "] = " << (uint64_t)text[text_pos] << ", reference[" << ref_pos << "] = " << (uint64_t)reference[ref_pos] << std::endl;
+          std::cout << "Phrase " << phrase << ", text[" << text_pos << "] = " << (size_type)text[text_pos] << ", reference[" << ref_pos << "] = " << (size_type)reference[ref_pos] << std::endl;
           errors++;
           if(errors > 20) { return; }
         }
       }
       if(text[text_pos] != mismatches[phrase])
       {
-        std::cout << "Phrase " << phrase << " (length " << lengths[phrase] << "), text[" << text_pos << "] = " << (uint64_t)text[text_pos] << "(prev " << (uint64_t)text[text_pos - 1] << "), mismatches[" << phrase << "] = " << (uint64_t)mismatches[phrase] << std::endl;
+        std::cout << "Phrase " << phrase << " (length " << lengths[phrase] << "), text[" << text_pos << "] = " << (size_type)text[text_pos] << "(prev " << (size_type)text[text_pos - 1] << "), mismatches[" << phrase << "] = " << (size_type)mismatches[phrase] << std::endl;
         errors++;
         if(errors > 20) { return; }
       } text_pos++;
@@ -224,48 +224,48 @@ void speedTest(const std::string& name, const vector_type& v)
   typename vector_type::rank_1_type   rank(&v);
   typename vector_type::select_1_type sel1(&v);
   typename vector_type::select_0_type sel0(&v);
-  uint64_t bytes = totalSize(v, rank, sel1, sel0);
-  uint64_t ones = rank(v.size());
+  size_type bytes = totalSize(v, rank, sel1, sel0);
+  size_type ones = rank(v.size());
   std::cout << name << ": " << inMegabytes(bytes) << " MB (" << inBPC(bytes, v.size()) << " bpc)" << std::endl;
 
   std::mt19937_64 rng(0xDEADBEEF);
 
   {
-    std::vector<uint64_t> queries(TIMING_QUERIES);
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % v.size(); }
+    std::vector<size_type> queries(TIMING_QUERIES);
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % v.size(); }
     double start = readTimer();
-    uint64_t checksum = 0;
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += rank(queries[i]); }
+    size_type checksum = 0;
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { checksum += rank(queries[i]); }
     double seconds = readTimer() - start;
     std::cout << "rank(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
   }
 
   {
-    std::vector<uint64_t> queries(TIMING_QUERIES);
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % ones + 1; }
+    std::vector<size_type> queries(TIMING_QUERIES);
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % ones + 1; }
     double start = readTimer();
-    uint64_t checksum = 0;
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += sel1(queries[i]); }
+    size_type checksum = 0;
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { checksum += sel1(queries[i]); }
     double seconds = readTimer() - start;
     std::cout << "select_1(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
   }
 
   {
-    std::vector<uint64_t> queries(TIMING_QUERIES);
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % (v.size() - ones) + 1; }
+    std::vector<size_type> queries(TIMING_QUERIES);
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % (v.size() - ones) + 1; }
     double start = readTimer();
-    uint64_t checksum = 0;
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += sel0(queries[i]); }
+    size_type checksum = 0;
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { checksum += sel0(queries[i]); }
     double seconds = readTimer() - start;
     std::cout << "select_0(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
   }
 
   {
-    std::vector<uint64_t> queries(TIMING_QUERIES);
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % v.size(); }
+    std::vector<size_type> queries(TIMING_QUERIES);
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { queries[i] = rng() % v.size(); }
     double start = readTimer();
-    uint64_t checksum = 0;
-    for(uint64_t i = 0; i < TIMING_QUERIES; i++) { checksum += v[queries[i]]; }
+    size_type checksum = 0;
+    for(size_type i = 0; i < TIMING_QUERIES; i++) { checksum += v[queries[i]]; }
     double seconds = readTimer() - start;
     std::cout << "access(): " << (seconds * TOTAL_TIME_TO_NANOSECS) << " ns/query (checksum " << checksum << ")" << std::endl;
   }
@@ -285,20 +285,20 @@ testBV(int argc, char** argv)
     double prob = atof(argv[arg]);
     std::cout << "Mutation rate: " << prob << std::endl;
 
-    bit_vector reference = generateReference(rng, BV_SIZE);
-    bit_vector text = generateVariant(rng, reference, prob);
-    uint64_t onebits = util::cnt_one_bits(text);
+    sdsl::bit_vector reference = generateReference(rng, BV_SIZE);
+    sdsl::bit_vector text = generateVariant(rng, reference, prob);
+    size_type onebits = sdsl::util::cnt_one_bits(text);
     std::cout << "Reference length " << reference.size() << ", text length " << text.size() << "." << std::endl;
 
-    bit_vector::rank_1_type   ref_rank(&reference);
-    bit_vector::select_1_type ref_select_1(&reference);
-    bit_vector::select_0_type ref_select_0(&reference);
+    sdsl::bit_vector::rank_1_type   ref_rank(&reference);
+    sdsl::bit_vector::select_1_type ref_select_1(&reference);
+    sdsl::bit_vector::select_0_type ref_select_0(&reference);
     std::cout << "Reference bitvector: " <<
       inBPC(totalSize(reference, ref_rank, ref_select_1, ref_select_0), reference.size()) << " bpc" << std::endl;
 
-    bit_vector::rank_1_type   text_rank(&text);
-    bit_vector::select_1_type text_select_1(&text);
-    bit_vector::select_0_type text_select_0(&text);
+    sdsl::bit_vector::rank_1_type   text_rank(&text);
+    sdsl::bit_vector::select_1_type text_select_1(&text);
+    sdsl::bit_vector::select_0_type text_select_0(&text);
     std::cout << "Plain bitvector: " <<
       inBPC(totalSize(text, text_rank, text_select_1, text_select_0), text.size()) << " bpc" << std::endl;
 
@@ -307,36 +307,36 @@ testBV(int argc, char** argv)
     rlz_vector::rank_1_type   rank(&relative);
     rlz_vector::select_1_type sel1(&relative);
     rlz_vector::select_0_type sel0(&relative);
-    std::cout << "Relative bitvector: " << inBPC(size_in_bytes(relative), text.size()) << " bpc" << std::endl;
+    std::cout << "Relative bitvector: " << inBPC(sdsl::size_in_bytes(relative), text.size()) << " bpc" << std::endl;
 
-    uint64_t errors = 0;
-    for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
+    size_type errors = 0;
+    for(size_type i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rng() % text.size();
+      size_type pos = rng() % text.size();
       if(text_rank(pos) != rank(pos)) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " rank queries with " << errors << " error(s)." << std::endl;
 
     errors = 0;
-    for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
+    for(size_type i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rng() % onebits + 1;
+      size_type pos = rng() % onebits + 1;
       if(text_select_1(pos) != sel1(pos)) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " select_1 queries with " << errors << " error(s)." << std::endl;
 
     errors = 0;
-    for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
+    for(size_type i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rng() % (text.size() - onebits) + 1;
+      size_type pos = rng() % (text.size() - onebits) + 1;
       if(text_select_0(pos) != sel0(pos)) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " select_0 queries with " << errors << " error(s)." << std::endl;
 
     errors = 0;
-    for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
+    for(size_type i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rng() % text.size();
+      size_type pos = rng() % text.size();
       if(text[pos] != relative[pos]) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " access queries with " << errors << " error(s)." << std::endl;
@@ -344,7 +344,7 @@ testBV(int argc, char** argv)
     std::cout << std::endl;
 
     speedTest("Plain", text);
-    rrr_vector<63> rrr(text);
+    sdsl::rrr_vector<63> rrr(text);
     speedTest("RRR", rrr);
     speedTest("RLZ", relative);
   }
@@ -356,8 +356,8 @@ template<class csa_type>
 void
 printSize(const csa_type& csa, std::string name)
 {
-  uint64_t bytes = size_in_bytes(csa);
-  uint64_t sample_bytes = size_in_bytes(csa.sa_sample) + size_in_bytes(csa.isa_sample);
+  size_type bytes = sdsl::size_in_bytes(csa);
+  size_type sample_bytes = sdsl::size_in_bytes(csa.sa_sample) + sdsl::size_in_bytes(csa.isa_sample);
 
   std::cout << name << " CSA: " << inMegabytes(bytes) << " MB (" << inMegabytes(bytes - sample_bytes) <<
     " MB without samples)" << std::endl;
@@ -375,32 +375,32 @@ testWT(int argc, char** argv)
     double prob = atof(argv[arg]);
     std::cout << "Mutation rate: " << prob << std::endl;
 
-    int_vector<8> reference = generateReference(rng, WT_SIZE, WT_ALPHABET);
-    int_vector<8> text = generateVariant(rng, reference, prob);
+    sdsl::int_vector<8> reference = generateReference(rng, WT_SIZE, WT_ALPHABET);
+    sdsl::int_vector<8> text = generateVariant(rng, reference, prob);
     std::cout << "Reference length " << reference.size() << ", text length " << text.size() << "." << std::endl;
 
-    csa_wt<> reference_csa;
+    sdsl::csa_wt<> reference_csa;
     construct_im(reference_csa, reference);
     printSize(reference_csa, "Reference");
 
-    csa_wt<> plain_csa;
+    sdsl::csa_wt<> plain_csa;
     construct_im(plain_csa, text);
     printSize(plain_csa, "Plain");
 
-    csa_wt<wt_huff<rlz_vector> > rlz_csa;
-    construct_im(rlz_csa, text);
+    sdsl::csa_wt<sdsl::wt_huff<rlz_vector> > rlz_csa;
+    sdsl::construct_im(rlz_csa, text);
     // Ugly hack is about to begin.
     rlz_vector& rlz = const_cast<rlz_vector&>(rlz_csa.wavelet_tree.bv);
-    bit_vector::rank_1_type r_r(&(reference_csa.wavelet_tree.bv));
-    bit_vector::select_1_type r_s1(&(reference_csa.wavelet_tree.bv));
-    bit_vector::select_0_type r_s0(&(reference_csa.wavelet_tree.bv));
+    sdsl::bit_vector::rank_1_type r_r(&(reference_csa.wavelet_tree.bv));
+    sdsl::bit_vector::select_1_type r_s1(&(reference_csa.wavelet_tree.bv));
+    sdsl::bit_vector::select_0_type r_s0(&(reference_csa.wavelet_tree.bv));
     rlz.compress(reference_csa.wavelet_tree.bv, r_r, r_s1, r_s0);
     printSize(rlz_csa, "RLZ");
 
-    uint64_t errors = 0;
-    for(uint64_t i = 0; i < CORRECTNESS_QUERIES; i++)
+    size_type errors = 0;
+    for(size_type i = 0; i < CORRECTNESS_QUERIES; i++)
     {
-      uint64_t pos = rng() % text.size();
+      size_type pos = rng() % text.size();
       if(plain_csa[pos] != rlz_csa[pos]) { errors++; }
     }
     std::cout << "Completed " << CORRECTNESS_QUERIES << " locate queries with " << errors << " error(s)." << std::endl;
@@ -412,36 +412,36 @@ testWT(int argc, char** argv)
 //------------------------------------------------------------------------------
 
 void
-compressBitvector(std::string name, const bit_vector& vec, const bit_vector& ref, const bv_fmi* fmi)
+compressBitvector(std::string name, const sdsl::bit_vector& vec, const sdsl::bit_vector& ref, const bv_fmi* fmi)
 {
   std::cout << name; std::cout.flush();
 
-  bit_vector::rank_1_type vec_rank(&vec);
-  bit_vector::select_1_type vec_select_1(&vec);
-  bit_vector::select_0_type vec_select_0(&vec);
-  uint64_t plain_bytes = size_in_bytes(vec) + size_in_bytes(vec_rank) + size_in_bytes(vec_select_1) + size_in_bytes(vec_select_0);
+  sdsl::bit_vector::rank_1_type vec_rank(&vec);
+  sdsl::bit_vector::select_1_type vec_select_1(&vec);
+  sdsl::bit_vector::select_0_type vec_select_0(&vec);
+  size_type plain_bytes = sdsl::size_in_bytes(vec) + sdsl::size_in_bytes(vec_rank) + sdsl::size_in_bytes(vec_select_1) + sdsl::size_in_bytes(vec_select_0);
   std::cout << "Plain " << inMegabytes(plain_bytes) << " MB"; std::cout.flush();
 
-  rrr_vector<> rrr(vec);
-  rrr_vector<>::rank_1_type rrr_rank(&rrr);
-  rrr_vector<>::select_1_type rrr_select_1(&rrr);
-  rrr_vector<>::select_0_type rrr_select_0(&rrr);
-  uint64_t rrr_bytes = size_in_bytes(rrr) + size_in_bytes(rrr_rank) + size_in_bytes(rrr_select_1) + size_in_bytes(rrr_select_0);
+  sdsl::rrr_vector<> rrr(vec);
+  sdsl::rrr_vector<>::rank_1_type rrr_rank(&rrr);
+  sdsl::rrr_vector<>::select_1_type rrr_select_1(&rrr);
+  sdsl::rrr_vector<>::select_0_type rrr_select_0(&rrr);
+  size_type rrr_bytes = sdsl::size_in_bytes(rrr) + sdsl::size_in_bytes(rrr_rank) + sdsl::size_in_bytes(rrr_select_1) + sdsl::size_in_bytes(rrr_select_0);
   std::cout << ", RRR " << inMegabytes(rrr_bytes) << " MB"; std::cout.flush();
 
-  sd_vector<> sd(vec);
-  sd_vector<>::rank_1_type sd_rank(&sd);
-  sd_vector<>::select_1_type sd_select_1(&sd);
-  sd_vector<>::select_0_type sd_select_0(&sd);
-  uint64_t sd_bytes = size_in_bytes(sd) + size_in_bytes(sd_rank) + size_in_bytes(sd_select_1) + size_in_bytes(sd_select_0);
+  sdsl::sd_vector<> sd(vec);
+  sdsl::sd_vector<>::rank_1_type sd_rank(&sd);
+  sdsl::sd_vector<>::select_1_type sd_select_1(&sd);
+  sdsl::sd_vector<>::select_0_type sd_select_0(&sd);
+  size_type sd_bytes = sdsl::size_in_bytes(sd) + sdsl::size_in_bytes(sd_rank) + sdsl::size_in_bytes(sd_select_1) + sdsl::size_in_bytes(sd_select_0);
   std::cout << ", SD " << inMegabytes(sd_bytes) << " MB"; std::cout.flush();
 
-  bit_vector::rank_1_type ref_rank(&ref);
-  bit_vector::select_1_type ref_select_1(&ref);
-  bit_vector::select_0_type ref_select_0(&ref);
+  sdsl::bit_vector::rank_1_type ref_rank(&ref);
+  sdsl::bit_vector::select_1_type ref_select_1(&ref);
+  sdsl::bit_vector::select_0_type ref_select_0(&ref);
   rlz_vector rlz_vec(vec);
   rlz_vec.compress(ref, ref_rank, ref_select_1, ref_select_0, fmi);
-  uint64_t rlz_bytes = size_in_bytes(rlz_vec);
+  size_type rlz_bytes = sdsl::size_in_bytes(rlz_vec);
   std::cout << ", RLZ " << inMegabytes(rlz_bytes) << " MB"; std::cout.flush();
 
   std::cout << std::endl;
@@ -457,7 +457,7 @@ file_exists(std::string name)
 }
 
 bv_fmi*
-indexBitvector(const bit_vector& v, std::string filename)
+indexBitvector(const sdsl::bit_vector& v, std::string filename)
 {
   if(file_exists(filename))
   {
@@ -488,7 +488,7 @@ indexBitvector(const bit_vector& v, std::string filename)
   }
 }
 
-typedef cst_sada<csa_wt<wt_huff<>, 32, 64, text_order_sa_sampling<bit_vector> > > cst_type;
+typedef sdsl::cst_sada<sdsl::csa_wt<sdsl::wt_huff<>, 32, 64, sdsl::text_order_sa_sampling<sdsl::bit_vector> > > cst_type;
 
 void
 testCST(int argc, char** argv)
@@ -508,14 +508,14 @@ testCST(int argc, char** argv)
   cst_type reference_cst;
   if(file_exists(ref_file))
   {
-    load_from_file(reference_cst, ref_file);
+    sdsl::load_from_file(reference_cst, ref_file);
   }
   else
   {
     construct(reference_cst, ref_name, 1);
     store_to_file(reference_cst, ref_file);
   }
-  std::cout << "Reference CST:    " << inMegabytes(size_in_bytes(reference_cst)) << " MB" << std::endl;
+  std::cout << "Reference CST:    " << inMegabytes(sdsl::size_in_bytes(reference_cst)) << " MB" << std::endl;
 
   bv_fmi* wt_fmi = indexBitvector(reference_cst.csa.wavelet_tree.bv, ref_file + ".wt");
   bv_fmi* sample_fmi = indexBitvector(reference_cst.csa.sa_sample.marked, ref_file + ".samples");
@@ -526,7 +526,7 @@ testCST(int argc, char** argv)
     reference_cst.lcp.serialize(out);
     out.close();
     std::ifstream in("temp.dat", std::ios_base::binary);
-    bit_vector ref_lcp;
+    sdsl::bit_vector ref_lcp;
     ref_lcp.load(in);
     in.close();
     lcp_fmi = indexBitvector(ref_lcp, ref_file + ".lcp");
@@ -542,14 +542,14 @@ testCST(int argc, char** argv)
     cst_type text_cst;
     if(file_exists(text_file))
     {
-      load_from_file(text_cst, text_file);
+      sdsl::load_from_file(text_cst, text_file);
     }
     else
     {
       construct(text_cst, text_name, 1);
       store_to_file(text_cst, text_file);
     }
-    std::cout << "Text CST:         " << inMegabytes(size_in_bytes(text_cst)) << " MB" << std::endl;
+    std::cout << "Text CST:         " << inMegabytes(sdsl::size_in_bytes(text_cst)) << " MB" << std::endl;
 
     compressBitvector("CSA               ", text_cst.csa.wavelet_tree.bv, reference_cst.csa.wavelet_tree.bv, wt_fmi);
     compressBitvector("Sampled positions ", text_cst.csa.sa_sample.marked, reference_cst.csa.sa_sample.marked, sample_fmi);
@@ -559,8 +559,8 @@ testCST(int argc, char** argv)
     text_cst.lcp.serialize(out); reference_cst.lcp.serialize(out);
     out.close();
     std::ifstream in("temp.dat", std::ios_base::binary);
-    bit_vector text_lcp, ref_lcp;
-    bit_vector::select_1_type sel;
+    sdsl::bit_vector text_lcp, ref_lcp;
+    sdsl::bit_vector::select_1_type sel;
     text_lcp.load(in); sel.load(in);
     ref_lcp.load(in);
     in.close();
@@ -596,15 +596,15 @@ testLCP(int argc, char** argv)
   std::string ref_file = ref_name + LCP_EXTENSION;
   std::cout << "Reference: " << ref_name << std::endl;
 
-  SLArray ref_lcp; load_from_file(ref_lcp, ref_file);
-  printSize("LCP array", size_in_bytes(ref_lcp), ref_lcp.size());
+  SLArray ref_lcp; sdsl::load_from_file(ref_lcp, ref_file);
+  printSize("LCP array", sdsl::size_in_bytes(ref_lcp), ref_lcp.size());
 
-  int_vector<0> sa;
+  sdsl::int_vector<0> sa;
   {
     double start = readTimer();
-    int_vector<0> buffer(ref_lcp.size() + 1, 0, ref_lcp.large.width() + 1);
-    for(uint64_t i = 0; i < ref_lcp.size(); i++) { buffer[i] = ref_lcp[i] + 1; }
-    qsufsort::construct_sa(sa, buffer); util::bit_compress(sa);
+    sdsl::int_vector<0> buffer(ref_lcp.size() + 1, 0, ref_lcp.large.width() + 1);
+    for(size_type i = 0; i < ref_lcp.size(); i++) { buffer[i] = ref_lcp[i] + 1; }
+    sdsl::qsufsort::construct_sa(sa, buffer); sdsl::util::bit_compress(sa);
     double seconds = readTimer() - start;
     std::cout << "Suffix array built in " << seconds << " seconds" << std::endl;
     std::cout << std::endl;
@@ -616,10 +616,10 @@ testLCP(int argc, char** argv)
     std::string text_file = text_name + LCP_EXTENSION;
     std::cout << "Text: " << text_name << std::endl;
 
-    SLArray seq_lcp; load_from_file(seq_lcp, text_file);
-    printSize("LCP array", size_in_bytes(seq_lcp), seq_lcp.size());
+    SLArray seq_lcp; sdsl::load_from_file(seq_lcp, text_file);
+    printSize("LCP array", sdsl::size_in_bytes(seq_lcp), seq_lcp.size());
 
-    std::vector<uint64_t> starts, lengths;
+    std::vector<size_type> starts, lengths;
     double start = readTimer();
     relativeLZ<SLArray, false>(seq_lcp, ref_lcp, sa, starts, lengths, 0);
     double seconds = readTimer() - start;
@@ -631,22 +631,22 @@ testLCP(int argc, char** argv)
 
 //------------------------------------------------------------------------------
 
-bit_vector
-generateReference(std::mt19937_64& rng, uint64_t size)
+sdsl::bit_vector
+generateReference(std::mt19937_64& rng, size_type size)
 {
-  bit_vector reference(size);
-  uint64_t* data = reference.data();
-  for(uint64_t i = 0; i < reference.capacity() >> 6; i++) { data[i] = rng(); }
+  sdsl::bit_vector reference(size);
+  size_type* data = reference.data();
+  for(size_type i = 0; i < reference.capacity() >> 6; i++) { data[i] = rng(); }
   return reference;
 }
 
-bit_vector
-generateVariant(std::mt19937_64& rng, const bit_vector& reference, double mutation_rate)
+sdsl::bit_vector
+generateVariant(std::mt19937_64& rng, const sdsl::bit_vector& reference, double mutation_rate)
 {
-  bit_vector text(reference.size() * (1.0 + 2 * mutation_rate) + EXTRA_SIZE);
+  sdsl::bit_vector text(reference.size() * (1.0 + 2 * mutation_rate) + EXTRA_SIZE);
 
-  uint64_t j = 0;
-  for(uint64_t i = 0; i < reference.size(); i++)
+  size_type j = 0;
+  for(size_type i = 0; i < reference.size(); i++)
   {
     double mutation = probability(rng);
     if(mutation < mutation_rate)
@@ -682,36 +682,36 @@ generateVariant(std::mt19937_64& rng, const bit_vector& reference, double mutati
 
 //------------------------------------------------------------------------------
 
-inline uint64_t randomChar(std::mt19937_64& rng, uint8_t alphabet_size)
+inline size_type randomChar(std::mt19937_64& rng, size_type alphabet_size)
 {
   return rng() % alphabet_size + 1;
 }
 
-int_vector<8>
-generateReference(std::mt19937_64& rng, uint64_t size, uint8_t alphabet_size)
+sdsl::int_vector<8>
+generateReference(std::mt19937_64& rng, size_type size, size_type alphabet_size)
 {
   if(alphabet_size == 0)
   {
     std::cerr << "generateReference(): Alphabet size cannot be 0" << std::endl;
   }
 
-  int_vector<8> reference(size);
-  for(uint64_t i = 0; i < reference.size(); i++) { reference[i] = randomChar(rng, alphabet_size); }
+  sdsl::int_vector<8> reference(size);
+  for(size_type i = 0; i < reference.size(); i++) { reference[i] = randomChar(rng, alphabet_size); }
   return reference;
 }
 
-int_vector<8>
-generateVariant(std::mt19937_64& rng, const int_vector<8>& reference, double mutation_rate)
+sdsl::int_vector<8>
+generateVariant(std::mt19937_64& rng, const sdsl::int_vector<8>& reference, double mutation_rate)
 {
-  uint8_t alphabet_size = *std::max_element(reference.begin(), reference.end());
+  size_type alphabet_size = *std::max_element(reference.begin(), reference.end());
   if(alphabet_size < 2)
   {
     std::cerr << "generateVariant(): Alphabet size must be at least 2" << std::endl;
   }
-  int_vector<8> text(reference.size() * (1.0 + 2 * mutation_rate) + EXTRA_SIZE);
+  sdsl::int_vector<8> text(reference.size() * (1.0 + 2 * mutation_rate) + EXTRA_SIZE);
 
-  uint64_t j = 0;
-  for(uint64_t i = 0; i < reference.size(); i++)
+  size_type j = 0;
+  for(size_type i = 0; i < reference.size(); i++)
   {
     double mutation = probability(rng);
     if(mutation < mutation_rate)
@@ -732,7 +732,7 @@ generateVariant(std::mt19937_64& rng, const int_vector<8>& reference, double mut
       }
       else  // Mismatch.
       {
-        uint64_t temp = (text[j] + randomChar(rng, alphabet_size - 1) - 1) % alphabet_size + 1;
+        size_type temp = (text[j] + randomChar(rng, alphabet_size - 1) - 1) % alphabet_size + 1;
         text[j] = temp; j++;
       }
     }

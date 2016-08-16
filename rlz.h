@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -42,29 +42,29 @@ namespace relative
   the last three parameters; each phrase is reference[start, start + length - 2], followed
   by mismatch. Use bv_fmi constructor to build index for the reverse reference.
 */
-void relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
+void relativeLZSuccinct(const sdsl::bit_vector& text, const sdsl::bit_vector& reference,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, sdsl::bit_vector& mismatches);
 
 struct bv_fmi;
 
 // Use this to reuse an existing index for the reverse reference.
-void relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches);
+void relativeLZSuccinct(const sdsl::bit_vector& text, const bv_fmi& reference,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, sdsl::bit_vector& mismatches);
 
 /*
   This version uses temporary files on disk. Alternatively, use reverseIndex(reference, csa)
   to build index for the reverse reference, and then call the template version. The sequence
   and the reference may contain character value 0 or character value 1, but not both.
 */
-void relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches);
+void relativeLZ(const sdsl::int_vector<8>& text, const sdsl::int_vector<8>& reference,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, sdsl::int_vector<8>& mismatches);
 
 //------------------------------------------------------------------------------
 
 template<class IntVector, bool differential>
 struct CharAt
 {
-  inline static uint64_t at(const IntVector& seq, uint64_t i)
+  inline static size_type at(const IntVector& seq, size_type i)
   {
     if(i >= seq.size()) { return 0; }
     return seq[i];
@@ -74,16 +74,16 @@ struct CharAt
 template<class IntVector>
 struct CharAt<IntVector, true>
 {
-  inline static uint64_t at(const IntVector& seq, uint64_t i)
+  inline static size_type at(const IntVector& seq, size_type i)
   {
     if(i >= seq.size()) { return 0; }
-    uint64_t prev = (i > 0 ? seq[i - 1] : 0), curr = seq[i];
+    size_type prev = (i > 0 ? seq[i - 1] : 0), curr = seq[i];
     return DiffEncoderNZ::encode(curr, prev);
   }
 };
 
 // FIXME Handle this in a more general way.
-const uint64_t MAX_RLZ_PHRASE_LENGTH = 1024;
+const size_type MAX_RLZ_PHRASE_LENGTH = 1024;
 
 /*
   This version is intended for integer sequences. It parses the reference using a prebuilt
@@ -95,25 +95,25 @@ const uint64_t MAX_RLZ_PHRASE_LENGTH = 1024;
 */
 template<class IntVector, bool differential>
 void
-relativeLZ(const IntVector& text, const IntVector& reference, const int_vector<0>& sa,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, std::vector<uint64_t>* mismatches)
+relativeLZ(const IntVector& text, const IntVector& reference, const sdsl::int_vector<0>& sa,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, std::vector<size_type>* mismatches)
 {
   if(text.size() == 0) { return; }
 
   starts.clear(); lengths.clear();
   if(mismatches != 0) { mismatches->clear(); }
-  uint64_t text_pos = 0;
+  size_type text_pos = 0;
   while(text_pos < text.size())
   {
-    uint64_t sp = 0, ep = sa.size() - 1, matched = 0;
-    uint64_t limit = std::min(text.size() - text_pos, MAX_RLZ_PHRASE_LENGTH);
+    size_type sp = 0, ep = sa.size() - 1, matched = 0;
+    size_type limit = std::min(text.size() - text_pos, MAX_RLZ_PHRASE_LENGTH);
     while(matched < limit)
     {
-      uint64_t low = sp, high = ep, next = CharAt<IntVector, differential>::at(text, text_pos + matched);
+      size_type low = sp, high = ep, next = CharAt<IntVector, differential>::at(text, text_pos + matched);
       while(low < high) // Find the first suffix that matches the next character.
       {
-        uint64_t mid = low + (high - low) / 2;
-        uint64_t val = CharAt<IntVector, differential>::at(reference, sa[mid] + matched);
+        size_type mid = low + (high - low) / 2;
+        size_type val = CharAt<IntVector, differential>::at(reference, sa[mid] + matched);
         if(val < next) { low = mid + 1; }
         else if(val > next) { high = mid - 1; }
         else { high = mid; }
@@ -124,8 +124,8 @@ relativeLZ(const IntVector& text, const IntVector& reference, const int_vector<0
       high = ep;
       while(low < high) // Find the last suffix that matches the next character.
       {
-        uint64_t mid = low + (high + 1 - low) / 2;
-        uint64_t val = CharAt<IntVector, differential>::at(reference, sa[mid] + matched);
+        size_type mid = low + (high + 1 - low) / 2;
+        size_type val = CharAt<IntVector, differential>::at(reference, sa[mid] + matched);
         if(val > next) { high = mid - 1; }
         else { low = mid; }
       }
@@ -149,28 +149,28 @@ relativeLZ(const IntVector& text, const IntVector& reference, const int_vector<0
 template<class IntVector, class CSA>
 void
 relativeLZ(const IntVector& text, const CSA& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, IntVector& mismatches)
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, IntVector& mismatches)
 {
   if(text.size() == 0) { return; }
 
   // Use backward searching on the BWT of the reverse reference to parse the text.
-  uint64_t text_pos = 0;
+  size_type text_pos = 0;
   starts.clear(); lengths.clear();
   std::vector<typename IntVector::value_type> char_buffer;
   while(text_pos < text.size())
   {
-    uint64_t sp = 0, ep = reference.size() - 1;
-    uint64_t len = 0; // We have matched len characters in the reverse reference.
+    size_type sp = 0, ep = reference.size() - 1;
+    size_type len = 0; // We have matched len characters in the reverse reference.
     while(text_pos + len < text.size())
     {
       // Does the current character exist in the reference?
       if(reference.char2comp[text[text_pos + len]] == 0) { break; }
-      uint64_t new_sp = 0, new_ep = 0;
+      size_type new_sp = 0, new_ep = 0;
       backward_search(reference, sp, ep, text[text_pos + len], new_sp, new_ep);
       if(new_sp > new_ep) { break; }
       else { sp = new_sp; ep = new_ep; len++; }
     }
-    uint64_t reverse_pos = reference[sp]; // Position of the reverse pattern in reverse reference.
+    size_type reverse_pos = reference[sp]; // Position of the reverse pattern in reverse reference.
     starts.push_back(reference.size() - reverse_pos - len - 1); // Convert into actual pattern position.
     if(text_pos + len < text.size()) { len++; } // Add the mismatching character.
     lengths.push_back(len);
@@ -178,7 +178,7 @@ relativeLZ(const IntVector& text, const CSA& reference,
     text_pos += len;
   }
   mismatches.resize(char_buffer.size());
-  for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
+  for(size_type i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
 }
 
 //------------------------------------------------------------------------------
@@ -192,7 +192,7 @@ template<class IntVector, class CSA>
 void
 reverseIndex(const IntVector& sequence, CSA& csa)
 {
-  cache_config config;
+  sdsl::cache_config config;
   std::string filename = tmp_file(config, "text");
   std::ofstream out(filename.c_str(), std::ios_base::binary);
   if(!out)
@@ -201,11 +201,11 @@ reverseIndex(const IntVector& sequence, CSA& csa)
     return;
   }
   IntVector reverse(sequence.size());
-  for(uint64_t i = 0; i < sequence.size(); i++)
+  for(size_type i = 0; i < sequence.size(); i++)
   {
     reverse[i] = std::max(sequence[sequence.size() - 1 - i], (typename IntVector::value_type)1);
   }
-  reverse.serialize(out); util::clear(reverse);
+  reverse.serialize(out); sdsl::util::clear(reverse);
   out.close();
 
   construct(csa, filename, 0);
@@ -220,31 +220,31 @@ reverseIndex(const IntVector& sequence, CSA& csa)
 struct bv_fmi
 {
 public:
-  typedef std::pair<uint64_t, uint64_t> range_type;
+  typedef std::pair<size_type, size_type> range_type;
 
-  const static uint64_t DEFAULT_BLOCK_SIZE  = 64 * MEGABYTE;
-  const static uint64_t DEFAULT_SAMPLE_RATE = 127;  // Should be prime with SA order sampling.
+  const static size_type DEFAULT_BLOCK_SIZE  = 64 * MEGABYTE;
+  const static size_type DEFAULT_SAMPLE_RATE = 127;  // Should be prime with SA order sampling.
 
-  explicit bv_fmi(const bit_vector& source,
-    uint64_t block_size = DEFAULT_BLOCK_SIZE, uint64_t _sample_rate = DEFAULT_SAMPLE_RATE);
+  explicit bv_fmi(const sdsl::bit_vector& source,
+    size_type block_size = DEFAULT_BLOCK_SIZE, size_type _sample_rate = DEFAULT_SAMPLE_RATE);
   explicit bv_fmi(std::istream& in);
 
-  uint64_t serialize(std::ostream& out);
+  size_type serialize(std::ostream& out);
 
-  bit_vector              bwt;
-  bit_vector::rank_1_type rank;
-  uint64_t                zeros;      // Number of 0-bits, excluding the endmarker.
-  uint64_t                endmarker;  // Position of the endmarker, encoded by a 0-bit.
+  sdsl::bit_vector              bwt;
+  sdsl::bit_vector::rank_1_type rank;
+  size_type                zeros;      // Number of 0-bits, excluding the endmarker.
+  size_type                endmarker;  // Position of the endmarker, encoded by a 0-bit.
 
-  int_vector<0>           sa_samples; // Will contain SA[i * sample_rate + 1] for all i.
-  uint64_t                sample_rate;
+  sdsl::int_vector<0>           sa_samples; // Will contain SA[i * sample_rate + 1] for all i.
+  size_type                sample_rate;
 
-  inline uint64_t LF1(uint64_t pos) const
+  inline size_type LF1(size_type pos) const
   {
     return this->zeros + 1 + this->rank(pos);
   }
 
-  inline uint64_t LF0(uint64_t pos) const
+  inline size_type LF0(size_type pos) const
   {
     return 1 + pos - this->rank(pos) - (pos > this->endmarker ? 1 : 0);
   }
@@ -255,15 +255,15 @@ public:
   }
 
   // pos % sample_rate is assumed to be 1.
-  inline uint64_t sampleAt(uint64_t pos) const
+  inline size_type sampleAt(size_type pos) const
   {
     return this->sa_samples[pos / this->sample_rate];
   }
 
 private:
-  void incrementalBWT(uint64_t block_size);
-  void lastBWTBlock(uint64_t offset);
-  void prevBWTBlock(uint64_t offset, uint64_t block_size);
+  void incrementalBWT(size_type block_size);
+  void lastBWTBlock(size_type offset);
+  void prevBWTBlock(size_type offset, size_type block_size);
   void sampleSA();
 };
 
@@ -276,11 +276,11 @@ private:
 */
 struct relative_encoder
 {
-  typedef uint64_t size_type;
+  typedef relative::size_type size_type;
 
-  int_vector<0>           values; // Phrase starts encoded as (ref_pos - text_pos).
-  bit_vector              rle;    // rle[i] is set, if phrase i is stored.
-  bit_vector::rank_1_type rank;
+  sdsl::int_vector<0>           values; // Phrase starts encoded as (ref_pos - text_pos).
+  sdsl::bit_vector              rle;    // rle[i] is set, if phrase i is stored.
+  sdsl::bit_vector::rank_1_type rank;
 
   relative_encoder();
   relative_encoder(const relative_encoder& r);
@@ -291,7 +291,7 @@ struct relative_encoder
   template<class Container>
   void init(const Container& ref_pos, const Container& lengths)
   {
-    util::clear(this->values); util::clear(this->rle); util::clear(this->rank);
+    sdsl::util::clear(this->values); sdsl::util::clear(this->rle); sdsl::util::clear(this->rank);
 
     // Check whether run-length encoding can help.
     size_type text_pos = 0, prev = ~(size_type)0, rle_max = 0, direct_max = 0, runs = 0;
@@ -306,30 +306,30 @@ struct relative_encoder
       direct_max = std::max(direct_max, temp);
       text_pos += lengths[i];
     }
-    double rle_bits = runs * bitlength(rle_max) + ref_pos.size() * 1.25;
-    double direct_bits = ref_pos.size() * bitlength(direct_max);
+    double rle_bits = runs * bit_length(rle_max) + ref_pos.size() * 1.25;
+    double direct_bits = ref_pos.size() * bit_length(direct_max);
 
     if(rle_bits >= direct_bits) // Use direct encoding.
     {
 #ifdef VERBOSE_STATUS_INFO
       std::cout << "Using direct encoding for starting positions." << std::endl;
 #endif
-      int_vector<0> buffer(ref_pos.size(), 0, bitlength(direct_max));
+      sdsl::int_vector<0> buffer(ref_pos.size(), 0, bit_length(direct_max));
       text_pos = 0;
       for(size_type i = 0; i < ref_pos.size(); i++)
       {
         buffer[i] = encode(ref_pos[i], text_pos);
         text_pos += lengths[i];
       }
-      util::assign(this->values, buffer);
+      sdsl::util::assign(this->values, buffer);
     }
     else  // Use run-length encoding.
     {
 #ifdef VERBOSE_STATUS_INFO
       std::cout << "Using run-length encoding for starting positions." << std::endl;
 #endif
-      int_vector<0> buffer(runs, 0, bitlength(rle_max));
-      util::assign(this->rle, bit_vector(ref_pos.size(), 0));
+      sdsl::int_vector<0> buffer(runs, 0, bit_length(rle_max));
+      sdsl::util::assign(this->rle, sdsl::bit_vector(ref_pos.size(), 0));
       text_pos = 0; prev = 0; runs = 0;
       for(size_type i = 0; i < ref_pos.size(); i++)
       {
@@ -342,14 +342,14 @@ struct relative_encoder
         }
         text_pos += lengths[i];
       }
-      util::assign(this->values, buffer);
-      util::init_support(this->rank, &(this->rle));
+      sdsl::util::assign(this->values, buffer);
+      sdsl::util::init_support(this->rank, &(this->rle));
     }
   }
 
   size_type reportSize() const;
   void load(std::istream& input);
-  size_type serialize(std::ostream& output, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& output, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
 
   // Returns a reference position for given text position relative to given phrase.
   inline size_type decode(size_type phrase, size_type text_pos) const

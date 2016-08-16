@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -35,19 +35,19 @@ namespace relative
 
 struct align_parameters
 {
-  const static uint64_t BLOCK_SIZE      = 1024; // Split the BWTs into blocks of this size or less.
-  const static uint64_t MAX_LENGTH      = 32;   // Maximum length of a pattern used to split the BWTs.
-  const static uint64_t SEED_LENGTH     = 4;    // Generate all patterns of this length before parallelizing.
+  const static size_type BLOCK_SIZE      = 1024; // Split the BWTs into blocks of this size or less.
+  const static size_type MAX_LENGTH      = 32;   // Maximum length of a pattern used to split the BWTs.
+  const static size_type SEED_LENGTH     = 4;    // Generate all patterns of this length before parallelizing.
   const static int      MAX_D           = 8192; // Number of diagonals to consider in Myers' algorithm.
-  const static uint64_t SA_SAMPLE_RATE  = 0;    // Sample rate for relative FM.
-  const static uint64_t ISA_SAMPLE_RATE  = 0;   // Sample rate for relative FM.
+  const static size_type SA_SAMPLE_RATE  = 0;    // Sample rate for relative FM.
+  const static size_type ISA_SAMPLE_RATE  = 0;   // Sample rate for relative FM.
 
   // Default size for on demand LCS buffer; enough for d = 100.
-  const static uint64_t BUFFER_SIZE = 103 * 101;
+  const static size_type BUFFER_SIZE = 103 * 101;
 
   // Default sample rate with a BWT-invariant subsequence.
-  const static uint64_t SECONDARY_SA_SAMPLE_RATE = 257;
-  const static uint64_t SECONDARY_ISA_SAMPLE_RATE = 512;
+  const static size_type SECONDARY_SA_SAMPLE_RATE = 257;
+  const static size_type SECONDARY_ISA_SAMPLE_RATE = 512;
 
   align_parameters() :
     block_size(BLOCK_SIZE), max_length(MAX_LENGTH), seed_length(SEED_LENGTH), max_d(MAX_D),
@@ -56,9 +56,9 @@ struct align_parameters
   {
   }
 
-  uint64_t block_size, max_length, seed_length;
+  size_type block_size, max_length, seed_length;
   int      max_d;
-  uint64_t sa_sample_rate, isa_sample_rate;
+  size_type sa_sample_rate, isa_sample_rate;
   bool     sorted_alphabet; // comp values are sorted by character values, making partitioning a bit faster.
   bool     preallocate;     // Use preallocated arrays in Myers' algorithm.
   bool     invariant;       // Find a BWT-invariant subsequence that supports relative SA samples.
@@ -67,23 +67,23 @@ struct align_parameters
 //------------------------------------------------------------------------------
 
 template<class ReferenceBWTType, class SequenceType>
-void getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vector& positions, uint64_t n);
+void getComplement(const ReferenceBWTType& bwt, SequenceType& output, const sdsl::bit_vector& positions, size_type n);
 
 template<class ReferenceType>
 void alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t& lcs,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs, size_type& lcs,
   const align_parameters& parameters, bool print);
 
 template<class ReferenceType>
 void alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& bwt_ref_lcs, bit_vector& bwt_seq_lcs,
-  bit_vector& text_ref_lcs, bit_vector& text_seq_lcs,
-  uint64_t& lcs,
-  int_vector<0>& sa_samples, int_vector<0>& isa_samples,
+  sdsl::bit_vector& bwt_ref_lcs, sdsl::bit_vector& bwt_seq_lcs,
+  sdsl::bit_vector& text_ref_lcs, sdsl::bit_vector& text_seq_lcs,
+  size_type& lcs,
+  sdsl::int_vector<0>& sa_samples, sdsl::int_vector<0>& isa_samples,
   const align_parameters& parameters, bool print);
 
 template<class IndexType, class VectorType>
-void getSortedLCS(const IndexType& index, const VectorType& lcs, bit_vector& sorted_lcs, int_vector<64>& lcs_C);
+void getSortedLCS(const IndexType& index, const VectorType& lcs, sdsl::bit_vector& sorted_lcs, sdsl::int_vector<64>& lcs_C);
 
 //------------------------------------------------------------------------------
 
@@ -109,8 +109,8 @@ public:
     this->sa_sample_rate = parameters.sa_sample_rate;
     this->isa_sample_rate = parameters.isa_sample_rate;
 
-    uint64_t lcs_length = 0;
-    bit_vector bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs;
+    size_type lcs_length = 0;
+    sdsl::bit_vector bwt_ref_lcs, bwt_seq_lcs, text_ref_lcs, text_seq_lcs;
     if(parameters.invariant)
     {
       if(!(ref.supportsLocate(true)) || !(seq.supportsLocate(true)))
@@ -129,12 +129,12 @@ public:
 
     getComplement(ref.bwt, this->ref_minus_lcs, bwt_ref_lcs, lcs_length);
     getComplement(seq.bwt, this->seq_minus_lcs, bwt_seq_lcs, lcs_length);
-    util::assign(this->bwt_lcs, LCS(bwt_ref_lcs, bwt_seq_lcs, lcs_length));
-    util::clear(bwt_ref_lcs); util::clear(bwt_seq_lcs);
+    sdsl::util::assign(this->bwt_lcs, LCS(bwt_ref_lcs, bwt_seq_lcs, lcs_length));
+    sdsl::util::clear(bwt_ref_lcs); sdsl::util::clear(bwt_seq_lcs);
     if(parameters.invariant)
     {
-      util::assign(this->text_lcs, LCS(text_ref_lcs, text_seq_lcs, lcs_length));
-      util::clear(text_ref_lcs); util::clear(text_seq_lcs);
+      sdsl::util::assign(this->text_lcs, LCS(text_ref_lcs, text_seq_lcs, lcs_length));
+      sdsl::util::clear(text_ref_lcs); sdsl::util::clear(text_seq_lcs);
     }
     this->alpha = seq.alpha;
     this->m_size = seq.size();
@@ -166,24 +166,24 @@ public:
 
 //------------------------------------------------------------------------------
 
-  inline uint64_t size() const { return this->m_size; }
-  inline uint64_t sequences() const { return this->alpha.C[1]; }
+  inline size_type size() const { return this->m_size; }
+  inline size_type sequences() const { return this->alpha.C[1]; }
 
-  uint64_t reportSize(bool print = false) const
+  size_type reportSize(bool print = false) const
   {
-    uint64_t ref_bytes = size_in_bytes(this->ref_minus_lcs);
-    uint64_t seq_bytes = size_in_bytes(this->seq_minus_lcs);
-    uint64_t bwt_bytes = ref_bytes + seq_bytes;
-    uint64_t bwt_lcs_bytes = size_in_bytes(this->bwt_lcs);
-    uint64_t text_lcs_bytes = size_in_bytes(this->text_lcs);
-    uint64_t sa_bytes = size_in_bytes(this->sa_samples);
-    uint64_t isa_bytes = size_in_bytes(this->isa_samples);
-    uint64_t select_bytes = this->selectSize();
+    size_type ref_bytes = sdsl::size_in_bytes(this->ref_minus_lcs);
+    size_type seq_bytes = sdsl::size_in_bytes(this->seq_minus_lcs);
+    size_type bwt_bytes = ref_bytes + seq_bytes;
+    size_type bwt_lcs_bytes = sdsl::size_in_bytes(this->bwt_lcs);
+    size_type text_lcs_bytes = sdsl::size_in_bytes(this->text_lcs);
+    size_type sa_bytes = sdsl::size_in_bytes(this->sa_samples);
+    size_type isa_bytes = sdsl::size_in_bytes(this->isa_samples);
+    size_type select_bytes = this->selectSize();
 
   #ifdef REPORT_RUNS
-    uint64_t ref_runs = 0, seq_runs = 0;
-    uint64_t ref_gap0 = 0, ref_gap1 = 0, ref_run = 0, ref_delta = 0;
-    uint64_t seq_gap0 = 0, seq_gap1 = 0, seq_run = 0, seq_delta = 0;
+    size_type ref_runs = 0, seq_runs = 0;
+    size_type ref_gap0 = 0, ref_gap1 = 0, ref_run = 0, ref_delta = 0;
+    size_type seq_gap0 = 0, seq_gap1 = 0, seq_run = 0, seq_delta = 0;
     if(print)
     {
       countRuns(this->bwt_lcs.ref, ref_runs, ref_gap0, ref_gap1, ref_run, ref_delta);
@@ -191,7 +191,7 @@ public:
     }
   #endif
 
-    uint64_t bytes = bwt_bytes + bwt_lcs_bytes + text_lcs_bytes + size_in_bytes(this->alpha)
+    size_type bytes = bwt_bytes + bwt_lcs_bytes + text_lcs_bytes + sdsl::size_in_bytes(this->alpha)
                    + sizeof(this->m_size)
                    + sizeof(this->sa_sample_rate) + sa_bytes
                    + sizeof(this->isa_sample_rate) + isa_bytes
@@ -245,19 +245,19 @@ public:
     this->bwt_lcs.serialize(output);
     this->text_lcs.serialize(output);
     this->alpha.serialize(output);
-    write_member(this->sa_sample_rate, output);
+    sdsl::write_member(this->sa_sample_rate, output);
     this->sa_samples.serialize(output);
-    write_member(this->isa_sample_rate, output);
+    sdsl::write_member(this->isa_sample_rate, output);
     this->isa_samples.serialize(output);
   }
 
 //------------------------------------------------------------------------------
 
-  inline range_type LF(uint64_t i) const
+  inline range_type LF(size_type i) const
   {
-    uint64_t lcs_bits = this->bwt_lcs.seq_rank(i + 1);  // Up to position i in seq.
-    uint64_t ref_pos = (lcs_bits > 0 ? this->bwt_lcs.ref_select(lcs_bits) : 0);
-    uint8_t ref_c = 0, seq_c = 0;
+    size_type lcs_bits = this->bwt_lcs.seq_rank(i + 1);  // Up to position i in seq.
+    size_type ref_pos = (lcs_bits > 0 ? this->bwt_lcs.ref_select(lcs_bits) : 0);
+    comp_type ref_c = 0, seq_c = 0;
     bool lcs_pos = this->bwt_lcs.seq[i];
 
     if(lcs_pos)
@@ -274,10 +274,10 @@ public:
     return this->LF(i, lcs_bits, ref_pos, ref_c, seq_c, lcs_pos);
   }
 
-  uint64_t Psi(uint64_t i) const
+  size_type Psi(size_type i) const
   {
     if(i >= this->size()) { return this->size(); }
-    uint64_t c = relative::findChar(this->alpha, i);
+    size_type c = relative::findChar(this->alpha, i);
     return this->select(i + 1 - cumulative(this->alpha, c), c);
   }
 
@@ -286,9 +286,9 @@ public:
     Use force = true if the index does not support locate() and extract().
     NOTE: The divisor of the threshold has been selected by experimenting with different values.
   */
-  uint64_t Psi(uint64_t i, uint64_t k, bool force = false) const
+  size_type Psi(size_type i, size_type k, bool force = false) const
   {
-    uint64_t threshold = ~(uint64_t)0;
+    size_type threshold = ~(size_type)0;
     if(!force)
     {
       threshold = this->reference.sa_sample_rate + this->reference.isa_sample_rate;
@@ -306,10 +306,10 @@ public:
     {
       --end;
       if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
-      uint64_t begin = cumulative(this->alpha, *end);
+      size_type begin = cumulative(this->alpha, *end);
       res.first = begin + this->rank(res.first, *end);
       res.second = begin + this->rank(res.second + 1, *end) - 1;
-      if(length(res) == 0) { return range_type(1, 0); }
+      if(Range::length(res) == 0) { return range_type(1, 0); }
     }
     return res;
   }
@@ -328,13 +328,13 @@ public:
   }
 
   // Call supportsLocate() first.
-  uint64_t locate(uint64_t i) const
+  size_type locate(size_type i) const
   {
     if(this->text_lcs.size() == 0) { return relative::locate(*this, i); }
     if(i >= this->size()) { return 0; }
 
     // Find an SA sample or an LCS position in BWT(seq).
-    uint64_t steps = 0;
+    size_type steps = 0;
     while(this->bwt_lcs.seq[i] == 0)
     {
       if(this->sa_sample_rate > 0 && i % this->sa_sample_rate == 0)
@@ -388,17 +388,17 @@ public:
   }
 
   // Call supportsExtract() first.
-  inline std::string extract(uint64_t from, uint64_t to) const
+  inline std::string extract(size_type from, size_type to) const
   {
     return relative::extract(*this, range_type(from, to));
   }
 
   // Returns ISA[i]. Call supportsExtract() first.
-  inline uint64_t inverse(uint64_t i) const
+  inline size_type inverse(size_type i) const
   {
     if(i >= this->size()) { return this->size(); }
 
-    uint64_t bwt_pos = 0, text_pos = this->size() - 1;  // The end of seq.
+    size_type bwt_pos = 0, text_pos = this->size() - 1;  // The end of seq.
     if(this->isa_sample_rate > 0) // Is there an ISA sample before the end?
     {
       text_pos = ((i + this->isa_sample_rate - 1) / this->isa_sample_rate) * this->isa_sample_rate;
@@ -407,12 +407,12 @@ public:
     }
     if(this->text_lcs.size() > 0) // Is there an LCS position before text_pos?
     {
-      uint64_t lcs_pos = this->text_lcs.seq_rank(i);
-      uint64_t next_pos = this->text_lcs.seq_select(lcs_pos + 1);
+      size_type lcs_pos = this->text_lcs.seq_rank(i);
+      size_type next_pos = this->text_lcs.seq_select(lcs_pos + 1);
       if(next_pos + 1 < text_pos)
       {
         text_pos = next_pos + 1;  // +1 because the matching BWT positions are one step forward.
-        uint64_t ref_pos = this->text_lcs.ref_select(lcs_pos + 1);
+        size_type ref_pos = this->text_lcs.ref_select(lcs_pos + 1);
         bwt_pos = this->reference.inverse(ref_pos + 1);
         bwt_pos = this->bwt_lcs.seq_select(this->bwt_lcs.ref_rank(bwt_pos) + 1);
       }
@@ -431,13 +431,13 @@ public:
   template<class ByteVector>
   void extractBWT(range_type range, ByteVector& buffer) const
   {
-    if(isEmpty(range) || range.second >= this->size()) { return; }
+    if(Range::empty(range) || range.second >= this->size()) { return; }
 
     // Extract the relevant range of the reference.
     ByteVector ref_buffer;
-    bit_vector ref_lcs;
-    uint64_t lcs_pos = this->bwt_lcs.seq_rank(range.first);
-    uint64_t lcs_end = this->bwt_lcs.seq_rank(range.second + 1);
+    sdsl::bit_vector ref_lcs;
+    size_type lcs_pos = this->bwt_lcs.seq_rank(range.first);
+    size_type lcs_end = this->bwt_lcs.seq_rank(range.second + 1);
     if(lcs_end > lcs_pos)
     {
       range_type ref_range(this->bwt_lcs.ref_select(lcs_pos + 1), this->bwt_lcs.ref_select(lcs_end));
@@ -446,11 +446,11 @@ public:
     }
 
     // Do the actual work.
-    bit_vector seq_lcs;
-    util::assign(buffer, ByteVector(length(range), 0));
+    sdsl::bit_vector seq_lcs;
+    sdsl::util::assign(buffer, ByteVector(Range::length(range), 0));
     extractBits(this->bwt_lcs.seq, range, seq_lcs);
-    uint64_t complement_pos = range.first - lcs_pos, ref_pos = 0;
-    for(uint64_t i = 0; i < buffer.size(); i++)
+    size_type complement_pos = range.first - lcs_pos, ref_pos = 0;
+    for(size_type i = 0; i < buffer.size(); i++)
     {
       if(seq_lcs[i] == 1)
       {
@@ -474,30 +474,30 @@ public:
   {
     if(this->fastSelect()) { this->clearSelect(); }
 
-    bit_vector ref_lcs, seq_lcs;
+    sdsl::bit_vector ref_lcs, seq_lcs;
     #pragma omp parallel for schedule(static)
-    for(uint64_t i = 0; i < 2; i++)
+    for(size_type i = 0; i < 2; i++)
     {
       if(i == 0) { getSortedLCS(this->reference, this->bwt_lcs.ref, ref_lcs, this->ref_lcs_C); }
       else       { getSortedLCS(*this, this->bwt_lcs.seq, seq_lcs, this->seq_lcs_C); }
     }
 
-    util::assign(this->sorted_lcs, LCS(ref_lcs, seq_lcs, this->bwt_lcs.size()));
-    util::init_support(this->complement_select, &(this->bwt_lcs.seq));
+    sdsl::util::assign(this->sorted_lcs, LCS(ref_lcs, seq_lcs, this->bwt_lcs.size()));
+    sdsl::util::init_support(this->complement_select, &(this->bwt_lcs.seq));
   }
 
-  uint64_t selectSize() const
+  size_type selectSize() const
   {
-    return size_in_bytes(this->sorted_lcs)
-      + size_in_bytes(this->ref_lcs_C) + size_in_bytes(this->seq_lcs_C);
+    return sdsl::size_in_bytes(this->sorted_lcs)
+      + sdsl::size_in_bytes(this->ref_lcs_C) + sdsl::size_in_bytes(this->seq_lcs_C);
   }
 
   void clearSelect()
   {
-    util::clear(this->sorted_lcs);
-    util::clear(this->complement_select);
-    util::clear(this->ref_lcs_C);
-    util::clear(this->seq_lcs_C);
+    sdsl::util::clear(this->sorted_lcs);
+    sdsl::util::clear(this->complement_select);
+    sdsl::util::clear(this->ref_lcs_C);
+    sdsl::util::clear(this->seq_lcs_C);
   }
 
   /*
@@ -548,15 +548,15 @@ public:
   SequenceType          ref_minus_lcs, seq_minus_lcs;
   LCS                   bwt_lcs, text_lcs;
   Alphabet              alpha;
-  uint64_t              m_size;
+  size_type              m_size;
 
-  uint64_t              sa_sample_rate, isa_sample_rate;
-  int_vector<0>         sa_samples, isa_samples;
+  size_type              sa_sample_rate, isa_sample_rate;
+  sdsl::int_vector<0>         sa_samples, isa_samples;
 
   // An optional select() structure that can be generated quickly when needed.
   LCS                             sorted_lcs;
   LCS::vector_type::select_0_type complement_select;
-  int_vector<64>                  ref_lcs_C, seq_lcs_C; // The C arrays for the common subsequence.
+  sdsl::int_vector<64>                  ref_lcs_C, seq_lcs_C; // The C arrays for the common subsequence.
 
 //------------------------------------------------------------------------------
 
@@ -569,9 +569,9 @@ private:
     this->text_lcs.load(input);
     this->alpha.load(input);
     this->m_size = this->reference.size() + this->seq_minus_lcs.size() - this->ref_minus_lcs.size();
-    read_member(this->sa_sample_rate, input);
+    sdsl::read_member(this->sa_sample_rate, input);
     this->sa_samples.load(input);
-    read_member(this->isa_sample_rate, input);
+    sdsl::read_member(this->isa_sample_rate, input);
     this->isa_samples.load(input);
   }
 
@@ -591,17 +591,17 @@ private:
     }
     if(sample_sa)
     {
-      util::assign(this->sa_samples,
-        int_vector<0>((this->size() + this->sa_sample_rate - 1) / this->sa_sample_rate, 0, bitlength(this->size() - 1)));
+      sdsl::util::assign(this->sa_samples,
+        sdsl::int_vector<0>((this->size() + this->sa_sample_rate - 1) / this->sa_sample_rate, 0, bit_length(this->size() - 1)));
     }
     if(sample_isa)
     {
-      util::assign(this->isa_samples,
-        int_vector<0>((this->size() + this->isa_sample_rate - 1) / this->isa_sample_rate, 0, bitlength(this->size() - 1)));
+      sdsl::util::assign(this->isa_samples,
+        sdsl::int_vector<0>((this->size() + this->isa_sample_rate - 1) / this->isa_sample_rate, 0, bit_length(this->size() - 1)));
     }
 
     if(!sample_sa && !sample_isa) { return; }
-    uint64_t text_pos = this->size(), bwt_pos = 0;
+    size_type text_pos = this->size(), bwt_pos = 0;
     while(text_pos > 0)
     {
       text_pos--;
@@ -625,12 +625,12 @@ private:
     and ignore the last position when doing rank in that sequence.
     Note that c is a real character.
   */
-  inline uint64_t rank(uint64_t i, uint8_t c) const
+  inline size_type rank(size_type i, char_type c) const
   {
-    uint64_t res = 0;
-    uint8_t ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
+    size_type res = 0;
+    comp_type ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
 
-    uint64_t lcs_bits = this->bwt_lcs.seq_rank(i + 1); // Number of LCS bits up to i in seq.
+    size_type lcs_bits = this->bwt_lcs.seq_rank(i + 1); // Number of LCS bits up to i in seq.
     bool check_lcs = (this->bwt_lcs.seq[i] == 1); // Is position i in LCS.
     if(lcs_bits < i + 1) // There are i + 1 - lcs_bits non-LCS bits in seq.
     {
@@ -638,7 +638,7 @@ private:
     }
     if(lcs_bits > 0)
     {
-      uint64_t ref_pos = this->bwt_lcs.ref_select(lcs_bits);  // Select is 1-based.
+      size_type ref_pos = this->bwt_lcs.ref_select(lcs_bits);  // Select is 1-based.
       res += this->reference.bwt.rank(ref_pos + 1 - check_lcs, ref_c);
       if(lcs_bits < ref_pos + 1) // At least one non-LCS bit in ref.
       {
@@ -653,37 +653,37 @@ private:
     Compute select() by either binary searching rank() or using the separate select() structures.
     Note that i is 1-based and c is a real character.
   */
-  uint64_t select(uint64_t i, uint8_t c) const
+  size_type select(size_type i, char_type c) const
   {
     if(this->fastSelect())
     {
-      uint8_t ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
-      uint64_t lf_pos = this->alpha.C[seq_c] + i - 1;
-      uint64_t lcs_rank = this->sorted_lcs.seq_rank(lf_pos) - this->seq_lcs_C[seq_c];
+      comp_type ref_c = this->reference.alpha.char2comp[c], seq_c = this->alpha.char2comp[c];
+      size_type lf_pos = this->alpha.C[seq_c] + i - 1;
+      size_type lcs_rank = this->sorted_lcs.seq_rank(lf_pos) - this->seq_lcs_C[seq_c];
 
       if(this->sorted_lcs.seq[lf_pos] == 1) // The i'th occurrence of c is in LCS.
       {
-        uint64_t ref_rank = this->sorted_lcs.ref_select(this->ref_lcs_C[ref_c] + lcs_rank + 1)
+        size_type ref_rank = this->sorted_lcs.ref_select(this->ref_lcs_C[ref_c] + lcs_rank + 1)
           - this->reference.alpha.C[ref_c];
-        uint64_t ref_pos = this->reference.bwt.select(ref_rank + 1, ref_c);
-        uint64_t lcs_pos = this->bwt_lcs.ref_rank(ref_pos);
+        size_type ref_pos = this->reference.bwt.select(ref_rank + 1, ref_c);
+        size_type lcs_pos = this->bwt_lcs.ref_rank(ref_pos);
         return this->bwt_lcs.seq_select(lcs_pos + 1);
       }
       else  // The i'th occurrence of c is in the complement.
       {
-        uint64_t comp_rank = (lf_pos - this->alpha.C[seq_c]) - lcs_rank;
-        uint64_t comp_pos = this->seq_minus_lcs.select(comp_rank + 1, seq_c);
+        size_type comp_rank = (lf_pos - this->alpha.C[seq_c]) - lcs_rank;
+        size_type comp_pos = this->seq_minus_lcs.select(comp_rank + 1, seq_c);
         return this->complement_select(comp_pos + 1);
       }
     }
     else
     {
       i--;  // Select is 1-based, while ranks are 0-based.
-      uint64_t low = 0, high = this->size() - 1;
+      size_type low = 0, high = this->size() - 1;
       while(low < high) // select(i, c) is the last position j with rank(j, c) == i.
       {
-        uint64_t mid = low + (high + 1 - low) / 2;
-        uint64_t candidate = this->rank(mid, c);
+        size_type mid = low + (high + 1 - low) / 2;
+        size_type candidate = this->rank(mid, c);
         if(candidate < i) { low = mid + 1; }
         else if(candidate == i) { low = mid; }
         else { high = mid - 1; }
@@ -697,20 +697,20 @@ private:
     that are known to be in seq_minus_lcs, while the second one contains the core
     functionality.
   */
-  inline range_type LF_complement(uint64_t i) const
+  inline range_type LF_complement(size_type i) const
   {
-    uint64_t lcs_bits = this->bwt_lcs.seq_rank(i);  // Up to position i in seq.
-    uint64_t ref_pos = (lcs_bits > 0 ? this->bwt_lcs.ref_select(lcs_bits) : 0);
-    uint8_t seq_c = this->seq_minus_lcs[i - lcs_bits];
-    uint8_t ref_c = this->reference.alpha.char2comp[this->alpha.comp2char[seq_c]];
+    size_type lcs_bits = this->bwt_lcs.seq_rank(i);  // Up to position i in seq.
+    size_type ref_pos = (lcs_bits > 0 ? this->bwt_lcs.ref_select(lcs_bits) : 0);
+    comp_type seq_c = this->seq_minus_lcs[i - lcs_bits];
+    comp_type ref_c = this->reference.alpha.char2comp[this->alpha.comp2char[seq_c]];
     return this->LF(i, lcs_bits, ref_pos, ref_c, seq_c, false);
   }
 
   // This function contains the core functionality of all varieties of LF.
-  inline range_type LF(uint64_t i, uint64_t lcs_bits, uint64_t ref_pos,
-    uint8_t ref_c, uint8_t seq_c, bool lcs_pos) const
+  inline range_type LF(size_type i, size_type lcs_bits, size_type ref_pos,
+    comp_type ref_c, comp_type seq_c, bool lcs_pos) const
   {
-    uint64_t res = this->alpha.C[seq_c];
+    size_type res = this->alpha.C[seq_c];
     if(lcs_bits < i + lcs_pos)
     {
       res += this->seq_minus_lcs.rank(i + lcs_pos - lcs_bits, seq_c);
@@ -739,13 +739,13 @@ private:
 
 template<class ReferenceBWTType, class SequenceType>
 void
-getComplement(const ReferenceBWTType& bwt, SequenceType& output, const bit_vector& positions, uint64_t n)
+getComplement(const ReferenceBWTType& bwt, SequenceType& output, const sdsl::bit_vector& positions, size_type n)
 {
 #ifdef VERBOSE_STATUS_INFO
   double timestamp = readTimer();
 #endif
-  int_vector<8> buffer(bwt.size() - n, 0);
-  for(uint64_t i = 0, j = 0; i < bwt.size(); i++)
+  sdsl::int_vector<8> buffer(bwt.size() - n, 0);
+  for(size_type i = 0, j = 0; i < bwt.size(); i++)
   {
     if(positions[i] == 0) { buffer[j] = bwt[i]; j++; }
   }
@@ -781,7 +781,7 @@ struct record_comparator
 {
   inline bool operator() (const record_type& a, const record_type& b)
   {
-    return (length(a.left) + length(a.right) > length(b.left) + length(b.right));
+    return (Range::length(a.left) + Range::length(a.right) > Range::length(b.left) + Range::length(b.right));
   }
 };
 
@@ -845,9 +845,9 @@ struct short_record_comparator
   of size at least (max_d + 3) * (max_d + 1).
 */
 range_type greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& seq_extract,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs,
   short_record_type& record,
-  const uint8_t* alphabet, uint64_t sigma,
+  const uint8_t* alphabet, size_type sigma,
   const align_parameters& parameters,
   std::vector<int>* buf);
 
@@ -855,7 +855,7 @@ range_type greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<
 
 template<class ReferenceType>
 void
-processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
+processSubtree(const record_type& root, uint8_t* alphabet, size_type sigma,
   const ReferenceType& ref, const ReferenceType& seq,
   std::vector<short_record_type>& results,
   const align_parameters& parameters)
@@ -864,7 +864,7 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
   while(!(record_stack.empty()))
   {
     record_type curr = record_stack.top(); record_stack.pop();
-    if(length(curr.left) <= parameters.block_size || length(curr.right) <= parameters.block_size || curr.endmarker)
+    if(Range::length(curr.left) <= parameters.block_size || Range::length(curr.right) <= parameters.block_size || curr.endmarker)
     {
       results.push_back(short_record_type(curr));
       continue;
@@ -876,7 +876,7 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
       {
         std::cerr << "Pattern length became " << curr.pattern.length() << " on ranges "
                   << std::make_pair(curr.left, curr.right) << std::endl;
-        std::cerr << "  Range lengths: " << std::make_pair(length(curr.left), length(curr.right)) << std::endl;
+        std::cerr << "  Range lengths: " << std::make_pair(Range::length(curr.left), Range::length(curr.right)) << std::endl;
         std::cerr << "  The pattern was: " << curr.pattern << std::endl;
       }
 #endif
@@ -885,11 +885,11 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
     }
 
     std::string pattern = curr.pattern + " ";
-    for(uint64_t i = sigma; i > 0; i--)
+    for(size_type i = sigma; i > 0; i--)
     {
       pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
-      range_type left = ref.find(pattern.begin(), pattern.end()); if(isEmpty(left)) { continue; }
-      range_type right = seq.find(pattern.begin(), pattern.end()); if(isEmpty(right)) { continue; }
+      range_type left = ref.find(pattern.begin(), pattern.end()); if(Range::empty(left)) { continue; }
+      range_type right = seq.find(pattern.begin(), pattern.end()); if(Range::empty(right)) { continue; }
       bool onlyNs = (curr.onlyNs && alphabet[i - 1] == 'N'), endmarker = (i == 1);
       record_stack.push(record_type(left, right, pattern, onlyNs, endmarker));
     }
@@ -898,9 +898,9 @@ processSubtree(const record_type& root, uint8_t* alphabet, uint64_t sigma,
 
 template<class ReferenceType>
 void
-generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint64_t sigma,
+generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, size_type sigma,
   const ReferenceType& ref, const ReferenceType& seq,
-  uint64_t seed_length)
+  size_type seed_length)
 {
   std::stack<record_type> record_stack;
   record_stack.push(record_type(range_type(0, ref.size() - 1), range_type(0, seq.size() - 1), "", true, false));
@@ -910,11 +910,11 @@ generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint
     record_type curr = record_stack.top(); record_stack.pop();
     if(curr.pattern.length() >= seed_length) { record_array.push_back(curr); continue; }
     std::string pattern = curr.pattern + " ";
-    for(uint64_t i = sigma; i > 0; i--)
+    for(size_type i = sigma; i > 0; i--)
     {
       pattern[pattern.length() - 1] = (unsigned char)(alphabet[i - 1]);
-      range_type left = ref.find(pattern.begin(), pattern.end()); if(isEmpty(left)) { continue; }
-      range_type right = seq.find(pattern.begin(), pattern.end()); if(isEmpty(right)) { continue; }
+      range_type left = ref.find(pattern.begin(), pattern.end()); if(Range::empty(left)) { continue; }
+      range_type right = seq.find(pattern.begin(), pattern.end()); if(Range::empty(right)) { continue; }
       bool onlyNs = (curr.onlyNs && alphabet[i - 1] == 'N'), endmarker = (i == 1);
       record_stack.push(record_type(left, right, pattern, onlyNs, endmarker));
     }
@@ -926,15 +926,15 @@ generatePatterns(std::vector<record_type>& record_array, uint8_t* alphabet, uint
 }
 
 /*
-  Copy the last length(range) bits from source to target[range]. We assume that source
+  Copy the last Range::length(range) bits from source to target[range]. We assume that source
   has been paddes so that word boundaries are in the same positions in both bitvectors.
 */
-void copyBits(const bit_vector& source, bit_vector& target, range_type range);
+void copyBits(const sdsl::bit_vector& source, sdsl::bit_vector& target, range_type range);
 
 template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t& lcs,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs, size_type& lcs,
   const align_parameters& parameters, bool print)
 {
   if(print)
@@ -942,13 +942,13 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     std::cout << "Reference size: " << ref.size() << std::endl;
     std::cout << "Target size: " << seq.size() << std::endl;
   }
-  util::clear(ref_lcs); util::clear(seq_lcs);
+  sdsl::util::clear(ref_lcs); sdsl::util::clear(seq_lcs);
 
-  uint64_t sigma = 0;
+  size_type sigma = 0;
   uint8_t alphabet[256];
   if(parameters.sorted_alphabet)  // Use the intersection of the alphabets.
   {
-    for(uint64_t c = 0; c < 256; c++)
+    for(size_type c = 0; c < 256; c++)
     {
       if(hasChar(ref.alpha, c) && hasChar(seq.alpha, c))
       {
@@ -959,18 +959,18 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   else  // Use the alphabet from seq.
   {
     sigma = seq.alpha.sigma;
-    for(uint64_t c = 0; c < sigma; c++) { alphabet[c] = seq.alpha.comp2char[c]; }
+    for(size_type c = 0; c < sigma; c++) { alphabet[c] = seq.alpha.comp2char[c]; }
   }
 
   // Partition the BWTs.
   double timestamp = readTimer();
-  uint64_t intersection = 0;
+  size_type intersection = 0;
   std::vector<short_record_type> results;
   {
     std::vector<record_type> record_array;
     generatePatterns(record_array, alphabet, sigma, ref, seq, parameters.seed_length);
     #pragma omp parallel for schedule(dynamic, 1)
-    for(uint64_t i = 0; i < record_array.size(); i++)
+    for(size_type i = 0; i < record_array.size(); i++)
     {
       std::vector<short_record_type> result_buffer;
       processSubtree(record_array[i], alphabet, sigma, ref, seq, result_buffer, parameters);
@@ -984,11 +984,11 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
   if(print)
   {
-    uint64_t ref_missed = 0, seq_missed = 0, ref_expect = 0, seq_expect = 0, ref_overlap = 0, seq_overlap = 0;
-    for(uint64_t i = 0; i < results.size(); i++)
+    size_type ref_missed = 0, seq_missed = 0, ref_expect = 0, seq_expect = 0, ref_overlap = 0, seq_overlap = 0;
+    for(size_type i = 0; i < results.size(); i++)
     {
       range_type first = results[i].first(), second = results[i].second();
-      intersection += std::min(length(first), length(second));
+      intersection += std::min(Range::length(first), Range::length(second));
       if(first.first < ref_expect) { ref_overlap++; }
       ref_missed += first.first - ref_expect; ref_expect = first.second + 1;
       if(second.first < seq_expect) { seq_overlap++; }
@@ -1011,27 +1011,27 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
   // Find the approximate LCS using the partitioning.
   timestamp = readTimer(); lcs = 0;
-  uint64_t losses = 0, processed = 0, percentage = 1;
-  util::assign(ref_lcs, bit_vector(ref.size(), 0));
-  util::assign(seq_lcs, bit_vector(seq.size(), 0));
-  uint64_t threads = omp_get_max_threads();
-  uint64_t chunk = std::max((uint64_t)1, results.size() / (threads * threads));
+  size_type losses = 0, processed = 0, percentage = 1;
+  sdsl::util::assign(ref_lcs, sdsl::bit_vector(ref.size(), 0));
+  sdsl::util::assign(seq_lcs, sdsl::bit_vector(seq.size(), 0));
+  size_type threads = omp_get_max_threads();
+  size_type chunk = std::max((size_type)1, results.size() / (threads * threads));
   std::vector<std::vector<int>*> buffers(threads, 0);
   if(parameters.preallocate)
   {
-    for(uint64_t i = 0; i < threads; i++)
+    for(size_type i = 0; i < threads; i++)
     {
       buffers[i] = new std::vector<int>;
       buffers[i]->reserve((parameters.max_d + 3) * (parameters.max_d + 1));
     }
   }
   #pragma omp parallel for schedule(dynamic, chunk)
-  for(uint64_t i = 0; i < results.size(); i++)
+  for(size_type i = 0; i < results.size(); i++)
   {
     // Ensure that ref_buffer and seq_buffer are aligned in the same way as ref_lcs and seq_lcs.
     range_type ref_range = results[i].first(), seq_range = results[i].second();
-    bit_vector ref_buffer(length(ref_range) + ref_range.first % 64, 0);
-    bit_vector seq_buffer(length(seq_range) + seq_range.first % 64, 0);
+    sdsl::bit_vector ref_buffer(Range::length(ref_range) + ref_range.first % 64, 0);
+    sdsl::bit_vector seq_buffer(Range::length(seq_range) + seq_range.first % 64, 0);
     std::vector<uint8_t> ref_extract; ref.extractBWT(ref_range, ref_extract);
     std::vector<uint8_t> seq_extract; seq.extractBWT(seq_range, seq_extract);
 
@@ -1057,7 +1057,7 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
   if(parameters.preallocate)
   {
-    for(uint64_t i = 0; i < threads; i++) { delete buffers[i]; buffers[i] = 0; }
+    for(size_type i = 0; i < threads; i++) { delete buffers[i]; buffers[i] = 0; }
   }
   if(print)
   {
@@ -1085,23 +1085,23 @@ struct range_pair
 
   The function clears left_matches and right_matches.
 */
-uint64_t increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
-  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t ref_len, uint64_t seq_len);
+size_type increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs, size_type ref_len, size_type seq_len);
 
 // Sort the matches and add a guard to the end.
-void sortMatches(std::vector<range_pair>& matches, uint64_t ref_len, uint64_t seq_len);
+void sortMatches(std::vector<range_pair>& matches, size_type ref_len, size_type seq_len);
 
 // Determine the number of positions covered by a left/right match.
-uint64_t countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches, uint64_t ref_len);
+size_type countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches, size_type ref_len);
 
 template<class ReferenceType>
 struct Match
 {
   const ReferenceType& seq;
-  uint64_t bwt_pos;
-  uint64_t text_pos;  // Ending position of the run in the text.
-  uint64_t distance;  // Distance from SA[bwt_pos] to text_pos.
-  uint64_t length;    // Length of the run.
+  size_type bwt_pos;
+  size_type text_pos;  // Ending position of the run in the text.
+  size_type distance;  // Distance from SA[bwt_pos] to text_pos.
+  size_type length;    // Length of the run.
   bool following;
 
   Match(const ReferenceType& _seq) :
@@ -1117,7 +1117,7 @@ struct Match
     this->following = false;
   }
 
-  void follow(uint64_t new_pos)
+  void follow(size_type new_pos)
   {
     this->bwt_pos = new_pos; this->text_pos = this->seq.size();
     this->distance = 0; this->length = 1;
@@ -1134,7 +1134,7 @@ struct Match
   }
 
   // c is the character that should match the one used for LF.
-  void advance(uint64_t c)
+  void advance(size_type c)
   {
     if(this->bwt_pos >= this->seq.size()) { return; }
 
@@ -1155,7 +1155,7 @@ struct Match
     }
   }
 
-  void addRun(std::vector<range_pair>& vec, uint64_t ref_starting_pos)
+  void addRun(std::vector<range_pair>& vec, size_type ref_starting_pos)
   {
     if(this->length > 1)
     {
@@ -1177,27 +1177,27 @@ template<class ReferenceType>
 void
 findMatches(const ReferenceType& ref, const ReferenceType& seq,
   std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
-  const bit_vector& merge_vector)
+  const sdsl::bit_vector& merge_vector)
 {
-  uint64_t bwt_pos = 0, text_pos = ref.size() - 1;  // SA(ref)[bwt_pos] = text_pos
+  size_type bwt_pos = 0, text_pos = ref.size() - 1;  // SA(ref)[bwt_pos] = text_pos
   Match<ReferenceType> left(seq), right(seq);
   right.follow(0);  // The empty suffix of seq is the right match of the empty suffix of ref.
-  bit_vector::select_0_type ref_select(&merge_vector);
-  bit_vector::rank_1_type seq_rank(&merge_vector);
+  sdsl::bit_vector::select_0_type ref_select(&merge_vector);
+  sdsl::bit_vector::rank_1_type seq_rank(&merge_vector);
 
   while(text_pos > 0)
   {
     // Advance to the previous position.
     range_type prev = ref.LF(bwt_pos); bwt_pos = prev.first; text_pos--;
     prev.second = ref.alpha.comp2char[prev.second];
-    uint64_t mutual_pos = ref_select(bwt_pos + 1);
+    size_type mutual_pos = ref_select(bwt_pos + 1);
 
     // We stop following, if the character is wrong, the match has reached the beginning of
     // the sequence, there is no longer a match, or the old match is no longer adjacent.
     if(left.following)
     {
       left.advance(prev.second);
-      uint64_t new_match = seq.size();
+      size_type new_match = seq.size();
       if(merge_vector[mutual_pos - 1] == 0) { left.following = false; }
       else if((new_match = seq_rank(mutual_pos - 1)) != left.bwt_pos) { left.following = false; }
       if(left.following) { left.length++; }
@@ -1215,7 +1215,7 @@ findMatches(const ReferenceType& ref, const ReferenceType& seq,
     if(right.following)
     {
       right.advance(prev.second);
-      uint64_t new_match = seq.size();
+      size_type new_match = seq.size();
       if(mutual_pos + 1 < seq.size() && merge_vector[mutual_pos + 1] == 0) { right.following = false; }
       else if((new_match = seq_rank(mutual_pos + 1)) != right.bwt_pos) { right.following = false; }
       if(right.following) { right.length++; }
@@ -1236,25 +1236,25 @@ findMatches(const ReferenceType& ref, const ReferenceType& seq,
 
 template<class ReferenceType>
 void
-permuteVector(const bit_vector& source, bit_vector& target, const ReferenceType& index,
-  uint64_t sa_sample_rate, int_vector<0>& sa_samples,
-  uint64_t isa_sample_rate, int_vector<0>& isa_samples)
+permuteVector(const sdsl::bit_vector& source, sdsl::bit_vector& target, const ReferenceType& index,
+  size_type sa_sample_rate, sdsl::int_vector<0>& sa_samples,
+  size_type isa_sample_rate, sdsl::int_vector<0>& isa_samples)
 {
   bool sample_sa = (sa_sample_rate > 0);
   bool sample_isa = (isa_sample_rate > 0);
   if(sample_sa)
   {
-    util::assign(sa_samples,
-      int_vector<0>((index.size() + sa_sample_rate - 1) / sa_sample_rate, 0, bitlength(index.size() - 1)));
+    sdsl::util::assign(sa_samples,
+      sdsl::int_vector<0>((index.size() + sa_sample_rate - 1) / sa_sample_rate, 0, bit_length(index.size() - 1)));
   }
   if(sample_isa)
   {
-    util::assign(isa_samples,
-      int_vector<0>((index.size() + isa_sample_rate - 1) / isa_sample_rate, 0, bitlength(index.size() - 1)));
+    sdsl::util::assign(isa_samples,
+      sdsl::int_vector<0>((index.size() + isa_sample_rate - 1) / isa_sample_rate, 0, bit_length(index.size() - 1)));
   }
-  util::assign(target, bit_vector(index.size(), 0));
+  sdsl::util::assign(target, sdsl::bit_vector(index.size(), 0));
 
-  uint64_t text_pos = index.size(), bwt_pos = 0;
+  size_type text_pos = index.size(), bwt_pos = 0;
   while(text_pos > 1)
   {
     text_pos--; // Invariant: SA[bwt_pos] == text_pos
@@ -1270,10 +1270,10 @@ permuteVector(const bit_vector& source, bit_vector& target, const ReferenceType&
 template<class ReferenceType>
 void
 alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
-  bit_vector& bwt_ref_lcs, bit_vector& bwt_seq_lcs,
-  bit_vector& text_ref_lcs, bit_vector& text_seq_lcs,
-  uint64_t& lcs,
-  int_vector<0>& sa_samples, int_vector<0>& isa_samples,
+  sdsl::bit_vector& bwt_ref_lcs, sdsl::bit_vector& bwt_seq_lcs,
+  sdsl::bit_vector& text_ref_lcs, sdsl::bit_vector& text_seq_lcs,
+  size_type& lcs,
+  sdsl::int_vector<0>& sa_samples, sdsl::int_vector<0>& isa_samples,
   const align_parameters& parameters, bool print)
 {
   if(print)
@@ -1281,18 +1281,18 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
     std::cout << "Reference size: " << ref.size() << std::endl;
     std::cout << "Target size: " << seq.size() << std::endl;
   }
-  util::clear(bwt_ref_lcs); util::clear(bwt_seq_lcs);
-  util::clear(text_ref_lcs); util::clear(text_seq_lcs);
+  sdsl::util::clear(bwt_ref_lcs); sdsl::util::clear(bwt_seq_lcs);
+  sdsl::util::clear(text_ref_lcs); sdsl::util::clear(text_seq_lcs);
 
   // Build a mapping from the comp values of seq to the comp values of ref.
-  int_vector<64> comp_mapping(seq.alpha.sigma);
-  bit_vector in_ref(seq.alpha.sigma);
+  sdsl::int_vector<64> comp_mapping(seq.alpha.sigma);
+  sdsl::bit_vector in_ref(seq.alpha.sigma);
   if(parameters.sorted_alphabet)  // Use first ref_c >= seq_c.
   {
-    uint64_t ref_comp = 0;
-    for(uint64_t seq_comp = 0; seq_comp < seq.alpha.sigma; seq_comp++)
+    size_type ref_comp = 0;
+    for(size_type seq_comp = 0; seq_comp < seq.alpha.sigma; seq_comp++)
     {
-      uint64_t seq_c = seq.alpha.comp2char[seq_comp];
+      size_type seq_c = seq.alpha.comp2char[seq_comp];
       while(ref_comp < ref.alpha.sigma && ref.alpha.comp2char[ref_comp] < seq_c) { ref_comp++; }
       comp_mapping[seq_comp] = ref_comp;
       in_ref[seq_comp] = (ref_comp < ref.alpha.sigma && ref.alpha.comp2char[ref_comp] == seq_c);
@@ -1300,14 +1300,14 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   }
   else  // Assume an identical alphabet.
   {
-    for(uint64_t i = 0; i < seq.alpha.sigma; i++) { comp_mapping[i] = i; in_ref[i] = true; }
+    for(size_type i = 0; i < seq.alpha.sigma; i++) { comp_mapping[i] = i; in_ref[i] = true; }
   }
 
   // Build the merging bitvector.
   double timestamp = readTimer();
-  bit_vector merge_vector(ref.size() + seq.size());
+  sdsl::bit_vector merge_vector(ref.size() + seq.size());
   {
-    uint64_t ref_pos = ref.sequences(), seq_pos = 0; // Number of suffixes smaller than the current one.
+    size_type ref_pos = ref.sequences(), seq_pos = 0; // Number of suffixes smaller than the current one.
     while(true)
     {
       merge_vector[ref_pos + seq_pos] = 1;
@@ -1335,12 +1335,12 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   timestamp = readTimer();
   {
     findMatches(ref, seq, left_matches, right_matches, merge_vector);
-    util::clear(merge_vector);
+    sdsl::util::clear(merge_vector);
     sortMatches(left_matches, ref.size(), seq.size());
     sortMatches(right_matches, ref.size(), seq.size());
     if(print)
     {
-      uint64_t total_matches = countCoverage(left_matches, right_matches, ref.size());
+      size_type total_matches = countCoverage(left_matches, right_matches, ref.size());
       std::cout << "Matched " << total_matches << " positions in "
                 << (readTimer() - timestamp) << " seconds" << std::endl;
     }
@@ -1360,12 +1360,12 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
   timestamp = readTimer();
   {
     const ReferenceType* index[2] = { &ref, &seq };
-    bit_vector* text_lcs[2] = { &text_ref_lcs, &text_seq_lcs };
-    bit_vector* bwt_lcs[2] = { &bwt_ref_lcs, &bwt_seq_lcs };
-    uint64_t sa_rate[2] = { 0, parameters.sa_sample_rate };
-    uint64_t isa_rate[2] = { 0, parameters.isa_sample_rate };
+    sdsl::bit_vector* text_lcs[2] = { &text_ref_lcs, &text_seq_lcs };
+    sdsl::bit_vector* bwt_lcs[2] = { &bwt_ref_lcs, &bwt_seq_lcs };
+    size_type sa_rate[2] = { 0, parameters.sa_sample_rate };
+    size_type isa_rate[2] = { 0, parameters.isa_sample_rate };
     #pragma omp parallel for
-    for(uint64_t i = 0; i < 2; i++)
+    for(size_type i = 0; i < 2; i++)
     {
       permuteVector(*(text_lcs[i]), *(bwt_lcs[i]), *(index[i]),
         sa_rate[i], sa_samples, isa_rate[i], isa_samples);
@@ -1383,22 +1383,22 @@ alignBWTs(const ReferenceType& ref, const ReferenceType& seq,
 
 template<class IndexType, class VectorType>
 void
-getSortedLCS(const IndexType& index, const VectorType& lcs, bit_vector& sorted_lcs, int_vector<64>& lcs_C)
+getSortedLCS(const IndexType& index, const VectorType& lcs, sdsl::bit_vector& sorted_lcs, sdsl::int_vector<64>& lcs_C)
 {
-  int_vector<8> buffer;
-  bit_vector lcs_buffer;
-  int_vector<64> C(index.alpha.sigma, 0);
+  sdsl::int_vector<8> buffer;
+  sdsl::bit_vector lcs_buffer;
+  sdsl::int_vector<64> C(index.alpha.sigma, 0);
 
-  util::assign(sorted_lcs, bit_vector(index.size(), 0));
-  util::assign(lcs_C, int_vector<64>(index.alpha.sigma + 1, 0));
-  for(uint64_t i = 0; i < index.size(); i += MEGABYTE)
+  sdsl::util::assign(sorted_lcs, sdsl::bit_vector(index.size(), 0));
+  sdsl::util::assign(lcs_C, sdsl::int_vector<64>(index.alpha.sigma + 1, 0));
+  for(size_type i = 0; i < index.size(); i += MEGABYTE)
   {
     range_type range(i, std::min(i + MEGABYTE, index.size()) - 1);
     index.extractBWT(range, buffer);
     extractBits(lcs, range, lcs_buffer);
-    for(uint64_t i = 0; i < buffer.size(); i++)
+    for(size_type i = 0; i < buffer.size(); i++)
     {
-      uint64_t comp = index.alpha.char2comp[buffer[i]];
+      size_type comp = index.alpha.char2comp[buffer[i]];
       if(lcs_buffer[i] == 1)
       {
         sorted_lcs[index.alpha.C[comp] + C[comp]] = 1;
@@ -1408,7 +1408,7 @@ getSortedLCS(const IndexType& index, const VectorType& lcs, bit_vector& sorted_l
     }
   }
 
-  for(uint64_t i = 2; i <= index.alpha.sigma; i++) { lcs_C[i] += lcs_C[i - 1]; }
+  for(size_type i = 2; i <= index.alpha.sigma; i++) { lcs_C[i] += lcs_C[i - 1]; }
 }
 
 //------------------------------------------------------------------------------

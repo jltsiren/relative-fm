@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -36,8 +36,8 @@ namespace relative
 //------------------------------------------------------------------------------
 
 void
-relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
+relativeLZSuccinct(const sdsl::bit_vector& text, const sdsl::bit_vector& reference,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, sdsl::bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
 
@@ -46,19 +46,19 @@ relativeLZSuccinct(const bit_vector& text, const bit_vector& reference,
 }
 
 void
-relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, bit_vector& mismatches)
+relativeLZSuccinct(const sdsl::bit_vector& text, const bv_fmi& reference,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, sdsl::bit_vector& mismatches)
 {
   if(text.size() == 0) { return; }
 
   // Use backward searching on the BWT of the reverse reference to parse the text.
-  uint64_t text_pos = 0;
+  size_type text_pos = 0;
   starts.clear(); lengths.clear();
   std::vector<bool> char_buffer;
   while(text_pos < text.size())
   {
     bv_fmi::range_type range = reference.bitRange(text[text_pos]);
-    uint64_t len = 1; // We have matched len bits in the reverse reference.
+    size_type len = 1; // We have matched len bits in the reverse reference.
     while(text_pos + len < text.size())
     {
       bv_fmi::range_type new_range;
@@ -75,7 +75,7 @@ relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
       if(new_range.first > new_range.second) { break; }
       else { range = new_range; len++; }
     }
-    uint64_t reverse_pos = 0; // Position of the reverse pattern in reverse reference.
+    size_type reverse_pos = 0; // Position of the reverse pattern in reverse reference.
     while(true)
     {
       if(range.first == reference.endmarker)
@@ -97,25 +97,25 @@ relativeLZSuccinct(const bit_vector& text, const bv_fmi& reference,
     text_pos += len;
   }
   mismatches.resize(char_buffer.size());
-  for(uint64_t i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
+  for(size_type i = 0; i < char_buffer.size(); i++) { mismatches[i] = char_buffer[i]; }
 }
 
 //------------------------------------------------------------------------------
 
 void
-relativeLZ(const int_vector<8>& text, const int_vector<8>& reference,
-  std::vector<uint64_t>& starts, std::vector<uint64_t>& lengths, int_vector<8>& mismatches)
+relativeLZ(const sdsl::int_vector<8>& text, const sdsl::int_vector<8>& reference,
+  std::vector<size_type>& starts, std::vector<size_type>& lengths, sdsl::int_vector<8>& mismatches)
 {
   if(text.size() == 0) { return; }
 
-  csa_wt<> csa;
+  sdsl::csa_wt<> csa;
   reverseIndex(reference, csa);
   relativeLZ(text, csa, starts, lengths, mismatches);
 }
 
 //------------------------------------------------------------------------------
 
-bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_rate)
+bv_fmi::bv_fmi(const sdsl::bit_vector& source, size_type block_size, size_type _sample_rate)
 {
   if(block_size < 2)
   {
@@ -124,19 +124,19 @@ bv_fmi::bv_fmi(const bit_vector& source, uint64_t block_size, uint64_t _sample_r
   }
 
   // Copy and reverse the source.
-  this->zeros = source.size() - util::cnt_one_bits(source);
+  this->zeros = source.size() - sdsl::util::cnt_one_bits(source);
   if(this->zeros == 0 || this->zeros == source.size())
   {
     std::cerr << "bv_fmi::bv_fmi(): Source must contain both 0-bits and 1-bits" << std::endl;
     return;
   }
   this->bwt.resize(source.size() + 1);
-  for(uint64_t i = 0; i < source.size(); i++) { this->bwt[i] = source[source.size() - i - 1]; }
+  for(size_type i = 0; i < source.size(); i++) { this->bwt[i] = source[source.size() - i - 1]; }
   this->bwt[source.size()] = 0;
 
   // Build BWT for the reverse source.
   this->incrementalBWT(block_size);
-  util::clear(this->rank); util::init_support(this->rank, &(this->bwt));
+  sdsl::util::clear(this->rank); sdsl::util::init_support(this->rank, &(this->bwt));
 
   // Sample the SA.
   this->sample_rate = _sample_rate;
@@ -147,27 +147,27 @@ bv_fmi::bv_fmi(std::istream& in)
 {
   this->bwt.load(in);
   this->rank.load(in, &(this->bwt));
-  read_member(this->zeros, in);
-  read_member(this->endmarker, in);
+  sdsl::read_member(this->zeros, in);
+  sdsl::read_member(this->endmarker, in);
   this->sa_samples.load(in);
-  read_member(this->sample_rate, in);
+  sdsl::read_member(this->sample_rate, in);
 }
 
-uint64_t
+size_type
 bv_fmi::serialize(std::ostream& out)
 {
-  uint64_t bytes = 0;
+  size_type bytes = 0;
   bytes += this->bwt.serialize(out);
   bytes += this->rank.serialize(out);
-  bytes += write_member(this->zeros, out);
-  bytes += write_member(this->endmarker, out);
+  bytes += sdsl::write_member(this->zeros, out);
+  bytes += sdsl::write_member(this->endmarker, out);
   bytes += this->sa_samples.serialize(out);
-  bytes += write_member(this->sample_rate, out);
+  bytes += sdsl::write_member(this->sample_rate, out);
   return bytes;
 }
 
 void
-bv_fmi::incrementalBWT(uint64_t block_size)
+bv_fmi::incrementalBWT(size_type block_size)
 {
   // Handle small inputs.
   if(this->bwt.size() <= block_size)
@@ -176,7 +176,7 @@ bv_fmi::incrementalBWT(uint64_t block_size)
   }
 
   // Handle the last block.
-  uint64_t offset = (this->bwt.size() / block_size) * block_size;
+  size_type offset = (this->bwt.size() / block_size) * block_size;
   if(offset + 2 >= this->bwt.size()) { offset -= block_size; }
   lastBWTBlock(offset);
 
@@ -195,7 +195,7 @@ bv_fmi::incrementalBWT(uint64_t block_size)
             The endmarker is encoded with a 0-bit and its position is stored.
 */
 void
-bv_fmi::lastBWTBlock(uint64_t offset)
+bv_fmi::lastBWTBlock(size_type offset)
 {
 #ifdef VERBOSE_STATUS_INFO
   std::cout << "Offset: " << offset << std::endl;
@@ -203,21 +203,21 @@ bv_fmi::lastBWTBlock(uint64_t offset)
   if(offset + 1 >= this->bwt.size()) { this->endmarker = offset; return; }
 
   // Prepare the text.
-  uint64_t block_size = this->bwt.size() - offset;
+  size_type block_size = this->bwt.size() - offset;
   unsigned char* buffer = new unsigned char[block_size];
-  for(uint64_t i = offset; i < bwt.size() - 1; i++)
+  for(size_type i = offset; i < bwt.size() - 1; i++)
   {
     buffer[i - offset] = this->bwt[i] + 1;
   }
   buffer[block_size - 1] = 0;
 
   // Build SA.
-  int_vector<> sa(block_size - 1, 0, bits::hi(block_size - 1) + 1);
-  algorithm::calculate_sa(buffer, block_size - 1, sa);
+  sdsl::int_vector<> sa(block_size - 1, 0, bit_length(block_size - 1));
+  sdsl::algorithm::calculate_sa(buffer, block_size - 1, sa);
 
   // Build BWT.
   bwt[offset] = buffer[block_size - 2] - 1;
-  for(uint64_t i = 0, j = offset + 1; i < sa.size(); i++, j++)
+  for(size_type i = 0, j = offset + 1; i < sa.size(); i++, j++)
   {
     if(sa[i] == 0) { this->endmarker = j; this->bwt[j] = 0; }
     else { this->bwt[j] = buffer[sa[i] - 1] - 1; }
@@ -234,21 +234,21 @@ bv_fmi::lastBWTBlock(uint64_t offset)
             The endmarker is updated and encoded by a 0-bit.
 */
 void
-bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
+bv_fmi::prevBWTBlock(size_type offset, size_type block_size)
 {
 #ifdef VERBOSE_STATUS_INFO
   std::cout << "Offset: " << offset << std::endl;
 #endif
 
   // Prepare the BWT.
-  util::clear(this->rank); util::init_support(this->rank, &(this->bwt));
-  uint64_t bwt_start = offset + block_size;
-  uint64_t false_ones = this->rank(bwt_start);    // 1-bits before the BWT.
-  uint64_t false_zeros = bwt_start - false_ones;  // 0-bits before the BWT.
+  sdsl::util::clear(this->rank); sdsl::util::init_support(this->rank, &(this->bwt));
+  size_type bwt_start = offset + block_size;
+  size_type false_ones = this->rank(bwt_start);    // 1-bits before the BWT.
+  size_type false_zeros = bwt_start - false_ones;  // 0-bits before the BWT.
 
   // Build the rank array.
-  int_vector<64> ra(block_size + 2, 0);
-  uint64_t text_pos = bwt_start, bwt_pos = this->endmarker;
+  sdsl::int_vector<64> ra(block_size + 2, 0);
+  size_type text_pos = bwt_start, bwt_pos = this->endmarker;
   while(text_pos > offset)
   {
     text_pos--;
@@ -258,7 +258,7 @@ bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
   }
 
   // Build SA using the rank array.
-  for(uint64_t i = 0; i < block_size; i++)
+  for(size_type i = 0; i < block_size; i++)
   {
     // Add the character to get the correct sorting order, 1 to handle the endmarker suffix,
     // and 0 or 1 to handle the endmarker in BWT.
@@ -267,21 +267,21 @@ bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
   ra[block_size] = this->endmarker - bwt_start +
     (this->endmarker >= bwt_start + this->zeros - false_zeros + 1 ? 1 : 0) + 1;
   ra[block_size + 1] = 0;
-  int_vector<64> sa(ra.size(), 0);
-  qsufsort::sorter<int_vector<64> > sorter;
+  sdsl::int_vector<64> sa(ra.size(), 0);
+  sdsl::qsufsort::sorter<sdsl::int_vector<64> > sorter;
   sorter.do_sort(sa, ra); // The rank array gets overwritten.
-  util::clear(ra);
+  sdsl::util::clear(ra);
 
   // Build BWT and determine the new endmarker.
-  bit_vector increment(block_size);
-  uint64_t sa_offset = 1, new_endmarker = 0;
-  for(uint64_t i = 1; i < sa.size(); i++)
+  sdsl::bit_vector increment(block_size);
+  size_type sa_offset = 1, new_endmarker = 0;
+  for(size_type i = 1; i < sa.size(); i++)
   {
     if(sa[i] == 0) { new_endmarker = i - sa_offset; increment[i - sa_offset] = 0; }
     else if(sa[i] == block_size) { sa_offset++; } // Skip the next suffix.
     else { increment[i - sa_offset] = this->bwt[offset + sa[i] - 1]; }
   }
-  util::clear(sa);
+  sdsl::util::clear(sa);
 
   // Rebuild the rank array that was overwritten during SA construction.
   ra.resize(block_size);
@@ -297,13 +297,13 @@ bv_fmi::prevBWTBlock(uint64_t offset, uint64_t block_size)
   // Merge the BWTs.
   this->bwt[this->endmarker] = this->bwt[offset + block_size - 1];  // No longer an endmarker.
   sequentialSort(ra.begin(), ra.end());
-  uint64_t inc_pos = 0, old_pos = bwt_start, next_pos = offset;
+  size_type inc_pos = 0, old_pos = bwt_start, next_pos = offset;
   while(inc_pos < block_size)
   {
     while(old_pos <= ra[inc_pos])
     {
-      uint64_t bits = std::min((uint64_t)64, ra[inc_pos] + 1 - old_pos);
-      uint64_t temp = this->bwt.get_int(old_pos, bits); old_pos += bits;
+      size_type bits = std::min((size_type)64, ra[inc_pos] + 1 - old_pos);
+      size_type temp = this->bwt.get_int(old_pos, bits); old_pos += bits;
       this->bwt.set_int(next_pos, temp, bits); next_pos += bits;
 //        bwt[next_pos++] = bwt[old_pos++];
     }
@@ -321,9 +321,9 @@ bv_fmi::sampleSA()
   std::cout << "Sampling SA... "; std::cout.flush();
 #endif
 
-  this->sa_samples.width(bits::hi(this->bwt.size() - 1) + 1);
+  this->sa_samples.width(bit_length(this->bwt.size() - 1));
   this->sa_samples.resize((this->bwt.size() + sample_rate - 2) / sample_rate);
-  uint64_t bwt_pos = 0, text_pos = this->bwt.size() - 1;
+  size_type bwt_pos = 0, text_pos = this->bwt.size() - 1;
   while(text_pos > 0)
   {
     text_pos--;
@@ -382,7 +382,7 @@ relative_encoder::copy(const relative_encoder& r)
 relative_encoder::size_type
 relative_encoder::reportSize() const
 {
-  return size_in_bytes(this->values) + size_in_bytes(this->rle) + size_in_bytes(this->rank);
+  return sdsl::size_in_bytes(this->values) + sdsl::size_in_bytes(this->rle) + sdsl::size_in_bytes(this->rank);
 }
 
 void
@@ -394,14 +394,14 @@ relative_encoder::load(std::istream& input)
 }
 
 relative_encoder::size_type
-relative_encoder::serialize(std::ostream& output, structure_tree_node* v, std::string name) const
+relative_encoder::serialize(std::ostream& output, sdsl::structure_tree_node* v, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(v, name, util::class_name(*this));
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
   size_type written_bytes = 0;
   written_bytes += this->values.serialize(output, child, "values");
   written_bytes += this->rle.serialize(output, child, "rle");
   written_bytes += this->rank.serialize(output, child, "rank");
-  structure_tree::add_size(child, written_bytes);
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 

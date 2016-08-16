@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -94,15 +94,15 @@ Alphabet::operator=(Alphabet&& a)
 }
 
 Alphabet::size_type
-Alphabet::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+Alphabet::serialize(std::ostream& out, sdsl::structure_tree_node* s, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(s, name, sdsl::util::class_name(*this));
   size_type written_bytes = 0;
   written_bytes += this->m_char2comp.serialize(out, child, "char2comp");
   written_bytes += this->m_comp2char.serialize(out, child, "comp2char");
   written_bytes += this->m_C.serialize(out, child, "C");
-  written_bytes += write_member(this->m_sigma, out, child, "sigma");
-  structure_tree::add_size(child, written_bytes);
+  written_bytes += sdsl::write_member(this->m_sigma, out, child, "sigma");
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 
@@ -112,7 +112,7 @@ Alphabet::load(std::istream& in)
   this->m_char2comp.load(in);
   this->m_comp2char.load(in);
   this->m_C.load(in);
-  read_member(this->m_sigma, in);
+  sdsl::read_member(this->m_sigma, in);
 }
 
 bool
@@ -125,11 +125,11 @@ Alphabet::assign(const std::string& alphabet_string)
     return false;
   }
 
-  bit_vector exists(MAX_SIGMA);
-  util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
+  sdsl::bit_vector exists(MAX_SIGMA);
+  sdsl::util::assign(this->m_char2comp, sdsl::int_vector<8>(MAX_SIGMA, 0));
   for(size_type i = 0; i < alphabet_string.length(); i++)
   {
-    uint8_t c = alphabet_string[i];
+    char_type c = alphabet_string[i];
     if(exists[c])
     {
       std::cerr << "Alphabet::assign(): The alphabet string contains multiple occurrences of " << c << std::endl;
@@ -179,9 +179,9 @@ CumulativeArray::swap(CumulativeArray& a)
   if(this != &a)
   {
     this->v.swap(a.v);
-    util::swap_support(this->rank, a.rank, &(this->v), &(a.v));
-    util::swap_support(this->select_1, a.select_1, &(this->v), &(a.v));
-    util::swap_support(this->select_0, a.select_0, &(this->v), &(a.v));
+    sdsl::util::swap_support(this->rank, a.rank, &(this->v), &(a.v));
+    sdsl::util::swap_support(this->select_1, a.select_1, &(this->v), &(a.v));
+    sdsl::util::swap_support(this->select_0, a.select_0, &(this->v), &(a.v));
     std::swap(this->m_size, a.m_size);
   }
 }
@@ -208,16 +208,16 @@ CumulativeArray::operator=(CumulativeArray&& a)
 }
 
 CumulativeArray::size_type
-CumulativeArray::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+CumulativeArray::serialize(std::ostream& out, sdsl::structure_tree_node* s, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(s, name, sdsl::util::class_name(*this));
   size_type written_bytes = 0;
   written_bytes += this->v.serialize(out, child, "v");
   written_bytes += this->rank.serialize(out, child, "rank");
   written_bytes += this->select_1.serialize(out, child, "select_1");
   written_bytes += this->select_0.serialize(out, child, "select_0");
-  written_bytes += write_member(this->m_size, out, child, "size");
-  structure_tree::add_size(child, written_bytes);
+  written_bytes += sdsl::write_member(this->m_size, out, child, "size");
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 
@@ -228,7 +228,7 @@ CumulativeArray::load(std::istream& in)
   this->rank.load(in, &(this->v));
   this->select_1.load(in, &(this->v));
   this->select_0.load(in, &(this->v));
-  read_member(this->m_size, in);
+  sdsl::read_member(this->m_size, in);
 }
 
 //------------------------------------------------------------------------------
@@ -267,8 +267,8 @@ CumulativeNZArray::swap(CumulativeNZArray& a)
   if(this != &a)
   {
     this->v.swap(a.v);
-    util::swap_support(this->rank, a.rank, &(this->v), &(a.v));
-    util::swap_support(this->select, a.select, &(this->v), &(a.v));
+    sdsl::util::swap_support(this->rank, a.rank, &(this->v), &(a.v));
+    sdsl::util::swap_support(this->select, a.select, &(this->v), &(a.v));
     std::swap(this->m_size, a.m_size);
   }
 }
@@ -294,15 +294,15 @@ CumulativeNZArray::operator=(CumulativeNZArray&& a)
 }
 
 CumulativeNZArray::size_type
-CumulativeNZArray::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+CumulativeNZArray::serialize(std::ostream& out, sdsl::structure_tree_node* s, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(s, name, sdsl::util::class_name(*this));
   size_type written_bytes = 0;
   written_bytes += this->v.serialize(out, child, "v");
   written_bytes += this->rank.serialize(out, child, "rank");
   written_bytes += this->select.serialize(out, child, "select");
-  written_bytes += write_member(this->m_size, out, child, "size");
-  structure_tree::add_size(child, written_bytes);
+  written_bytes += sdsl::write_member(this->m_size, out, child, "size");
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 
@@ -312,7 +312,7 @@ CumulativeNZArray::load(std::istream& in)
   this->v.load(in);
   this->rank.load(in, &(this->v));
   this->select.load(in, &(this->v));
-  read_member(this->m_size, in);
+  sdsl::read_member(this->m_size, in);
 }
 
 //------------------------------------------------------------------------------
@@ -322,19 +322,19 @@ LCS::LCS()
   this->lcs_size = 0;
 }
 
-LCS::LCS(const bit_vector& a, const bit_vector& b, LCS::size_type _lcs_size)
+LCS::LCS(const sdsl::bit_vector& a, const sdsl::bit_vector& b, LCS::size_type _lcs_size)
 {
   this->ref = a; this->seq = b;
   this->lcs_size = _lcs_size;
 
-  util::init_support(this->ref_rank, &(this->ref));
+  sdsl::util::init_support(this->ref_rank, &(this->ref));
 #ifndef USE_HYBRID_BITVECTORS
-  util::init_support(this->ref_select, &(this->ref));
+  sdsl::util::init_support(this->ref_select, &(this->ref));
 #endif
 
-  util::init_support(this->seq_rank, &(this->seq));
+  sdsl::util::init_support(this->seq_rank, &(this->seq));
 #ifndef USE_HYBRID_BITVECTORS
-  util::init_support(this->seq_select, &(this->seq));
+  sdsl::util::init_support(this->seq_select, &(this->seq));
 #endif
 }
 
@@ -378,15 +378,15 @@ LCS::swap(LCS& l)
   if(this != &l)
   {
     this->ref.swap(l.ref);
-    util::swap_support(this->ref_rank, l.ref_rank, &(this->ref), &(l.ref));
+    sdsl::util::swap_support(this->ref_rank, l.ref_rank, &(this->ref), &(l.ref));
 #ifndef USE_HYBRID_BITVECTORS
-    util::swap_support(this->ref_select, l.ref_select, &(this->ref), &(l.ref));
+    sdsl::util::swap_support(this->ref_select, l.ref_select, &(this->ref), &(l.ref));
 #endif
 
     this->seq.swap(l.seq);
-    util::swap_support(this->seq_rank, l.seq_rank, &(this->seq), &(l.seq));
+    sdsl::util::swap_support(this->seq_rank, l.seq_rank, &(this->seq), &(l.seq));
 #ifndef USE_HYBRID_BITVECTORS
-    util::swap_support(this->seq_select, l.seq_select, &(this->seq), &(l.seq));
+    sdsl::util::swap_support(this->seq_select, l.seq_select, &(this->seq), &(l.seq));
 #endif
 
     std::swap(this->lcs_size, l.lcs_size);
@@ -424,11 +424,11 @@ LCS::operator=(LCS&& l)
   return *this;
 }
 
-uint64_t
-LCS::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+size_type
+LCS::serialize(std::ostream& out, sdsl::structure_tree_node* s, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
-  uint64_t written_bytes = 0;
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(s, name, sdsl::util::class_name(*this));
+  size_type written_bytes = 0;
 
   written_bytes += this->ref.serialize(out, child, "ref");
   written_bytes += this->ref_rank.serialize(out, child, "ref_rank");
@@ -442,9 +442,9 @@ LCS::serialize(std::ostream& out, structure_tree_node* s, std::string name) cons
   written_bytes += this->seq_select.serialize(out, child, "seq_select");
 #endif
 
-  written_bytes += write_member(this->lcs_size, out, child, "lcs_size");
+  written_bytes += sdsl::write_member(this->lcs_size, out, child, "lcs_size");
 
-  structure_tree::add_size(child, written_bytes);
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 
@@ -463,7 +463,7 @@ LCS::load(std::istream& in)
   this->seq_select.load(in, &(this->seq));
 #endif
 
-  read_member(this->lcs_size, in);
+  sdsl::read_member(this->lcs_size, in);
 }
 
 void
@@ -481,16 +481,16 @@ LCS::set_vectors()
 }
 
 #ifdef USE_HYBRID_BITVECTORS
-uint64_t
-LCS::select(const LCS::vector_type& vec, const LCS::vector_type::rank_1_type& rank, uint64_t i) const
+size_type
+LCS::select(const LCS::vector_type& vec, const LCS::vector_type::rank_1_type& rank, size_type i) const
 {
   if(i == 0) { return 0; }
 
   // Find the last position, where rank < i.
-  uint64_t low = 0, high = vec.size();
+  size_type low = 0, high = vec.size();
   while(low < high)
   {
-    uint64_t mid = low + (high - low + 1) / 2;
+    size_type mid = low + (high - low + 1) / 2;
     if(rank(mid) >= i) { high = mid - 1; }
     else { low = mid; }
   }
@@ -519,7 +519,7 @@ SLArray::~SLArray()
 {
 }
 
-SLArray::SLArray(int_vector_buffer<0>& source)
+SLArray::SLArray(sdsl::int_vector_buffer<0>& source)
 {
   this->buildFrom(source);
 }
@@ -562,17 +562,17 @@ SLArray::operator=(SLArray&& s)
   return *this;
 }
 
-uint64_t
-SLArray::serialize(std::ostream& out, structure_tree_node* s, std::string name) const
+size_type
+SLArray::serialize(std::ostream& out, sdsl::structure_tree_node* s, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(s, name, util::class_name(*this));
-  uint64_t written_bytes = 0;
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(s, name, sdsl::util::class_name(*this));
+  size_type written_bytes = 0;
 
   written_bytes += this->small.serialize(out, child, "small");
   written_bytes += this->large.serialize(out, child, "large");
   written_bytes += this->samples.serialize(out, child, "samples");
 
-  structure_tree::add_size(child, written_bytes);
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 
@@ -584,11 +584,11 @@ SLArray::load(std::istream& in)
   this->samples.load(in);
 }
 
-int_vector<64>
+sdsl::int_vector<64>
 SLArray::extract(size_type from, size_type to) const
 {
   to = std::min(to, this->size());
-  int_vector<64> result(to - from, 0);
+  sdsl::int_vector<64> result(to - from, 0);
   if(this->largeValues() == 0)
   {
     for(size_type i = from, j = 0; i < to; i++, j++) { result[j] = this->small[i]; }

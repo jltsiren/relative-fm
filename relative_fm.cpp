@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -34,25 +34,25 @@ namespace relative
 
 range_type
 mostFrequentChar(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& seq_extract,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs,
   range_type ref_range, range_type seq_range)
 {
   std::vector<range_type> freqs(256, range_type(0, 0));
-  for(uint64_t i = 0; i < ref_extract.size(); i++) { freqs[ref_extract[i]].first++; }
-  for(uint64_t i = 0; i < seq_extract.size(); i++) { freqs[seq_extract[i]].second++; }
-  uint64_t max_c = 0, max_f = 0;
-  for(uint64_t c = 0; c < freqs.size(); c++)
+  for(size_type i = 0; i < ref_extract.size(); i++) { freqs[ref_extract[i]].first++; }
+  for(size_type i = 0; i < seq_extract.size(); i++) { freqs[seq_extract[i]].second++; }
+  size_type max_c = 0, max_f = 0;
+  for(size_type c = 0; c < freqs.size(); c++)
   {
-    uint64_t temp = std::min(freqs[c].first, freqs[c].second);
+    size_type temp = std::min(freqs[c].first, freqs[c].second);
     if(temp > max_f) { max_c = c; max_f = temp; }
   }
 
-  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
-  for(uint64_t i = 0, found = 0; i < length(ref_range) && found < max_f; i++)
+  size_type ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
+  for(size_type i = 0, found = 0; i < Range::length(ref_range) && found < max_f; i++)
   {
     if(ref_extract[i] == max_c) { ref_lcs[ref_padding + i] = 1; found++; }
   }
-  for(uint64_t i = 0, found = 0; i < length(seq_range) && found < max_f; i++)
+  for(size_type i = 0, found = 0; i < Range::length(seq_range) && found < max_f; i++)
   {
     if(seq_extract[i] == max_c) { seq_lcs[seq_padding + i] = 1; found++; }
   }
@@ -63,7 +63,7 @@ mostFrequentChar(const std::vector<uint8_t>& ref_extract, const std::vector<uint
     std::cerr << "Finding the most frequent character in " << std::make_pair(ref_range, seq_range) << std::endl;
     if(max_f == 0)
     {
-      for(uint64_t c = 0; c < freqs.size(); c++)
+      for(size_type c = 0; c < freqs.size(); c++)
       {
         if(freqs[c].first != 0 || freqs[c].second != 0)
         {
@@ -75,34 +75,34 @@ mostFrequentChar(const std::vector<uint8_t>& ref_extract, const std::vector<uint
     std::cerr << " from sequences of length " << range_type(ref_extract.size(), seq_extract.size()) << std::endl;
   }
 #endif
-  return range_type(max_f, std::min(length(ref_range), length(seq_range)) - max_f);
+  return range_type(max_f, std::min(Range::length(ref_range), Range::length(seq_range)) - max_f);
 }
 
 range_type
 matchRuns(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& seq_extract,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs,
   range_type ref_range, range_type seq_range,
-  const uint8_t* alphabet, uint64_t sigma)
+  const uint8_t* alphabet, size_type sigma)
 {
-  uint64_t ref_pos = 0, seq_pos = 0, found = 0;
+  size_type ref_pos = 0, seq_pos = 0, found = 0;
   range_type ref_run(0, 0), seq_run(0, 0);
-  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
-  while(ref_pos < length(ref_range) && seq_pos < length(seq_range))
+  size_type ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
+  while(ref_pos < Range::length(ref_range) && seq_pos < Range::length(seq_range))
   {
     if(ref_run.second <= ref_pos) // Find the next ref_run if needed.
     {
       ref_run.first = ref_extract[ref_pos]; ref_run.second = ref_pos + 1;
-      while(ref_run.second < length(ref_range) && ref_extract[ref_run.second] == ref_run.first) { ref_run.second++; }
+      while(ref_run.second < Range::length(ref_range) && ref_extract[ref_run.second] == ref_run.first) { ref_run.second++; }
     }
     if(seq_run.second <= seq_pos) // Find the next seq_run if needed.
     {
       seq_run.first = seq_extract[seq_pos]; seq_run.second = seq_pos + 1;
-      while(seq_run.second < length(seq_range) && seq_extract[seq_run.second] == seq_run.first) { seq_run.second++; }
+      while(seq_run.second < Range::length(seq_range) && seq_extract[seq_run.second] == seq_run.first) { seq_run.second++; }
     }
     if(ref_run.first == seq_run.first)  // Match the current runs if the characters match.
     {
-      uint64_t run_length = std::min(ref_run.second - ref_pos, seq_run.second - seq_pos);
-      for(uint64_t i = 0; i < run_length; i++)
+      size_type run_length = std::min(ref_run.second - ref_pos, seq_run.second - seq_pos);
+      for(size_type i = 0; i < run_length; i++)
       {
         ref_lcs[ref_padding + ref_pos + i] = 1; seq_lcs[seq_padding + seq_pos + i] = 1;
       }
@@ -110,8 +110,8 @@ matchRuns(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
     }
     else  // Otherwise advance the run with the smaller character comp value.
     {
-      uint64_t ref_c = 0, seq_c = 0;
-      for(uint64_t c = 0; c < sigma; c++)
+      size_type ref_c = 0, seq_c = 0;
+      for(size_type c = 0; c < sigma; c++)
       {
         if(alphabet[c] == ref_run.first) { ref_c = c; }
         if(alphabet[c] == seq_run.first) { seq_c = c; }
@@ -129,7 +129,7 @@ matchRuns(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
               << range_type(ref_extract.size(), seq_extract.size()) << std::endl;
   }
 #endif
-  return range_type(found, std::min(length(ref_range), length(seq_range)) - found);
+  return range_type(found, std::min(Range::length(ref_range), Range::length(seq_range)) - found);
 }
 
 // Diagonal i has 2i+3 elements: -(i+1) to (i+1).
@@ -137,16 +137,16 @@ inline int offsetFor(int pos, int d) { return (d + 3) * d + pos + 1; }
 
 range_type
 greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& seq_extract,
-  bit_vector& ref_lcs, bit_vector& seq_lcs,
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs,
   short_record_type& record,
-  const uint8_t* alphabet, uint64_t sigma,
+  const uint8_t* alphabet, size_type sigma,
   const align_parameters& parameters,
   std::vector<int>* buf)
 {
   range_type ref_range = record.first(), seq_range = record.second();
   bool onlyNs = record.onlyNs(), endmarker = record.endmarker();
-  if(isEmpty(ref_range) || isEmpty(seq_range)) { return range_type(0, 0); }
-  int ref_len = length(ref_range), seq_len = length(seq_range);
+  if(Range::empty(ref_range) || Range::empty(seq_range)) { return range_type(0, 0); }
+  int ref_len = Range::length(ref_range), seq_len = Range::length(seq_range);
 
   if(endmarker)
   {
@@ -199,9 +199,9 @@ greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
   }
 
   // Extract the LCS.
-  uint64_t lcs = 0;
+  size_type lcs = 0;
   d--;  // The last diagonal.
-  uint64_t ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
+  size_type ref_padding = ref_range.first % 64, seq_padding = seq_range.first % 64;
   for(int k = ref_len - seq_len; d >= 0; d--)
   {
     int x_lim = 0, next_k = 0;
@@ -227,16 +227,16 @@ greedyLCS(const std::vector<uint8_t>& ref_extract, const std::vector<uint8_t>& s
 //------------------------------------------------------------------------------
 
 void
-copyBits(const bit_vector& source, bit_vector& target, range_type range)
+copyBits(const sdsl::bit_vector& source, sdsl::bit_vector& target, range_type range)
 {
   // Copy the first bits.
-  uint64_t offset = source.size() - length(range);
-  uint64_t bits = std::min((uint64_t)64, source.size()) - offset;
-  uint64_t val = source.get_int(offset, bits);
+  size_type offset = source.size() - Range::length(range);
+  size_type bits = std::min((size_type)64, source.size()) - offset;
+  size_type val = source.get_int(offset, bits);
   target.set_int(range.first, val, bits);
 
   // Copy the bulk of the bits.
-  for(uint64_t source_pos = 1, target_pos = (range.first + bits) / 64;
+  for(size_type source_pos = 1, target_pos = (range.first + bits) / 64;
       source_pos < source.size() / 64; source_pos++, target_pos++)
   {
     target.data()[target_pos] = source.data()[source_pos];
@@ -261,20 +261,20 @@ struct range_pair_comparator
 };
 
 void
-processRange(uint64_t pos, uint64_t val, uint64_t len,
-  int_vector<0>& smallest, int_vector<0>& previous, uint64_t& lcs)
+processRange(size_type pos, size_type val, size_type len,
+  sdsl::int_vector<0>& smallest, sdsl::int_vector<0>& previous, size_type& lcs)
 {
   // Find the longest increasing subsequence with last value < val.
-  uint64_t low = 1, high = lcs;
+  size_type low = 1, high = lcs;
   while(low <= high)
   {
-    uint64_t mid = low + (high - low) / 2;
+    size_type mid = low + (high - low) / 2;
     if(smallest[2 * mid + 1] < val) { low = mid + 1; }
     else { high = mid - 1; }
   }
 
   // low is now the length of the found subsequence + 1.
-  for(uint64_t i = 0; i < len; i++)
+  for(size_type i = 0; i < len; i++)
   {
     previous[2 * (pos + i)] = smallest[2 * (low + i) - 2];
     previous[2 * (pos + i) + 1] = smallest[2 * (low + i) - 1];
@@ -285,17 +285,17 @@ processRange(uint64_t pos, uint64_t val, uint64_t len,
 }
 
 void
-sortMatches(std::vector<range_pair>& matches, uint64_t ref_len, uint64_t seq_len)
+sortMatches(std::vector<range_pair>& matches, size_type ref_len, size_type seq_len)
 {
   range_pair_comparator comp;
   parallelMergeSort(matches.begin(), matches.end(), comp);
   matches.push_back(range_pair(range_type(ref_len, ref_len + 1), range_type(seq_len, seq_len + 1)));
 }
 
-uint64_t
-countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches, uint64_t ref_len)
+size_type
+countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches, size_type ref_len)
 {
-  uint64_t total_matches = 0, pos = 0;
+  size_type total_matches = 0, pos = 0;
   std::vector<range_pair>::iterator l = left_matches.begin(), r = right_matches.begin();
   while(l->ref_range.first < ref_len || r->ref_range.first < ref_len)
   {
@@ -321,13 +321,13 @@ countCoverage(std::vector<range_pair>& left_matches, std::vector<range_pair>& ri
   return total_matches;
 }
 
-uint64_t
+size_type
 increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_pair>& right_matches,
-  bit_vector& ref_lcs, bit_vector& seq_lcs, uint64_t ref_len, uint64_t seq_len)
+  sdsl::bit_vector& ref_lcs, sdsl::bit_vector& seq_lcs, size_type ref_len, size_type seq_len)
 {
   if(left_matches.size() == 0 || right_matches.size() == 0)
   {
-    util::assign(ref_lcs, bit_vector(ref_len)); util::assign(seq_lcs, bit_vector(seq_len));
+    sdsl::util::assign(ref_lcs, sdsl::bit_vector(ref_len)); sdsl::util::assign(seq_lcs, sdsl::bit_vector(seq_len));
     return 0;
   }
 
@@ -338,22 +338,22 @@ increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_p
     position pos in the longest increasing subsequence pos is a part of. Note that if pos
     is a right match, the actual position is pos - ref_len.
   */
-  int_vector<0> smallest(2 * (ref_len + 1), 2 * ref_len, bitlength(2 * ref_len));
-  int_vector<0> previous(4 * ref_len, 2 * ref_len, bitlength(2 * ref_len));
-  uint64_t lcs = 0;
+  sdsl::int_vector<0> smallest(2 * (ref_len + 1), 2 * ref_len, bit_length(2 * ref_len));
+  sdsl::int_vector<0> previous(4 * ref_len, 2 * ref_len, bit_length(2 * ref_len));
+  size_type lcs = 0;
   {
     std::vector<range_pair>::iterator l = left_matches.begin(), r = right_matches.begin();
     while(l->ref_range.first < ref_len || r->ref_range.first < ref_len)
     {
       if(l->ref_range.first < r->ref_range.first)
       {
-        uint64_t len = std::min(l->ref_range.second, r->ref_range.first) - l->ref_range.first;
+        size_type len = std::min(l->ref_range.second, r->ref_range.first) - l->ref_range.first;
         processRange(l->ref_range.first, l->seq_range.first, len, smallest, previous, lcs);
         l->ref_range.first += len; l->seq_range.first += len;
       }
       else if(l->ref_range.first > r->ref_range.first)
       {
-        uint64_t len = std::min(r->ref_range.second, l->ref_range.first) - r->ref_range.first;
+        size_type len = std::min(r->ref_range.second, l->ref_range.first) - r->ref_range.first;
         processRange(r->ref_range.first + ref_len, r->seq_range.first, len, smallest, previous, lcs);
         r->ref_range.first += len; r->seq_range.first += len;
       }
@@ -361,7 +361,7 @@ increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_p
       {
         // Process the larger values first, because they cannot interfere with the smaller values.
         // This works because the ranges of left and right matches cannot overlap.
-        uint64_t len = std::min(length(l->ref_range), length(r->ref_range)) - 1;
+        size_type len = std::min(Range::length(l->ref_range), Range::length(r->ref_range)) - 1;
         if(l->seq_range.first > r->seq_range.first)
         {
           processRange(l->ref_range.first, l->seq_range.first, len, smallest, previous, lcs);
@@ -378,13 +378,13 @@ increasingSubsequence(std::vector<range_pair>& left_matches, std::vector<range_p
       if(l->ref_range.first >= l->ref_range.second) { ++l; }
       if(r->ref_range.first >= r->ref_range.second) { ++r; }
     }
-    util::clear(left_matches); util::clear(right_matches);
+    sdsl::util::clear(left_matches); sdsl::util::clear(right_matches);
   }
 
   // Fill the bitvectors.
-  util::assign(ref_lcs, bit_vector(ref_len, 0)); util::assign(seq_lcs, bit_vector(seq_len, 0));
-  uint64_t pos = smallest[2 * lcs], val = smallest[2 * lcs + 1];
-  for(uint64_t i = lcs; i > 0; i--)
+  sdsl::util::assign(ref_lcs, sdsl::bit_vector(ref_len, 0)); sdsl::util::assign(seq_lcs, sdsl::bit_vector(seq_len, 0));
+  size_type pos = smallest[2 * lcs], val = smallest[2 * lcs + 1];
+  for(size_type i = lcs; i > 0; i--)
   {
     ref_lcs[pos % ref_len] = 1; seq_lcs[val] = 1;
     val = previous[2 * pos + 1]; pos = previous[2 * pos];

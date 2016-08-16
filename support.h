@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -36,10 +36,10 @@ namespace relative
 // This function has been specialized for RLSequence.
 template<class ByteVector>
 void
-characterCounts(const ByteVector& sequence, int_vector<64>& counts)
+characterCounts(const ByteVector& sequence, sdsl::int_vector<64>& counts)
 {
-  for(uint64_t c = 0; c < counts.size(); c++) { counts[c] = 0; }
-  for(uint64_t i = 0; i < sequence.size(); i++) { counts[sequence[i]]++; }
+  for(size_type c = 0; c < counts.size(); c++) { counts[c] = 0; }
+  for(size_type i = 0; i < sequence.size(); i++) { counts[sequence[i]]++; }
 }
 
 /*
@@ -51,7 +51,7 @@ characterCounts(const ByteVector& sequence, int_vector<64>& counts)
 class Alphabet
 {
 public:
-  typedef uint64_t size_type;
+  typedef relative::size_type size_type;
   const static size_type MAX_SIGMA = 256;
 
   Alphabet();
@@ -67,9 +67,9 @@ public:
   explicit Alphabet(const ByteVector& sequence) :
     char2comp(m_char2comp), comp2char(m_comp2char), C(m_C), sigma(m_sigma)
   {
-    util::assign(this->m_char2comp, int_vector<8>(MAX_SIGMA, 0));
-    util::assign(this->m_comp2char, int_vector<8>(MAX_SIGMA, 0));
-    util::assign(this->m_C, int_vector<64>(MAX_SIGMA + 1, 0));
+    sdsl::util::assign(this->m_char2comp, sdsl::int_vector<8>(MAX_SIGMA, 0));
+    sdsl::util::assign(this->m_comp2char, sdsl::int_vector<8>(MAX_SIGMA, 0));
+    sdsl::util::assign(this->m_C, sdsl::int_vector<64>(MAX_SIGMA + 1, 0));
     this->m_sigma = 0;
     if(sequence.size() == 0) { return; }
 
@@ -100,7 +100,7 @@ public:
   Alphabet& operator=(const Alphabet& v);
   Alphabet& operator=(Alphabet&& v);
 
-  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
   /*
@@ -110,23 +110,23 @@ public:
   bool assign(const std::string& alphabet_string);
 
 private:
-  int_vector<8>  m_char2comp, m_comp2char;
-  int_vector<64> m_C;
+  sdsl::int_vector<8>  m_char2comp, m_comp2char;
+  sdsl::int_vector<64> m_C;
   size_type      m_sigma;
 
   void copy(const Alphabet& v);
 
 public:
-  const int_vector<8>&  char2comp;
-  const int_vector<8>&  comp2char;
-  const int_vector<64>& C;
+  const sdsl::int_vector<8>&  char2comp;
+  const sdsl::int_vector<8>&  comp2char;
+  const sdsl::int_vector<64>& C;
   const size_type&      sigma;
 };  // class Alphabet
 
 //------------------------------------------------------------------------------
 
 /*
-  This class uses an sd_vector to encode the cumulative sum of an array of integers.
+  This class uses an sdsl::sd_vector to encode the cumulative sum of an array of integers.
   The array contains sum() items in size() elements. The array uses 0-based indexes.
   Each element is encoded as 'items' 0-bits, followed by an 1-bit.
 */
@@ -134,7 +134,7 @@ public:
 class CumulativeArray
 {
 public:
-  typedef uint64_t size_type;
+  typedef relative::size_type size_type;
 
   CumulativeArray();
   CumulativeArray(const CumulativeArray& s);
@@ -151,19 +151,19 @@ public:
     this->m_size = sequence.size();
 
     for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1] + 1; }
-    this->v = sd_vector<>(sequence.begin(), sequence.end());
+    this->v = sdsl::sd_vector<>(sequence.begin(), sequence.end());
     for(size_type i = this->size() - 1; i > 0; i--) { sequence[i] -= sequence[i - 1] + 1; }
 
-    util::init_support(this->rank, &(this->v));
-    util::init_support(this->select_1, &(this->v));
-    util::init_support(this->select_0, &(this->v));
+    sdsl::util::init_support(this->rank, &(this->v));
+    sdsl::util::init_support(this->select_1, &(this->v));
+    sdsl::util::init_support(this->select_0, &(this->v));
   }
 
   void swap(CumulativeArray& v);
   CumulativeArray& operator=(const CumulativeArray& v);
   CumulativeArray& operator=(CumulativeArray&& v);
 
-  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
   inline size_type size() const { return this->m_size; }
@@ -199,16 +199,16 @@ public:
   inline size_type inverse(size_type i, bool& is_last) const
   {
     if(i >= this->sum()) { is_last = false; return this->size(); }
-    uint64_t temp = this->select_0(i + 1);
+    size_type temp = this->select_0(i + 1);
     is_last = this->v[temp + 1];
     return temp - i;
   }
 
 private:
-  sd_vector<>                v;
-  sd_vector<>::rank_1_type   rank;
-  sd_vector<>::select_1_type select_1;
-  sd_vector<>::select_0_type select_0;
+  sdsl::sd_vector<>                v;
+  sdsl::sd_vector<>::rank_1_type   rank;
+  sdsl::sd_vector<>::select_1_type select_1;
+  sdsl::sd_vector<>::select_0_type select_0;
   size_type                  m_size;  // Size of the original array.
 
   void copy(const CumulativeArray& v);
@@ -223,7 +223,7 @@ private:
 class CumulativeNZArray
 {
 public:
-  typedef uint64_t size_type;
+  typedef relative::size_type size_type;
 
   CumulativeNZArray();
   CumulativeNZArray(const CumulativeNZArray& s);
@@ -241,19 +241,19 @@ public:
 
     sequence[0]--;
     for(size_type i = 1; i < this->size(); i++) { sequence[i] += sequence[i - 1]; }
-    this->v = sd_vector<>(sequence.begin(), sequence.end());
+    this->v = sdsl::sd_vector<>(sequence.begin(), sequence.end());
     for(size_type i = this->size() - 1; i > 0; i--) { sequence[i] -= sequence[i - 1]; }
     sequence[0]++;
 
-    util::init_support(this->rank, &(this->v));
-    util::init_support(this->select, &(this->v));
+    sdsl::util::init_support(this->rank, &(this->v));
+    sdsl::util::init_support(this->select, &(this->v));
   }
 
   void swap(CumulativeNZArray& v);
   CumulativeNZArray& operator=(const CumulativeNZArray& v);
   CumulativeNZArray& operator=(CumulativeNZArray&& v);
 
-  size_type serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
   inline size_type size() const { return this->m_size; }
@@ -286,9 +286,9 @@ public:
   }
 
 private:
-  sd_vector<>                v;
-  sd_vector<>::rank_1_type   rank;
-  sd_vector<>::select_1_type select;
+  sdsl::sd_vector<>                v;
+  sdsl::sd_vector<>::rank_1_type   rank;
+  sdsl::sd_vector<>::select_1_type select;
   size_type                  m_size;  // Size of the original array.
 
   void copy(const CumulativeNZArray& v);
@@ -302,16 +302,16 @@ private:
 class LCS
 {
 public:
-  typedef uint64_t size_type;
+  typedef relative::size_type size_type;
 
 #ifdef USE_HYBRID_BITVECTORS
-  typedef hyb_vector<> vector_type;
+  typedef sdsl::hyb_vector<> vector_type;
 #else
-  typedef rrr_vector<63> vector_type;
+  typedef sdsl::rrr_vector<63> vector_type;
 #endif
 
   LCS();
-  LCS(const bit_vector& a, const bit_vector& b, size_type _lcs_size);
+  LCS(const sdsl::bit_vector& a, const sdsl::bit_vector& b, size_type _lcs_size);
   LCS(const LCS& l);
   LCS(LCS&& l);
   ~LCS();
@@ -320,12 +320,12 @@ public:
   LCS& operator=(const LCS& l);
   LCS& operator=(LCS&& l);
 
-  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
-  inline uint64_t size() const { return this->lcs_size; }
-  inline uint64_t ref_size() const { return this->ref.size(); }
-  inline uint64_t seq_size() const { return this->seq.size(); }
+  inline size_type size() const { return this->lcs_size; }
+  inline size_type ref_size() const { return this->ref.size(); }
+  inline size_type seq_size() const { return this->seq.size(); }
 
   /*
     To find how many LCS bits are in ref before the 0-based position i, use ref_rank(i).
@@ -335,7 +335,7 @@ public:
   vector_type                ref;
   vector_type::rank_1_type   ref_rank;
 #ifdef USE_HYBRID_BITVECTORS
-  inline uint64_t ref_select(uint64_t i) const { return this->select(this->ref, this->ref_rank, i); }
+  inline size_type ref_select(size_type i) const { return this->select(this->ref, this->ref_rank, i); }
 #else
   vector_type::select_1_type  ref_select;
 #endif
@@ -343,7 +343,7 @@ public:
   vector_type                seq;
   vector_type::rank_1_type   seq_rank;
 #ifdef USE_HYBRID_BITVECTORS
-  inline uint64_t seq_select(uint64_t i) const { return this->select(this->seq, this->seq_rank, i); }
+  inline size_type seq_select(size_type i) const { return this->select(this->seq, this->seq_rank, i); }
 #else
   vector_type::select_1_type  seq_select;
 #endif
@@ -355,7 +355,7 @@ private:
   void set_vectors();
 
 #ifdef USE_HYBRID_BITVECTORS
-  uint64_t select(const vector_type& vec, const vector_type::rank_1_type& rank, uint64_t i) const;
+  size_type select(const vector_type& vec, const vector_type::rank_1_type& rank, size_type i) const;
 #endif
 };  // class LCS
 
@@ -363,14 +363,14 @@ private:
 
 /*
   This class stores an integer array in two parts. Small values less than 255 are stored in
-  an int_vector<8>, while large values are marked with 255 and stored separately in an
-  int_vector<0>.
+  an sdsl::int_vector<8>, while large values are marked with 255 and stored separately in an
+  sdsl::int_vector<0>.
 */
 class SLArray
 {
 public:
-  typedef uint64_t size_type;
-  typedef uint64_t value_type;
+  typedef relative::size_type size_type;
+  typedef relative::size_type value_type;
 
   const static size_type  BLOCK_SIZE  = 64;
   const static value_type LARGE_VALUE = 255;
@@ -386,14 +386,14 @@ public:
     this->buildFrom(source);
   }
 
-  // int_vector_buffer cannot be const.
-  explicit SLArray(int_vector_buffer<0>& source);
+  // sdsl::int_vector_buffer cannot be const.
+  explicit SLArray(sdsl::int_vector_buffer<0>& source);
 
   void swap(SLArray& s);
   SLArray& operator=(const SLArray& s);
   SLArray& operator=(SLArray&& s);
 
-  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
   inline size_type size() const { return this->small.size(); }
@@ -429,7 +429,7 @@ public:
   /*
     Semiopen interval [from, to). Minimal sanity checking.
   */
-  int_vector<64> extract(size_type from, size_type to) const;
+  sdsl::int_vector<64> extract(size_type from, size_type to) const;
 
   inline size_type large_rank(size_type i) const
   {
@@ -441,9 +441,9 @@ public:
     return res;
   }
 
-  int_vector<8> small;
-  int_vector<0> large;
-  int_vector<0> samples;
+  sdsl::int_vector<8> small;
+  sdsl::int_vector<0> large;
+  sdsl::int_vector<0> samples;
 
 //------------------------------------------------------------------------------
 
@@ -454,7 +454,7 @@ private:
   void
   buildFrom(IntVector& source)
   {
-    util::assign(this->small, int_vector<8>(source.size(), 0));
+    sdsl::util::assign(this->small, sdsl::int_vector<8>(source.size(), 0));
 
     size_type  large_values = 0;
     value_type max_large = 0;
@@ -471,8 +471,8 @@ private:
     if(large_values > 0)
     {
       size_type blocks = (this->size() + BLOCK_SIZE - 1) / BLOCK_SIZE;
-      util::assign(this->large, int_vector<0>(large_values, 0, bitlength(max_large)));
-      util::assign(this->samples, int_vector<0>(blocks, 0, bitlength(large_values)));
+      sdsl::util::assign(this->large, sdsl::int_vector<0>(large_values, 0, bit_length(max_large)));
+      sdsl::util::assign(this->samples, sdsl::int_vector<0>(blocks, 0, bit_length(large_values)));
       for(size_type block = 0, pos = 0, large_pos = 0; block < blocks; block++)
       {
         this->samples[block] = large_pos;

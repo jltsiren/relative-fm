@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -33,35 +33,35 @@ using namespace relative;
 //------------------------------------------------------------------------------
 
 template<class Index>
-void testIndex(std::string name, Index& index, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags);
+void testIndex(std::string name, Index& index, std::vector<std::string>& patterns, size_type chars, size_type tags);
 
 template<class ReferenceBWTType, class SequenceType>
 void testIndex(std::string ref_name, std::string seq_name,
-  std::string name, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags);
+  std::string name, std::vector<std::string>& patterns, size_type chars, size_type tags);
 
-const uint64_t SEQ_UNKNOWN    = 0;
-const uint64_t SEQ_WT_PLAIN   = 1;
-const uint64_t SEQ_WT_RRR     = 2;
-const uint64_t SEQ_WT_RLZ     = 3;
-const uint64_t SEQ_RLSEQUENCE = 4;
-const uint64_t SEQ_REPRESENTATIONS = 5; // Largest representation identifier + 1.
+const size_type SEQ_UNKNOWN    = 0;
+const size_type SEQ_WT_PLAIN   = 1;
+const size_type SEQ_WT_RRR     = 2;
+const size_type SEQ_WT_RLZ     = 3;
+const size_type SEQ_RLSEQUENCE = 4;
+const size_type SEQ_REPRESENTATIONS = 5; // Largest representation identifier + 1.
 
-const uint64_t TAG_BUILD_INDEXES   = 0x01;
-const uint64_t TAG_PLAIN_FORMAT    = 0x02;
-const uint64_t TAG_NATIVE_FORMAT   = 0x04;
-const uint64_t TAG_ROPEBWT_FORMAT  = 0x08;
-const uint64_t TAG_ROPEBWT2_FORMAT = 0x10;
-const uint64_t TAG_LOCATE          = 0x20;
-const uint64_t TAG_VERIFY          = 0x40;
+const size_type TAG_BUILD_INDEXES   = 0x01;
+const size_type TAG_PLAIN_FORMAT    = 0x02;
+const size_type TAG_NATIVE_FORMAT   = 0x04;
+const size_type TAG_ROPEBWT_FORMAT  = 0x08;
+const size_type TAG_ROPEBWT2_FORMAT = 0x10;
+const size_type TAG_LOCATE          = 0x20;
+const size_type TAG_VERIFY          = 0x40;
 
-const uint64_t ROPEBWT_TAG_MASK = TAG_ROPEBWT_FORMAT | TAG_ROPEBWT2_FORMAT;
-const uint64_t MODE_TAG_MASK = TAG_NATIVE_FORMAT | TAG_ROPEBWT_FORMAT | TAG_ROPEBWT2_FORMAT;
+const size_type ROPEBWT_TAG_MASK = TAG_ROPEBWT_FORMAT | TAG_ROPEBWT2_FORMAT;
+const size_type MODE_TAG_MASK = TAG_NATIVE_FORMAT | TAG_ROPEBWT_FORMAT | TAG_ROPEBWT2_FORMAT;
 
-uint64_t seqRepresentation(uint8_t type);
-std::string indexName(uint64_t representation);
-std::string indexName(uint64_t ref_representation, uint64_t seq_representation);
+size_type seqRepresentation(char_type type);
+std::string indexName(size_type representation);
+std::string indexName(size_type ref_representation, size_type seq_representation);
 
-LoadMode getMode(uint64_t tags, bool print);
+LoadMode getMode(size_type tags, bool print);
 
 //------------------------------------------------------------------------------
 
@@ -112,16 +112,16 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   std::vector<std::string> patterns;
-  uint64_t chars = readRows(argv[pat_arg], patterns, true);
+  size_type chars = readRows(argv[pat_arg], patterns, true);
   std::cout << "Read " << patterns.size() << " patterns of total length " << chars << std::endl;
   std::cout << std::endl;
   std::cout << std::endl;
 
-  uint64_t tags = TAG_PLAIN_FORMAT;
+  size_type tags = TAG_PLAIN_FORMAT;
   LoadMode mode = mode_plain;
   for(int i = 1; i < ref_arg; i++)
   {
-    uint64_t ref_enc = 0, seq_enc = 0;
+    size_type ref_enc = 0, seq_enc = 0;
     switch(argv[i][0])
     {
 
@@ -138,17 +138,17 @@ main(int argc, char** argv)
         break;
       case SEQ_WT_RRR:
         {
-          SimpleFM<wt_huff<rrr_vector<63> > > seq(argv[seq_arg], mode);
+          SimpleFM<sdsl::wt_huff<sdsl::rrr_vector<63> > > seq(argv[seq_arg], mode);
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
         }
         break;
       case SEQ_WT_RLZ:
         {
           SimpleFM<> ref(argv[ref_arg], mode);
-          SimpleFM<wt_huff<rlz_vector> > seq(argv[seq_arg], mode);
-          bit_vector::rank_1_type b_r(&(ref.bwt.bv));
-          bit_vector::select_1_type b_s1(&(ref.bwt.bv));
-          bit_vector::select_0_type b_s0(&(ref.bwt.bv));
+          SimpleFM<sdsl::wt_huff<rlz_vector> > seq(argv[seq_arg], mode);
+          sdsl::bit_vector::rank_1_type b_r(&(ref.bwt.bv));
+          sdsl::bit_vector::select_1_type b_s1(&(ref.bwt.bv));
+          sdsl::bit_vector::select_0_type b_s0(&(ref.bwt.bv));
           {
             rlz_vector& temp = const_cast<rlz_vector&>(seq.bwt.bv);
             temp.compress(ref.bwt.bv, b_r, b_s1, b_s0);
@@ -162,9 +162,9 @@ main(int argc, char** argv)
           testIndex(indexName(seq_enc), seq, patterns, chars, tags);
           if(mode == mode_ropebwt2)
           {
-            uint64_t hash_value = seq.bwt.hash(seq.alpha);
+            size_type hash_value = seq.bwt.hash(seq.alpha);
             std::cerr << "BWT imported from ropebwt2 (hash value " << hash_value << ")" << std::endl;
-            for(uint64_t c = 0; c < seq.alpha.sigma; c++)
+            for(size_type c = 0; c < seq.alpha.sigma; c++)
             {
               std::cerr << "  Character " << c << " (" << (char)(seq.alpha.comp2char[c])
                         << "), count " << (seq.alpha.C[c + 1] - seq.alpha.C[c]) << std::endl;
@@ -187,27 +187,27 @@ main(int argc, char** argv)
         testIndex<bwt_type, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
-        testIndex<bwt_type, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
+        testIndex<bwt_type, sdsl::wt_huff<sdsl::rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_WT_PLAIN * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
         testIndex<bwt_type, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
 
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_WT_PLAIN:
-        testIndex<wt_huff<rrr_vector<63> >, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
+        testIndex<sdsl::wt_huff<sdsl::rrr_vector<63> >, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
-        testIndex<wt_huff<rrr_vector<63> >, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
+        testIndex<sdsl::wt_huff<sdsl::rrr_vector<63> >, sdsl::wt_huff<sdsl::rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_WT_RRR * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
-        testIndex<wt_huff<rrr_vector<63> >, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
+        testIndex<sdsl::wt_huff<sdsl::rrr_vector<63> >, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
 
       case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_PLAIN:
         testIndex<RLSequence, bwt_type>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_WT_RRR:
-        testIndex<RLSequence, wt_huff<rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
+        testIndex<RLSequence, sdsl::wt_huff<sdsl::rrr_vector<63> > >(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
         break;
       case SEQ_RLSEQUENCE * SEQ_REPRESENTATIONS + SEQ_RLSEQUENCE:
         testIndex<RLSequence, RLSequence>(argv[ref_arg], argv[seq_arg], indexName(ref_enc, seq_enc), patterns, chars, tags);
@@ -294,7 +294,7 @@ main(int argc, char** argv)
 
 template<class Index>
 void
-testIndex(std::string name, Index& index, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags)
+testIndex(std::string name, Index& index, std::vector<std::string>& patterns, size_type chars, size_type tags)
 {
   if(tags & ROPEBWT_TAG_MASK)
   {
@@ -307,20 +307,20 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
   if(verify && !(index.supportsExtract(true))) { verify = false; }
 
   double start = readTimer();
-  uint64_t found = 0, matches = 0, failed = 0;
-  uint64_t hash = FNV_OFFSET_BASIS;
+  size_type found = 0, matches = 0, failed = 0;
+  size_type hash = FNV_OFFSET_BASIS;
   for(auto pattern : patterns)
   {
     range_type res = index.find(pattern.begin(), pattern.end());
-    if(length(res) > 0)
+    if(Range::length(res) > 0)
     {
-      found++; matches += length(res);
+      found++; matches += Range::length(res);
       if(locate)
       {
         if(verify)
         {
           bool fail = false;
-          uint64_t temp = 0;
+          size_type temp = 0;
           if(res.first > 0) // The suffix before the range.
           {
             temp = index.locate(res.first - 1);
@@ -330,7 +330,7 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
             temp = index.locate(res.first); hash = fnv1a_hash(index.locate(res.first), hash);
             if(index.extract(temp, temp + pattern.length() - 1) != pattern) { fail = true; }
           }
-          for(uint64_t i = res.first + 2; i <= res.second; i++) // The middle suffixes.
+          for(size_type i = res.first + 2; i <= res.second; i++) // The middle suffixes.
           {
             hash = fnv1a_hash(index.locate(i - 1), hash);
           }
@@ -358,7 +358,7 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
         }
         else
         {
-          for(uint64_t i = res.first; i <= res.second; i++) { hash = fnv1a_hash(index.locate(i), hash); }
+          for(size_type i = res.first; i <= res.second; i++) { hash = fnv1a_hash(index.locate(i), hash); }
         }
       }
     }
@@ -375,7 +375,7 @@ testIndex(std::string name, Index& index, std::vector<std::string>& patterns, ui
 template<class ReferenceBWTType, class SequenceType>
 void
 testIndex(std::string ref_name, std::string seq_name,
-  std::string name, std::vector<std::string>& patterns, uint64_t chars, uint64_t tags)
+  std::string name, std::vector<std::string>& patterns, size_type chars, size_type tags)
 {
   LoadMode mode = getMode(tags, false);
   SimpleFM<ReferenceBWTType> ref(ref_name, mode);
@@ -396,8 +396,8 @@ testIndex(std::string ref_name, std::string seq_name,
   }
 }
 
-uint64_t
-seqRepresentation(uint8_t type)
+size_type
+seqRepresentation(char_type type)
 {
   switch(type)
   {
@@ -410,7 +410,7 @@ seqRepresentation(uint8_t type)
 }
 
 std::string
-encodingName(uint64_t representation)
+encodingName(size_type representation)
 {
   switch(representation)
   {
@@ -423,7 +423,7 @@ encodingName(uint64_t representation)
 }
 
 std::string
-indexName(uint64_t representation)
+indexName(size_type representation)
 {
   switch(representation)
   {
@@ -436,7 +436,7 @@ indexName(uint64_t representation)
 }
 
 std::string
-indexName(uint64_t ref_representation, uint64_t seq_representation)
+indexName(size_type ref_representation, size_type seq_representation)
 {
   return "RFM<" + encodingName(ref_representation) + "," + encodingName(seq_representation) + ">";
 }
@@ -452,7 +452,7 @@ modeName(LoadMode mode)
 }
 
 LoadMode
-getMode(uint64_t tags, bool print)
+getMode(size_type tags, bool print)
 {
   LoadMode mode = mode_plain;
   if(tags & TAG_NATIVE_FORMAT) { mode = mode_native; }

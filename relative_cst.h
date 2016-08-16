@@ -37,12 +37,12 @@ namespace relative
 
 struct rcst_node
 {
-  uint64_t sp, ep;
-  uint64_t left_lcp, right_lcp; // lcp[sp], lcp[ep + 1]
+  size_type sp, ep;
+  size_type left_lcp, right_lcp; // lcp[sp], lcp[ep + 1]
 
   rcst_node() : sp(0), ep(0), left_lcp(0), right_lcp(0) {}
 
-  rcst_node(uint64_t _sp, uint64_t _ep, uint64_t left, uint64_t right) :
+  rcst_node(size_type _sp, size_type _ep, size_type left, size_type right) :
     sp(_sp), ep(_ep), left_lcp(left), right_lcp(right)
   {
   }
@@ -70,11 +70,11 @@ template<class IndexType = RelativeFM<>>
 class RelativeCST
 {
 public:
-  typedef rcst_node node_type;
-  typedef uint64_t  size_type;
-  typedef uint8_t   char_type;
+  typedef rcst_node           node_type;
+  typedef relative::size_type size_type;
+  typedef relative::char_type char_type;
 
-  typedef cst_dfs_const_forward_iterator<RelativeCST> const_iterator;
+  typedef sdsl::cst_dfs_const_forward_iterator<RelativeCST> const_iterator;
 
 //------------------------------------------------------------------------------
   RelativeCST(const IndexType& _index, const RelativeLCP& _lcp) :
@@ -86,11 +86,11 @@ public:
 
   inline size_type size() const { return this->index.size(); }
 
-  uint64_t reportSize(bool print = false) const
+  size_type reportSize(bool print = false) const
   {
-    uint64_t index_bytes = this->index.reportSize();
-    uint64_t lcp_bytes = this->lcp.reportSize();
-    uint64_t bytes = index_bytes + lcp_bytes;
+    size_type index_bytes = this->index.reportSize();
+    size_type lcp_bytes = this->lcp.reportSize();
+    size_type bytes = index_bytes + lcp_bytes;
 
     if(print)
     {
@@ -209,7 +209,7 @@ public:
     if(!hasChar(this->index.alpha, c)) { return this->root(); }
     c = this->index.alpha.char2comp[c];
 
-    uint64_t comp = 0;  // The next comp value to check.
+    size_type comp = 0;  // The next comp value to check.
     for(node_type curr = this->first_child(v); curr != this->root(); curr = this->sibling(curr))
     {
       size_type d = std::max(curr.left_lcp, curr.right_lcp);

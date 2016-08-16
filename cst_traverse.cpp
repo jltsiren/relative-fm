@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -36,10 +36,10 @@ template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
 template<class CST>
-void traverseHash(CST& cst, const std::string& name, uint64_t indent = 18);
+void traverseHash(CST& cst, const std::string& name, size_type indent = 18);
 
 template<class CST>
-void traverse(CST& cst, const std::string& name, uint64_t indent = 18);
+void traverse(CST& cst, const std::string& name, size_type indent = 18);
 
 //------------------------------------------------------------------------------
 
@@ -61,11 +61,11 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   SimpleFM<> ref_fm(ref_name);
-  uint64_t fm_bytes = ref_fm.reportSize();
+  size_type fm_bytes = ref_fm.reportSize();
   printSize("FM-index", fm_bytes, ref_fm.size());
   RelativeLCP::lcp_type ref_lcp;
-  load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
-  uint64_t lcp_bytes = size_in_bytes(ref_lcp);
+  sdsl::load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
+  size_type lcp_bytes = sdsl::size_in_bytes(ref_lcp);
   printSize("LCP array", lcp_bytes, ref_lcp.size());
   printSize("Reference data", fm_bytes + lcp_bytes, ref_fm.size());
   std::cout << std::endl;
@@ -93,7 +93,7 @@ main(int argc, char** argv)
 
     {
       std::string name = "cst_sct3_dac";
-      cst_sct3<> cst;
+      sdsl::cst_sct3<> cst;
       buildCST(cst, seq_name, name);
 #ifdef USE_HASH
       traverseHash(cst, name);
@@ -105,7 +105,7 @@ main(int argc, char** argv)
 
     {
       std::string name = "cst_sct3_plcp";
-      cst_sct3<csa_wt<>, lcp_support_sada<>> cst;
+      sdsl::cst_sct3<sdsl::csa_wt<>, sdsl::lcp_support_sada<>> cst;
       buildCST(cst, seq_name, name);
 #ifdef USE_HASH
       traverseHash(cst, name);
@@ -117,7 +117,7 @@ main(int argc, char** argv)
 
     {
       std::string name = "cst_sada";
-      cst_sada<> cst;
+      sdsl::cst_sada<> cst;
       buildCST(cst, seq_name, name);
       traverse(cst, name);
       std::cout << std::endl;
@@ -125,7 +125,7 @@ main(int argc, char** argv)
 
     {
       std::string name = "cst_fully";
-      cst_fully<> cst;
+      sdsl::cst_fully<> cst;
       buildCST(cst, seq_name, name);
 //      traverse(cst, name);
       std::cout << std::endl;
@@ -158,27 +158,27 @@ buildCST(CST& cst, const std::string& base_name, const std::string& type)
   std::string cst_file = base_name + "." + type;
   if(file_exists(cst_file))
   {
-    load_from_file(cst, cst_file);
+    sdsl::load_from_file(cst, cst_file);
   }
   else
   {
     construct(cst, base_name, 1);
     store_to_file(cst, cst_file);
   }
-  printSize(type, size_in_bytes(cst), cst.size());
+  printSize(type, sdsl::size_in_bytes(cst), cst.size());
 }
 
 //------------------------------------------------------------------------------
 
-inline uint64_t
-hashNode(const rcst_node& node, uint64_t hash)
+inline size_type
+hashNode(const rcst_node& node, size_type hash)
 {
   hash = fnv1a_hash(node.sp, hash);
   return fnv1a_hash(node.ep, hash);
 }
 
-inline uint64_t
-hashNode(const bp_interval<uint64_t>& node, uint64_t hash)
+inline size_type
+hashNode(const sdsl::bp_interval<size_type>& node, size_type hash)
 {
   hash = fnv1a_hash(node.i, hash);
   return fnv1a_hash(node.j, hash);
@@ -186,10 +186,10 @@ hashNode(const bp_interval<uint64_t>& node, uint64_t hash)
 
 template<class CST>
 void
-traverseHash(CST& cst, const std::string& name, uint64_t indent)
+traverseHash(CST& cst, const std::string& name, size_type indent)
 {
   double start = readTimer();
-  uint64_t nodes = 0, hash = FNV_OFFSET_BASIS;
+  size_type nodes = 0, hash = FNV_OFFSET_BASIS;
   for(auto iter = cst.begin(); iter != cst.end(); ++iter)
   {
     if(iter.visit() == 1) { nodes++; }
@@ -205,10 +205,10 @@ traverseHash(CST& cst, const std::string& name, uint64_t indent)
 
 template<class CST>
 void
-traverse(CST& cst, const std::string& name, uint64_t indent)
+traverse(CST& cst, const std::string& name, size_type indent)
 {
   double start = readTimer();
-  uint64_t nodes = 0;
+  size_type nodes = 0;
   for(auto iter = cst.begin(); iter != cst.end(); ++iter)
   {
     if(iter.visit() == 1) { nodes++; }

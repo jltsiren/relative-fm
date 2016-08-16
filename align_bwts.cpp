@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -155,9 +155,9 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
   RelativeLCP::index_type ref_index;
   if(lcp)
   {
-    load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
-    load_from_file(ref_index, ref_name + DLCP_INDEX_EXTENSION);
-    printSize("LCP array", size_in_bytes(ref_lcp), ref.size()); std::cout << std::endl;
+    sdsl::load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
+    sdsl::load_from_file(ref_index, ref_name + DLCP_INDEX_EXTENSION);
+    printSize("LCP array", sdsl::size_in_bytes(ref_lcp), ref.size()); std::cout << std::endl;
   }
   std::cout << std::endl;
 
@@ -180,14 +180,14 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, LoadMode mod
     if(lcp)
     {
       RelativeLCP::lcp_type seq_lcp;
-      load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
+      sdsl::load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
       start = readTimer();
       RelativeLCP rlcp(ref_lcp, seq_lcp, ref_index, true);
       seconds = readTimer() - start;
       std::cout << "Relative LCP array built in " << seconds << " seconds" << std::endl;
       std::cout << std::endl;
 
-      printSize("LCP array", size_in_bytes(seq_lcp), seq.size()); std::cout << std::endl;
+      printSize("LCP array", sdsl::size_in_bytes(seq_lcp), seq.size()); std::cout << std::endl;
       rlcp.writeTo(seq_name);
       rlcp.reportSize(true);
     }

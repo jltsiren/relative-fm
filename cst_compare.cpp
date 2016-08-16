@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -39,9 +39,9 @@ void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
 template<class CST>
-void matchingStatistics(const CST& cst, const int_vector<8>& seq,
-  std::vector<range_type>& ranges, std::vector<uint64_t>& depths,
-  const std::string& name, uint64_t indent = 18);
+void matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
+  std::vector<range_type>& ranges, std::vector<size_type>& depths,
+  const std::string& name, size_type indent = 18);
 
 //------------------------------------------------------------------------------
 
@@ -62,11 +62,11 @@ main(int argc, char** argv)
   std::cout << "Reference: " << ref_name << std::endl;
 
   SimpleFM<> ref_fm(ref_name);
-  uint64_t fm_bytes = ref_fm.reportSize();
+  size_type fm_bytes = ref_fm.reportSize();
   printSize("FM-index", fm_bytes, ref_fm.size());
   RelativeLCP::lcp_type ref_lcp;
-  load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
-  uint64_t lcp_bytes = size_in_bytes(ref_lcp);
+  sdsl::load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
+  size_type lcp_bytes = sdsl::size_in_bytes(ref_lcp);
   printSize("LCP array", lcp_bytes, ref_lcp.size());
   printSize("Reference data", fm_bytes + lcp_bytes, ref_fm.size());
   std::cout << std::endl;
@@ -74,7 +74,7 @@ main(int argc, char** argv)
   std::string target_name = argv[2];
   std::cout << "Target: " << target_name << std::endl;
   std::string seq_name = argv[3];
-  int_vector<8> seq;
+  sdsl::int_vector<8> seq;
   {
     std::ifstream in(seq_name.c_str(), std::ios_base::binary);
     if(!in)
@@ -82,14 +82,14 @@ main(int argc, char** argv)
       std::cerr << "cst_compare: Cannot open sequence file " << seq_name << std::endl;
       return 2;
     }
-    uint64_t size = util::file_size(seq_name); seq.resize(size);
+    size_type size = sdsl::util::file_size(seq_name); seq.resize(size);
     in.read((char*)(seq.data()), size); in.close();
   }
   std::cout << "Sequence: " << seq_name << " (" << seq.size() << " bytes)" << std::endl;
   std::cout << std::endl;
 
   std::vector<range_type> rcst_ranges;
-  std::vector<uint64_t>   rcst_depths;
+  std::vector<size_type>   rcst_depths;
   {
     std::string name = "Relative (slow)";
     RelativeFM<> rfm(ref_fm, target_name);
@@ -107,10 +107,10 @@ main(int argc, char** argv)
   }
 
   std::vector<range_type> cst_ranges;
-  std::vector<uint64_t>   cst_depths;
+  std::vector<size_type>   cst_depths;
   {
     std::string name = "cst_sct3_dac";
-    cst_sct3<> cst;
+    sdsl::cst_sct3<> cst;
     buildCST(cst, target_name, name);
     matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
@@ -118,7 +118,7 @@ main(int argc, char** argv)
 
   {
     std::string name = "cst_sct3_plcp";
-    cst_sct3<csa_wt<>, lcp_support_sada<>> cst;
+    sdsl::cst_sct3<sdsl::csa_wt<>, sdsl::lcp_support_sada<>> cst;
     buildCST(cst, target_name, name);
     matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
@@ -126,7 +126,7 @@ main(int argc, char** argv)
 
   {
     std::string name = "cst_sada";
-    cst_sada<> cst;
+    sdsl::cst_sada<> cst;
     buildCST(cst, target_name, name);
     matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
@@ -134,14 +134,14 @@ main(int argc, char** argv)
 
   {
     std::string name = "cst_fully";
-    cst_fully<> cst;
+    sdsl::cst_fully<> cst;
     buildCST(cst, target_name, name);
 //    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
   }
 
 #ifdef VERIFY_RESULTS
-  for(uint64_t i = 0; i < seq.size(); i++)
+  for(size_type i = 0; i < seq.size(); i++)
   {
     if(rcst_ranges[i] != cst_ranges[i] || rcst_depths[i] != cst_depths[i])
     {
@@ -179,14 +179,14 @@ buildCST(CST& cst, const std::string& base_name, const std::string& type)
   std::string cst_file = base_name + "." + type;
   if(file_exists(cst_file))
   {
-    load_from_file(cst, cst_file);
+    sdsl::load_from_file(cst, cst_file);
   }
   else
   {
     construct(cst, base_name, 1);
     store_to_file(cst, cst_file);
   }
-  printSize(type, size_in_bytes(cst), cst.size());
+  printSize(type, sdsl::size_in_bytes(cst), cst.size());
 }
 
 void
@@ -208,9 +208,9 @@ buildSelect(RelativeFM<>& rfm, const std::string& base_name)
 
 template<class CST>
 void
-maximalMatch(const CST& cst, const int_vector<8>& seq,
+maximalMatch(const CST& cst, const sdsl::int_vector<8>& seq,
   typename CST::node_type& prev, typename CST::node_type& next,
-  uint64_t start_offset, typename CST::size_type& depth,
+  size_type start_offset, typename CST::size_type& depth,
   typename CST::size_type& next_depth)
 {
   typename CST::size_type bwt_pos =
@@ -239,9 +239,9 @@ maximalMatch(const CST& cst, const int_vector<8>& seq,
 
 template<>
 void
-maximalMatch(const RelativeCST<>& cst, const int_vector<8>& seq,
+maximalMatch(const RelativeCST<>& cst, const sdsl::int_vector<8>& seq,
   RelativeCST<>::node_type& prev, RelativeCST<>::node_type& next,
-  uint64_t start_offset, RelativeCST<>::size_type& depth,
+  size_type start_offset, RelativeCST<>::size_type& depth,
   RelativeCST<>::size_type& next_depth)
 {
   RelativeCST<>::size_type bwt_pos =
@@ -257,11 +257,11 @@ maximalMatch(const RelativeCST<>& cst, const int_vector<8>& seq,
 
 template<class CST>
 void
-matchingStatistics(const CST& cst, const int_vector<8>& seq,
-  std::vector<range_type>& ranges, std::vector<uint64_t>& depths,
-  const std::string& name, uint64_t indent)
+matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
+  std::vector<range_type>& ranges, std::vector<size_type>& depths,
+  const std::string& name, size_type indent)
 {
-  util::clear(ranges); util::clear(depths);
+  sdsl::util::clear(ranges); sdsl::util::clear(depths);
 
   // prev is the last node we have fully matched.
   // If next != prev, we are in the edge from prev to next.
@@ -271,8 +271,8 @@ matchingStatistics(const CST& cst, const int_vector<8>& seq,
   maximalMatch(cst, seq, prev, next, 0, depth, next_depth);
   ranges.push_back(range_type(cst.lb(next), cst.rb(next)));
   depths.push_back(depth);
-  uint64_t total_length = depth;
-  for(uint64_t i = 1; i < seq.size(); i++)
+  size_type total_length = depth;
+  for(size_type i = 1; i < seq.size(); i++)
   {
     if(depth == 0)
     {

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -68,7 +68,7 @@ main(int argc, char** argv)
     {
       std::vector<int32_t> dlcp_plain(lcp.size(), 0);
       int32_t prev = 0;
-      for(uint64_t i = 1; i < dlcp_plain.size(); i++)
+      for(size_type i = 1; i < dlcp_plain.size(); i++)
       {
         int32_t curr = lcp[i];
         dlcp_plain[i] = curr - prev;
@@ -88,14 +88,14 @@ main(int argc, char** argv)
     }
 #endif
 
-    int_vector<0> dlcp; dlcp.width(lcp.large.width() + 2);
+    sdsl::int_vector<0> dlcp; dlcp.width(lcp.large.width() + 2);
     differentialArray<SLArray, DiffEncoderNZ>(lcp, dlcp, true);
-    util::clear(lcp);
-    std::cout << "DLCP width: " << (uint64_t)(dlcp.width()) << std::endl;
+    sdsl::util::clear(lcp);
+    std::cout << "DLCP width: " << (size_type)(dlcp.width()) << std::endl;
 
-    int_vector<0> sa;
-    qsufsort::construct_sa(sa, dlcp); util::bit_compress(sa);
-    std::cout << "SA width: " << (uint64_t)(sa.width()) << std::endl;
+    sdsl::int_vector<0> sa;
+    sdsl::qsufsort::construct_sa(sa, dlcp); sdsl::util::bit_compress(sa);
+    std::cout << "SA width: " << (size_type)(sa.width()) << std::endl;
     store_to_file(sa, base_name + DLCP_INDEX_EXTENSION);
 
     double seconds = readTimer() - start;

@@ -28,7 +28,7 @@
 #include <vector>
 
 
-typedef std::vector<uint8_t> byte_vector;
+typedef std::vector<byte_type> byte_vector;
 
 byte_vector readFile(const std::string& filename);
 int greedyLCS(byte_vector& seq1, byte_vector& seq2);
@@ -59,7 +59,7 @@ main(int argc, char** argv)
 
 //------------------------------------------------------------------------------
 
-uint64_t
+size_type
 fileSize(std::ifstream& file)
 {
   std::streamoff curr = file.tellg();
@@ -83,7 +83,7 @@ readFile(const std::string& filename)
     return byte_vector();
   }
 
-  uint64_t size = fileSize(input);
+  size_type size = fileSize(input);
   char* buffer = new char[size];
   input.read(buffer, size);
   input.close();

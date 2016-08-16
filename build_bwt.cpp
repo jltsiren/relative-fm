@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren and Simon Gog
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -50,7 +50,7 @@ main(int argc, char** argv)
   }
 
   bool write_alphabet = false, build_lcp = false, options = false;
-  uint64_t sa_sample_rate = 0, isa_sample_rate = 0;
+  size_type sa_sample_rate = 0, isa_sample_rate = 0;
   int c = 0;
   while((c = getopt(argc, argv, "ai:ls:")) != -1)
   {
@@ -87,9 +87,9 @@ main(int argc, char** argv)
   {
     std::string base_name = argv[i];
     std::cout << "File: " << base_name << std::endl;
-    int_vector<8> text;
-    cache_config config;
-    uint64_t size = 0;
+    sdsl::int_vector<8> text;
+    sdsl::cache_config config;
+    size_type size = 0;
 
     // Read text.
     {
@@ -100,35 +100,35 @@ main(int argc, char** argv)
         std::cout << std::endl;
         continue;
       }
-      size = util::file_size(base_name); text.resize(size + 1);
+      size = sdsl::util::file_size(base_name); text.resize(size + 1);
       std::cout << "Text size: " << size << std::endl;
       in.read((char*)(text.data()), size); text[size] = 0; in.close();
     }
 
     // Build BWT and sample SA.
-    int_vector<0> sa_samples, isa_samples;
+    sdsl::int_vector<0> sa_samples, isa_samples;
     {
       double start = readTimer();
-      int_vector<64> sa(size + 1);
+      sdsl::int_vector<64> sa(size + 1);
       divsufsort64((const unsigned char*)(text.data()), (int64_t*)(sa.data()), size + 1);
       if(sa_sample_rate > 0)
       {
-        util::assign(sa_samples, int_vector<0>(size / sa_sample_rate + 1, 0, bitlength(size)));
-        for(uint64_t i = 0; i <= size; i += sa_sample_rate) { sa_samples[i / sa_sample_rate] = sa[i]; }
+        sdsl::util::assign(sa_samples, sdsl::int_vector<0>(size / sa_sample_rate + 1, 0, bit_length(size)));
+        for(size_type i = 0; i <= size; i += sa_sample_rate) { sa_samples[i / sa_sample_rate] = sa[i]; }
       }
       if(isa_sample_rate > 0)
       {
-        util::assign(isa_samples, int_vector<0>(size / isa_sample_rate + 1, 0, bitlength(size)));
-        for(uint64_t i = 0; i <= size; i++)
+        sdsl::util::assign(isa_samples, sdsl::int_vector<0>(size / isa_sample_rate + 1, 0, bit_length(size)));
+        for(size_type i = 0; i <= size; i++)
         {
           if(sa[i] % isa_sample_rate == 0) { isa_samples[sa[i] / isa_sample_rate] = i; }
         }
       }
-      uint8_t* bwt = (uint8_t*)(sa.data()); // Overwrite SA with BWT.
-      uint64_t to_add[2] = { (uint64_t)-1, size };
-      for(uint64_t i = 0; i <= size; i++) { bwt[i] = text[sa[i] + to_add[sa[i] == 0]]; }
-      for(uint64_t i = 0; i <= size; i++) { text[i] = bwt[i]; }
-      util::clear(sa);
+      char_type* bwt = (char_type*)(sa.data()); // Overwrite SA with BWT.
+      size_type to_add[2] = { (size_type)-1, size };
+      for(size_type i = 0; i <= size; i++) { bwt[i] = text[sa[i] + to_add[sa[i] == 0]]; }
+      for(size_type i = 0; i <= size; i++) { text[i] = bwt[i]; }
+      sdsl::util::clear(sa);
       double seconds = readTimer() - start;
       std::cout << "BWT built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
     }
@@ -136,7 +136,7 @@ main(int argc, char** argv)
     // Compact the alphabet and write it if necessary.
     {
       Alphabet alpha(text);
-      for(uint64_t i = 0; i <= size; i++) { text[i] = alpha.char2comp[text[i]]; }
+      for(size_type i = 0; i <= size; i++) { text[i] = alpha.char2comp[text[i]]; }
       if(write_alphabet)
       {
         std::string filename = base_name + ALPHA_EXTENSION;
@@ -167,10 +167,10 @@ main(int argc, char** argv)
         std::cout << "BWT written to " << filename << std::endl;
         if(build_lcp)
         {
-          config.file_map[conf::KEY_BWT] = filename;
+          config.file_map[sdsl::conf::KEY_BWT] = filename;
         }
       }
-      util::clear(text);
+      sdsl::util::clear(text);
     }
 
     // Write SA/ISA samples.
@@ -184,12 +184,12 @@ main(int argc, char** argv)
       }
       else
       {
-        write_member(sa_sample_rate, out); sa_samples.serialize(out);
-        write_member(isa_sample_rate, out); isa_samples.serialize(out);
+        sdsl::write_member(sa_sample_rate, out); sa_samples.serialize(out);
+        sdsl::write_member(isa_sample_rate, out); isa_samples.serialize(out);
         out.close();
         std::cout << "Samples written to " << filename << std::endl;
       }
-      util::clear(sa_samples); util::clear(isa_samples);
+      sdsl::util::clear(sa_samples); sdsl::util::clear(isa_samples);
     }
 
     // Build and write LCP.
@@ -197,7 +197,7 @@ main(int argc, char** argv)
     {
       double start = readTimer();
       construct_lcp_bwt_based(config);
-      int_vector_buffer<0> lcp_buffer(cache_file_name(conf::KEY_LCP, config));
+      sdsl::int_vector_buffer<0> lcp_buffer(sdsl::cache_file_name(sdsl::conf::KEY_LCP, config));
       SLArray lcp(lcp_buffer);
       double seconds = readTimer() - start;
       std::cout << "LCP array built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
@@ -212,7 +212,7 @@ main(int argc, char** argv)
         lcp.serialize(out); out.close();
         std::cout << "LCP array written to " << filename << std::endl;
       }
-      sdsl::remove(cache_file_name(conf::KEY_LCP, config));
+      sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_LCP, config));
     }
 
     std::cout << std::endl;

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -51,7 +51,7 @@ rlz_vector::rlz_vector(rlz_vector&& v)
   *this = std::move(v);
 }
 
-rlz_vector::rlz_vector(const bit_vector& v)
+rlz_vector::rlz_vector(const sdsl::bit_vector& v)
 {
   this->m_compressed = 0;
   this->compressed = 0;
@@ -60,7 +60,7 @@ rlz_vector::rlz_vector(const bit_vector& v)
   this->init_support();
 }
 
-rlz_vector::rlz_vector(bit_vector&& v)
+rlz_vector::rlz_vector(sdsl::bit_vector&& v)
 {
   this->m_compressed = 0;
   this->compressed = 0;
@@ -75,10 +75,10 @@ rlz_vector::~rlz_vector()
 }
 
 void
-rlz_vector::compress(const bit_vector& reference,
-  const bit_vector::rank_1_type& ref_rank,
-  const bit_vector::select_1_type& ref_select_1,
-  const bit_vector::select_0_type& ref_select_0,
+rlz_vector::compress(const sdsl::bit_vector& reference,
+  const sdsl::bit_vector::rank_1_type& ref_rank,
+  const sdsl::bit_vector::select_1_type& ref_select_1,
+  const sdsl::bit_vector::select_0_type& ref_select_0,
   const bv_fmi* fmi)
 {
   if(this->isCompressed())  // FIXME maybe decompress and recompress
@@ -116,18 +116,18 @@ rlz_vector::copy(const rlz_vector& v)
 void
 rlz_vector::init_support()
 {
-  util::init_support(this->m_plain_rank, &(this->m_plain));
-  util::init_support(this->m_plain_select_1, &(this->m_plain));
-  util::init_support(this->m_plain_select_0, &(this->m_plain));
+  sdsl::util::init_support(this->m_plain_rank, &(this->m_plain));
+  sdsl::util::init_support(this->m_plain_select_1, &(this->m_plain));
+  sdsl::util::init_support(this->m_plain_select_0, &(this->m_plain));
 }
 
 void
 rlz_vector::clear_plain()
 {
-  util::clear(this->m_plain);
-  util::clear(this->m_plain_rank);
-  util::clear(this->m_plain_select_1);
-  util::clear(this->m_plain_select_0);
+  sdsl::util::clear(this->m_plain);
+  sdsl::util::clear(this->m_plain_rank);
+  sdsl::util::clear(this->m_plain_select_1);
+  sdsl::util::clear(this->m_plain_select_0);
 }
 
 void
@@ -145,9 +145,9 @@ rlz_vector::swap(rlz_vector& v)
   {
     std::swap(this->m_size, v.m_size);
     this->m_plain.swap(v.m_plain);
-    util::swap_support(this->m_plain_rank, v.m_plain_rank, &(this->m_plain), &(v.m_plain));
-    util::swap_support(this->m_plain_select_1, v.m_plain_select_1, &(this->m_plain), &(v.m_plain));
-    util::swap_support(this->m_plain_select_0, v.m_plain_select_0, &(this->m_plain), &(v.m_plain));
+    sdsl::util::swap_support(this->m_plain_rank, v.m_plain_rank, &(this->m_plain), &(v.m_plain));
+    sdsl::util::swap_support(this->m_plain_select_1, v.m_plain_select_1, &(this->m_plain), &(v.m_plain));
+    sdsl::util::swap_support(this->m_plain_select_0, v.m_plain_select_0, &(this->m_plain), &(v.m_plain));
     std::swap(this->m_compressed, v.m_compressed);
     std::swap(this->compressed, v.compressed);
   }
@@ -180,13 +180,13 @@ rlz_vector::operator=(rlz_vector&& v)
 }
 
 rlz_vector::size_type
-rlz_vector::serialize(std::ostream& out, structure_tree_node* v, std::string name) const
+rlz_vector::serialize(std::ostream& out, sdsl::structure_tree_node* v, std::string name) const
 {
-  structure_tree_node* child = structure_tree::add_child(v, name, util::class_name(*this));
+  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
   size_type written_bytes = 0;
-  written_bytes += write_member(this->m_size, out, child, "size");
+  written_bytes += sdsl::write_member(this->m_size, out, child, "size");
   bool compressed = this->isCompressed();
-  written_bytes += write_member(compressed, out, child, "compressed");
+  written_bytes += sdsl::write_member(compressed, out, child, "compressed");
 
   if(compressed)
   {
@@ -200,7 +200,7 @@ rlz_vector::serialize(std::ostream& out, structure_tree_node* v, std::string nam
     written_bytes += this->m_plain_select_0.serialize(out, child, "plain_select_0");
   }
 
-  structure_tree::add_size(child, written_bytes);
+  sdsl::structure_tree::add_size(child, written_bytes);
   return written_bytes;
 }
 
@@ -210,10 +210,10 @@ rlz_vector::load(std::istream& in)
   this->clear_plain();
   this->clear_compressed();
 
-  uint64_t new_size = 0;
-  read_member(new_size, in);
+  size_type new_size = 0;
+  sdsl::read_member(new_size, in);
   bool compressed = false;
-  read_member(compressed, in);
+  sdsl::read_member(compressed, in);
 
   if(compressed)
   {
@@ -231,17 +231,17 @@ rlz_vector::load(std::istream& in)
 }
 
 void
-rlz_vector::load(std::istream& in, const bit_vector& reference,
-    const bit_vector::rank_1_type& ref_rank,
-    const bit_vector::select_1_type& ref_select_1,
-    const bit_vector::select_0_type& ref_select_0)
+rlz_vector::load(std::istream& in, const sdsl::bit_vector& reference,
+    const sdsl::bit_vector::rank_1_type& ref_rank,
+    const sdsl::bit_vector::select_1_type& ref_select_1,
+    const sdsl::bit_vector::select_0_type& ref_select_0)
 {
   this->clear_plain();
   this->clear_compressed();
 
-  read_member(this->m_size, in);
+  sdsl::read_member(this->m_size, in);
   bool compressed = false;
-  read_member(compressed, in);
+  sdsl::read_member(compressed, in);
 
   if(compressed)
   {
@@ -259,14 +259,14 @@ rlz_vector::load(std::istream& in, const bit_vector& reference,
 
 //------------------------------------------------------------------------------
 
-RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
-  const bit_vector::rank_1_type& _ref_rank,
-  const bit_vector::select_1_type& _ref_select_1,
-  const bit_vector::select_0_type& _ref_select_0,
+RLZVector::RLZVector(const sdsl::bit_vector& text, const sdsl::bit_vector& _reference,
+  const sdsl::bit_vector::rank_1_type& _ref_rank,
+  const sdsl::bit_vector::select_1_type& _ref_select_1,
+  const sdsl::bit_vector::select_0_type& _ref_select_0,
   const bv_fmi* fmi) :
   reference(_reference), ref_rank(_ref_rank), ref_select_1(_ref_select_1), ref_select_0(_ref_select_0)
 {
-  std::vector<uint64_t> phrase_starts, phrase_lengths;
+  std::vector<size_type> phrase_starts, phrase_lengths;
   if(fmi != 0)
   {
     relativeLZSuccinct(text, *fmi, phrase_starts, phrase_lengths, this->mismatches);
@@ -278,23 +278,23 @@ RLZVector::RLZVector(const bit_vector& text, const bit_vector& _reference,
 
   // Initialize phrases and blocks.
   this->phrases.init(phrase_starts, phrase_lengths);
-  util::assign(this->blocks, CumulativeArray(phrase_lengths));
+  sdsl::util::assign(this->blocks, CumulativeArray(phrase_lengths));
 
   // Initialize ones and zeros, using phrase_starts for ones and phrase_lengths for zeros.
-  for(uint64_t i = 0; i < phrase_starts.size(); i++)
+  for(size_type i = 0; i < phrase_starts.size(); i++)
   {
     phrase_starts[i] = this->oneBits(phrase_starts[i], phrase_lengths[i] - 1);
     if(this->mismatches[i]) { phrase_starts[i]++; }
     phrase_lengths[i] -= phrase_starts[i];
   }
-  util::assign(this->ones, CumulativeArray(phrase_starts));
-  util::assign(this->zeros, CumulativeArray(phrase_lengths));
+  sdsl::util::assign(this->ones, CumulativeArray(phrase_starts));
+  sdsl::util::assign(this->zeros, CumulativeArray(phrase_lengths));
 }
 
-RLZVector::RLZVector(std::istream& input, const bit_vector& _reference,
-  const bit_vector::rank_1_type& _ref_rank,
-  const bit_vector::select_1_type& _ref_select_1,
-  const bit_vector::select_0_type& _ref_select_0) :
+RLZVector::RLZVector(std::istream& input, const sdsl::bit_vector& _reference,
+  const sdsl::bit_vector::rank_1_type& _ref_rank,
+  const sdsl::bit_vector::select_1_type& _ref_select_1,
+  const sdsl::bit_vector::select_0_type& _ref_select_0) :
   reference(_reference), ref_rank(_ref_rank), ref_select_1(_ref_select_1), ref_select_0(_ref_select_0)
 {
   this->phrases.load(input);
@@ -334,23 +334,23 @@ RLZVector::~RLZVector()
 
 //------------------------------------------------------------------------------
 
-uint64_t
+size_type
 RLZVector::reportSize() const
 {
-  uint64_t bytes = sizeof(*this);
+  size_type bytes = sizeof(*this);
   bytes += this->phrases.reportSize();
-  bytes += size_in_bytes(this->blocks);
-  bytes += size_in_bytes(this->ones);
-  bytes += size_in_bytes(this->zeros);
-  bytes += size_in_bytes(this->mismatches);
+  bytes += sdsl::size_in_bytes(this->blocks);
+  bytes += sdsl::size_in_bytes(this->ones);
+  bytes += sdsl::size_in_bytes(this->zeros);
+  bytes += sdsl::size_in_bytes(this->mismatches);
   return bytes;
 }
 
 
-uint64_t
+size_type
 RLZVector::writeTo(std::ostream& output) const
 {
-  uint64_t bytes = 0;
+  size_type bytes = 0;
   bytes += this->phrases.serialize(output);
   bytes += this->blocks.serialize(output);
   bytes += this->ones.serialize(output);
@@ -361,56 +361,56 @@ RLZVector::writeTo(std::ostream& output) const
 
 //------------------------------------------------------------------------------
 
-uint64_t
-RLZVector::rank(uint64_t i) const
+size_type
+RLZVector::rank(size_type i) const
 {
   if(i >= this->size()) { return this->items(); }
 
-  uint64_t phrase = this->blocks.inverse(i); // Phrase is 0-based.
+  size_type phrase = this->blocks.inverse(i); // Phrase is 0-based.
   if(phrase == 0) { return this->oneBits(this->phrases.decode(0, 0), i); }
-  uint64_t text_pos = this->blocks.sum(phrase); // Starting position of the phrase in the text.
+  size_type text_pos = this->blocks.sum(phrase); // Starting position of the phrase in the text.
 
   return this->ones.sum(phrase) + this->oneBits(this->phrases.decode(phrase, text_pos), i - text_pos);
 }
 
-uint64_t
-RLZVector::select_1(uint64_t i) const
+size_type
+RLZVector::select_1(size_type i) const
 {
   // FIXME what happens for i == 0?
   if(i > this->items()) { return this->size(); }
 
-  uint64_t phrase = this->ones.inverse(i - 1); // Phrase is 0-based.
+  size_type phrase = this->ones.inverse(i - 1); // Phrase is 0-based.
   // Check if the requested 1-bit is the mismatching bit at the end of the phrase.
   if(this->ones.isLast(i - 1) && this->mismatches[phrase]) { return this->blocks.sum(phrase + 1) - 1; }
   if(phrase == 0) { return this->findBit(this->phrases.decode(0, 0), i); }
   i -= this->ones.sum(phrase); // i is now relative to the phrase.
-  uint64_t text_pos = this->blocks.sum(phrase);  // Starting position of the phrase in the text.
+  size_type text_pos = this->blocks.sum(phrase);  // Starting position of the phrase in the text.
 
   return text_pos + this->findBit(this->phrases.decode(phrase, text_pos), i);
 }
 
-uint64_t
-RLZVector::select_0(uint64_t i) const
+size_type
+RLZVector::select_0(size_type i) const
 {
   // FIXME what happens for i == 0?
   if(i > this->size() - this->items()) { return this->size(); }
 
-  uint64_t phrase = this->zeros.inverse(i - 1);  // Phrase is 0-based.
+  size_type phrase = this->zeros.inverse(i - 1);  // Phrase is 0-based.
   // Check if the requested 0-bit is the mismatching bit at the end of the phrase.
   if(this->zeros.isLast(i - 1) && !(this->mismatches[phrase])) { return this->blocks.sum(phrase + 1) - 1; }
   if(phrase == 0) { return this->findZero(this->phrases.decode(0, 0), i); }
   i -= this->zeros.sum(phrase);  // i is now relative to the phrase.
-  uint64_t text_pos = this->blocks.sum(phrase);  // Starting position of the phrase in the text.
+  size_type text_pos = this->blocks.sum(phrase);  // Starting position of the phrase in the text.
 
   return text_pos + this->findZero(this->phrases.decode(phrase, text_pos), i);
 }
 
 bool
-RLZVector::operator[](uint64_t i) const
+RLZVector::operator[](size_type i) const
 {
   if(i >= this->size()) { return false; }
 
-  uint64_t phrase = this->blocks.inverse(i); // Phrase is 0-based.
+  size_type phrase = this->blocks.inverse(i); // Phrase is 0-based.
   if(this->blocks.isLast(i)) { return this->mismatches[phrase]; } // The mismatching bit.
 
   return this->reference[this->phrases.decode(phrase, i)];

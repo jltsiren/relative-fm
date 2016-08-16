@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -38,13 +38,13 @@ namespace relative
 class RLSequence
 {
 public:
-  const static uint64_t SAMPLE_RATE = 64;
-  const static uint64_t SIGMA = 6;
-  const static uint64_t MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
-  typedef uint64_t size_type;
+  typedef relative::size_type size_type;
+  const static size_type SAMPLE_RATE = 64;
+  const static size_type SIGMA = 6;
+  const static size_type MAX_RUN = 256 / SIGMA;  // 42; encoded as 6 * 41
 
   RLSequence();
-  RLSequence(int_vector_buffer<8>& buffer, uint64_t _size);
+  RLSequence(sdsl::int_vector_buffer<8>& buffer, size_type _size);
   RLSequence(const RLSequence& s);
   RLSequence(RLSequence&& s);
   ~RLSequence();
@@ -53,25 +53,25 @@ public:
   RLSequence& operator=(const RLSequence& v);
   RLSequence& operator=(RLSequence&& v);
 
-  uint64_t serialize(std::ostream& out, structure_tree_node* v = nullptr, std::string name = "") const;
+  size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in, LoadMode mode = mode_native);
 
-  inline uint64_t size() const { return this->block_boundaries.size(); }
-  inline uint64_t bytes() const { return this->data.size(); }
-  inline uint64_t count(uint8_t c) const { return this->samples[c].sum(); }
+  inline size_type size() const { return this->block_boundaries.size(); }
+  inline size_type bytes() const { return this->data.size(); }
+  inline size_type count(uint8_t c) const { return this->samples[c].sum(); }
 
   // FIXME implement
-  uint64_t countRuns() const;
+  size_type countRuns() const;
 
-  inline uint64_t rank(uint64_t i, uint8_t c) const
+  inline size_type rank(size_type i, uint8_t c) const
   {
     if(c >= SIGMA) { return 0; }
     if(i > this->size()) { i = this->size(); }
 
-    uint64_t block = this->block_rank(i);
-    uint64_t res = this->samples[c].sum(block);
-    uint64_t rle_pos = block * SAMPLE_RATE;
-    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    size_type block = this->block_rank(i);
+    size_type res = this->samples[c].sum(block);
+    size_type rle_pos = block * SAMPLE_RATE;
+    size_type seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
 
     while(seq_pos < i)
     {
@@ -87,16 +87,16 @@ public:
     return res;
   }
 
-  inline uint64_t select(uint64_t i, uint8_t c) const
+  inline size_type select(size_type i, uint8_t c) const
   {
     if(c >= SIGMA) { return 0; }
     if(i == 0) { return 0; }
     if(i > this->count(c)) { return this->size(); }
 
-    uint64_t block = this->samples[c].inverse(i - 1);
-    uint64_t count = this->samples[c].sum(block);
-    uint64_t rle_pos = block * SAMPLE_RATE;
-    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    size_type block = this->samples[c].inverse(i - 1);
+    size_type count = this->samples[c].sum(block);
+    size_type rle_pos = block * SAMPLE_RATE;
+    size_type seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(true)
     {
       range_type run = this->readRun(rle_pos);
@@ -110,13 +110,13 @@ public:
     }
   }
 
-  inline uint64_t operator[](uint64_t i) const
+  inline size_type operator[](size_type i) const
   {
     if(i >= this->size()) { return 0; }
 
-    uint64_t block = this->block_rank(i);
-    uint64_t rle_pos = block * SAMPLE_RATE;
-    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    size_type block = this->block_rank(i);
+    size_type rle_pos = block * SAMPLE_RATE;
+    size_type seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     while(true)
     {
       range_type run = this->readRun(rle_pos);
@@ -127,17 +127,17 @@ public:
   }
 
   // returns (rank(i, seq[i]), seq[i])
-  inline range_type inverse_select(uint64_t i) const
+  inline range_type inverse_select(size_type i) const
   {
     range_type res(0, 0);
     if(i >= this->size()) { return res; }
 
-    uint64_t block = this->block_rank(i);
-    uint64_t rle_pos = block * SAMPLE_RATE;
-    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    size_type block = this->block_rank(i);
+    size_type rle_pos = block * SAMPLE_RATE;
+    size_type seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
 
     range_type run(0, 0);
-    uint64_t ranks[SIGMA] = {};
+    size_type ranks[SIGMA] = {};
     while(seq_pos <= i)
     {
       run = this->readRun(rle_pos);
@@ -151,13 +151,13 @@ public:
   template<class ByteVector>
   void extract(range_type range, ByteVector& buffer) const
   {
-    if(isEmpty(range) || range.second >= this->size()) { return; }
-    buffer.resize(length(range));
+    if(Range::empty(range) || range.second >= this->size()) { return; }
+    buffer.resize(Range::length(range));
 
     // Find the first character.
-    uint64_t block = this->block_rank(range.first);
-    uint64_t rle_pos = block * SAMPLE_RATE;
-    uint64_t seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
+    size_type block = this->block_rank(range.first);
+    size_type rle_pos = block * SAMPLE_RATE;
+    size_type seq_pos = (block > 0 ? this->block_select(block) + 1 : 0);
     range_type run(0, 0);
 
     while(true)
@@ -169,7 +169,7 @@ public:
     }
 
     // Fill the buffer.
-    for(uint64_t i = range.first; i <= range.second; i++)
+    for(size_type i = range.first; i <= range.second; i++)
     {
       if(i > seq_pos)
       {
@@ -180,20 +180,20 @@ public:
     }
   }
 
-  inline uint8_t rawData(uint64_t i) const { return this->data[i]; }
+  inline uint8_t rawData(size_type i) const { return this->data[i]; }
 
-  uint64_t hash(const Alphabet& alpha) const;
+  size_type hash(const Alphabet& alpha) const;
 
   // Returns (character, length).
-  inline range_type readRun(uint64_t& rle_pos) const
+  inline range_type readRun(size_type& rle_pos) const
   {
     range_type run(this->data[rle_pos] % SIGMA, this->data[rle_pos] / SIGMA + 1); rle_pos++;
     if(run.second >= MAX_RUN)
     {
-      uint64_t temp = this->data[rle_pos] & 0x7F, offset = 7;
+      size_type temp = this->data[rle_pos] & 0x7F, offset = 7;
       while(this->data[rle_pos] & 0x80)
       {
-        rle_pos++; temp |= ((uint64_t)(this->data[rle_pos] & 0x7F)) << offset; offset += 7;
+        rle_pos++; temp |= ((size_type)(this->data[rle_pos] & 0x7F)) << offset; offset += 7;
       }
       run.second += temp; rle_pos++;
     }
@@ -204,9 +204,9 @@ private:
   std::vector<uint8_t> data;
   CumulativeArray      samples[SIGMA];
 
-  sd_vector<>                block_boundaries; // Marks the last sequence position in each block.
-  sd_vector<>::rank_1_type   block_rank;
-  sd_vector<>::select_1_type block_select;
+  sdsl::sd_vector<>                block_boundaries; // Marks the last sequence position in each block.
+  sdsl::sd_vector<>::rank_1_type   block_rank;
+  sdsl::sd_vector<>::select_1_type block_select;
 
   void copy(const RLSequence& v);
   void buildRank();
@@ -221,11 +221,11 @@ void
 SimpleFM<RLSequence>::extractBWT(range_type range, ByteVector& buffer) const
 {
   this->bwt.extract(range, buffer);
-  for(uint64_t i = 0; i < buffer.size(); i++) { buffer[i] = this->alpha.comp2char[buffer[i]]; }
+  for(size_type i = 0; i < buffer.size(); i++) { buffer[i] = this->alpha.comp2char[buffer[i]]; }
 }
 
 template<>
-void characterCounts(const RLSequence& sequence, int_vector<64>& counts);
+void characterCounts(const RLSequence& sequence, sdsl::int_vector<64>& counts);
 
 //------------------------------------------------------------------------------
 

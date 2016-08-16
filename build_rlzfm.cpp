@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -46,9 +46,9 @@ main(int argc, char** argv)
   SimpleFM<> ref(argv[1]);
   ref.reportSize(true);
   std::cout << std::endl;
-  csa_wt<> csa;
+  sdsl::csa_wt<> csa;
   {
-    int_vector<8> buffer(ref.size()); ref.extractBWT(buffer);
+    sdsl::int_vector<8> buffer(ref.size()); ref.extractBWT(buffer);
     reverseIndex(buffer, csa);
   }
 

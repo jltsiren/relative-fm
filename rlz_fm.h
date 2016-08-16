@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -43,20 +43,20 @@ class RLZFM
 public:
   const static std::string EXTENSION;       // .rlzfm
 
-  const static uint64_t    BLOCK_SIZE = 4;  // How many phrases in one rank() block.
+  const static size_type    BLOCK_SIZE = 4;  // How many phrases in one rank() block.
 
   /*
     The last parameter is an optional index for the reverse reference.
   */
-  RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const csa_wt<>* csa = 0);
+  RLZFM(const SimpleFM<>& ref, const SimpleFM<>& seq, const sdsl::csa_wt<>* csa = 0);
   RLZFM(const SimpleFM<>& ref, const std::string& base_name);
   RLZFM(const SimpleFM<>& ref, std::istream& input);
   ~RLZFM();
 
-  uint64_t size() const { return this->blocks.sum(); }
-  uint64_t sequences() const { return this->alpha.C[1]; }
+  size_type size() const { return this->blocks.sum(); }
+  size_type sequences() const { return this->alpha.C[1]; }
 
-  uint64_t reportSize(bool print = false) const;
+  size_type reportSize(bool print = false) const;
   void writeTo(const std::string& base_name) const;
   void writeTo(std::ostream& output) const;
 
@@ -73,7 +73,7 @@ public:
   }
 
   // Call supportsLocate() first.
-  inline uint64_t locate(uint64_t i) const { return i; }
+  inline size_type locate(size_type i) const { return i; }
 
   inline bool supportsExtract(bool print = false) const
   {
@@ -91,7 +91,7 @@ public:
     return std::string();
   }
 
-  inline std::string extract(uint64_t from, uint64_t to) const { return this->extract(range_type(from, to)); }
+  inline std::string extract(size_type from, size_type to) const { return this->extract(range_type(from, to)); }
 
   const SimpleFM<>&       reference;
 
@@ -99,18 +99,18 @@ public:
   relative_encoder        phrases;
   CumulativeArray         blocks;
   CumulativeArray*        block_rank;
-  int_vector<8>           mismatches; // FIXME this could be packed
+  sdsl::int_vector<8>           mismatches; // FIXME this could be packed
 
 private:
   // Counts the number of occurrences of (real character) c in reference[ref_pos, ref_pos + phrase_length - 1].
-  inline uint64_t countOf(uint64_t ref_pos, uint64_t phrase_length, uint8_t c) const
+  inline size_type countOf(size_type ref_pos, size_type phrase_length, char_type c) const
   {
     if(phrase_length == 0) { return 0; }
     c = this->reference.alpha.char2comp[c];
     return this->reference.bwt.rank(ref_pos + phrase_length, c) - this->reference.bwt.rank(ref_pos, c);
   }
 
-  uint64_t rank(uint64_t i, uint8_t c) const; // c is real character.
+  size_type rank(size_type i, char_type c) const; // c is real character.
 
   void loadFrom(std::istream& input);
 
@@ -129,10 +129,10 @@ RLZFM::find(Iter begin, Iter end) const
   while(begin != end)
   {
     --end;
-    uint64_t pos = cumulative(this->alpha, *end);
+    size_type pos = cumulative(this->alpha, *end);
     res.first = pos + this->rank(res.first, *end);
     res.second = pos + this->rank(res.second + 1, *end) - 1;
-    if(length(res) == 0) { return range_type(1, 0); }
+    if(Range::length(res) == 0) { return range_type(1, 0); }
   }
   return res;
 }

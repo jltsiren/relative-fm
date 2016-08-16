@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -49,15 +49,13 @@ using namespace relative;
 // Verify the queries or just run the speed tests.
 //#define VERIFY_QUERIES
 
-const uint64_t MILLION = 1000000;
+const size_type LF_QUERIES = 10 * MILLION;
+const size_type PSI_QUERIES = 10 * MILLION;
 
-const uint64_t LF_QUERIES = 10 * MILLION;
-const uint64_t PSI_QUERIES = 10 * MILLION;
-
-const uint64_t LCP_QUERIES = 100 * MILLION;
-const uint64_t RMQ_QUERIES = 100 * MILLION;
-const uint64_t RMQ_QUERY_LENGTH = 16;
-const uint64_t PSV_NSV_QUERIES = 100 * MILLION;
+const size_type LCP_QUERIES = 100 * MILLION;
+const size_type RMQ_QUERIES = 100 * MILLION;
+const size_type RMQ_QUERY_LENGTH = 16;
+const size_type PSV_NSV_QUERIES = 100 * MILLION;
 
 //------------------------------------------------------------------------------
 
@@ -101,8 +99,8 @@ main(int argc, char** argv)
   printSize("FM-index", ref_fm.reportSize(), ref_fm.size()); std::cout << std::endl;
 
   RelativeLCP::lcp_type ref_lcp;
-  load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
-  printSize("LCP array", size_in_bytes(ref_lcp), ref_lcp.size()); std::cout << std::endl;
+  sdsl::load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
+  printSize("LCP array", sdsl::size_in_bytes(ref_lcp), ref_lcp.size()); std::cout << std::endl;
 
   std::cout << std::endl;
 
@@ -119,8 +117,8 @@ main(int argc, char** argv)
     rfm.reportSize(true);
 
     RelativeLCP::lcp_type seq_lcp;
-    load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
-    printSize("LCP array", size_in_bytes(seq_lcp), seq_lcp.size()); std::cout << std::endl;
+    sdsl::load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
+    printSize("LCP array", sdsl::size_in_bytes(seq_lcp), seq_lcp.size()); std::cout << std::endl;
 
     RelativeLCP rlcp(ref_lcp, seq_name);
     rlcp.reportSize(true);
@@ -182,7 +180,7 @@ findQueries(const Index& index, const std::string& type,
   const std::vector<std::string>& patterns, std::vector<range_type>& results)
 {
   double start = readTimer();
-  for(uint64_t i = 0; i < patterns.size(); i++)
+  for(size_type i = 0; i < patterns.size(); i++)
   {
     results[i] = index.find(patterns[i].begin(), patterns[i].end());
   }
@@ -194,7 +192,7 @@ void
 verifyForwardSearch(const SimpleFM<>& fm, const RelativeFM<>& rfm, const RelativeLCP& lcp)
 {
   std::vector<std::string> patterns;
-  uint64_t total_length = readRows("patterns", patterns, true);
+  size_type total_length = readRows("patterns", patterns, true);
   std::cout << "Read " << patterns.size() << " patterns of total length " << total_length << std::endl;
 
   std::vector<range_type> fm_results(patterns.size());
@@ -206,7 +204,7 @@ verifyForwardSearch(const SimpleFM<>& fm, const RelativeFM<>& rfm, const Relativ
 
   {
     bool ok = true;
-    for(uint64_t i = 0; i < patterns.size(); i++)
+    for(size_type i = 0; i < patterns.size(); i++)
     {
       if(fm_results[i] != cst_results[i])
       {
@@ -224,34 +222,34 @@ verifyForwardSearch(const SimpleFM<>& fm, const RelativeFM<>& rfm, const Relativ
 
 //------------------------------------------------------------------------------
 
-std::vector<uint64_t>
-randomPositions(uint64_t n, uint64_t size)
+std::vector<size_type>
+randomPositions(size_type n, size_type size)
 {
   std::mt19937_64 rng(0xDEADBEEF);
-  std::vector<uint64_t> positions(n);
-  for(uint64_t i = 0; i < positions.size(); i++) { positions[i] = rng() % size; }
+  std::vector<size_type> positions(n);
+  for(size_type i = 0; i < positions.size(); i++) { positions[i] = rng() % size; }
   return positions;
 }
 
 template<class ArrayType>
-uint64_t
-timeQueries(const ArrayType& array, const std::vector<uint64_t>& queries, std::string name)
+size_type
+timeQueries(const ArrayType& array, const std::vector<size_type>& queries, std::string name)
 {
   double start = readTimer();
-  uint64_t sum = 0;
-  for(uint64_t i = 0; i < queries.size(); i++) { sum += array[queries[i]]; }
+  size_type sum = 0;
+  for(size_type i = 0; i < queries.size(); i++) { sum += array[queries[i]]; }
   double seconds = readTimer() - start;
   printTime(name, queries.size(), seconds);
   return sum;
 }
 
 template<class ArrayType>
-uint64_t
+size_type
 timeQueries(const ArrayType& array, std::string name)
 {
   double start = readTimer();
-  uint64_t sum = 0;
-  for(uint64_t i = 0; i < array.size(); i++) { sum += array[i]; }
+  size_type sum = 0;
+  for(size_type i = 0; i < array.size(); i++) { sum += array[i]; }
   double seconds = readTimer() - start;
   printTime(name, array.size(), seconds);
   return sum;
@@ -263,12 +261,12 @@ template<class Index>
 void
 verifyLF(const Index& index, const std::string& type)
 {
-  uint64_t sum = 0;
-  std::vector<uint64_t> positions = randomPositions(LF_QUERIES, index.size());
+  size_type sum = 0;
+  std::vector<size_type> positions = randomPositions(LF_QUERIES, index.size());
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < positions.size(); i++)
+    for(size_type i = 0; i < positions.size(); i++)
     {
       sum += index.LF(positions[i]).first;
     }
@@ -286,12 +284,12 @@ template<class Index>
 void
 verifyPsi(const Index& index, const std::string& type)
 {
-  uint64_t sum = 0;
-  std::vector<uint64_t> positions = randomPositions(PSI_QUERIES, index.size());
+  size_type sum = 0;
+  std::vector<size_type> positions = randomPositions(PSI_QUERIES, index.size());
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < positions.size(); i++)
+    for(size_type i = 0; i < positions.size(); i++)
     {
       sum += index.Psi(positions[i]);
     }
@@ -302,10 +300,10 @@ verifyPsi(const Index& index, const std::string& type)
 #ifdef VERIFY_QUERIES
   {
     double start = readTimer();
-    for(uint64_t i = index.sequences(); i < index.size(); i++)
+    for(size_type i = index.sequences(); i < index.size(); i++)
     {
-      uint64_t next_pos = index.Psi(i);
-      uint64_t prev_pos = index.LF(next_pos).first;
+      size_type next_pos = index.Psi(i);
+      size_type prev_pos = index.LF(next_pos).first;
       if(prev_pos != i)
       {
         std::cerr << "verify: Psi(" << i << ") = " << next_pos
@@ -347,15 +345,15 @@ buildSelect(RelativeFM<>& rfm, const std::string& base_name)
 void
 verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  uint64_t sum = 0;
-  std::vector<uint64_t> positions = randomPositions(LCP_QUERIES, lcp.size());
+  size_type sum = 0;
+  std::vector<size_type> positions = randomPositions(LCP_QUERIES, lcp.size());
 
   sum += timeQueries(lcp, positions, "LCP (random)");
 
   {
     double start = readTimer();
-    uint64_t rank = lcp.initForward(0);
-    for(uint64_t i = 0; i < lcp.size(); i++)
+    size_type rank = lcp.initForward(0);
+    for(size_type i = 0; i < lcp.size(); i++)
     {
       sum += lcp.accessForward(i, rank);
     }
@@ -370,8 +368,8 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 #ifdef VERIFY_QUERIES
   {
     double start = readTimer();
-    uint64_t rank = lcp.initForward(0);
-    for(uint64_t i = 0; i < rlcp.size(); i++)
+    size_type rank = lcp.initForward(0);
+    for(size_type i = 0; i < rlcp.size(); i++)
     {
       if(rlcp[i] != lcp.accessForward(i, rank))
       {
@@ -391,14 +389,14 @@ verifyLCP(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 //------------------------------------------------------------------------------
 
 std::vector<range_type>
-randomRanges(const RelativeLCP::lcp_type& lcp, uint64_t n, uint64_t max_length)
+randomRanges(const RelativeLCP::lcp_type& lcp, size_type n, size_type max_length)
 {
   std::mt19937_64 rng(0xDEADBEEF);
   std::vector<range_type> ranges(n);
-  for(uint64_t i = 0; i < ranges.size(); i++)
+  for(size_type i = 0; i < ranges.size(); i++)
   {
     ranges[i].first = rng() % lcp.size();
-    uint64_t len = max_length;
+    size_type len = max_length;
     while(len < lcp.size() && (rng() & 1)) { len *= max_length; }
     ranges[i].second = std::min(lcp.size() - 1, ranges[i].first + rng() % len);
   }
@@ -409,11 +407,11 @@ void
 verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
   std::vector<range_type> queries = randomRanges(lcp, RMQ_QUERIES, RMQ_QUERY_LENGTH);
-  uint64_t sum = 0;
+  size_type sum = 0;
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < queries.size(); i++)
+    for(size_type i = 0; i < queries.size(); i++)
     {
       sum += rlcp.rmq(queries[i]).first;
     }
@@ -425,10 +423,10 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   {
     rmq_succinct_sct<true> rmq(&lcp);
     double start = readTimer();
-    for(uint64_t i = 0; i < queries.size(); i++)
+    for(size_type i = 0; i < queries.size(); i++)
     {
       range_type a = rlcp.rmq(queries[i]);
-      uint64_t b = rmq(queries[i].first, queries[i].second);
+      size_type b = rmq(queries[i].first, queries[i].second);
       if(a.first != b)
       {
         std::cerr << "Query " << i << ", range " << queries[i] << std::endl;
@@ -449,14 +447,14 @@ verifyRMQ(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 //------------------------------------------------------------------------------
 
 void
-printLCP(const RelativeLCP::lcp_type& lcp, uint64_t pos)
+printLCP(const RelativeLCP::lcp_type& lcp, size_type pos)
 {
   std::cerr << "  lcp[" << pos << "] = " << lcp[pos] << std::endl;
 }
 
 void
-printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
-  uint64_t error_pos, uint64_t val, bool psv)
+printError(const RelativeLCP::lcp_type& lcp, size_type query, size_type query_pos,
+  size_type error_pos, size_type val, bool psv)
 {
   std::cerr << "Query " << query << ", position " << query_pos << std::endl;
   printLCP(lcp, query_pos);
@@ -472,12 +470,12 @@ printError(const RelativeLCP::lcp_type& lcp, uint64_t query, uint64_t query_pos,
 void
 verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
-  uint64_t sum = 0;
+  std::vector<size_type> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
+  size_type sum = 0;
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < queries.size(); i++)
+    for(size_type i = 0; i < queries.size(); i++)
     {
       sum += rlcp.psv(queries[i]).first;
     }
@@ -489,13 +487,13 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   {
     double start = readTimer();
     bool ok = true;
-    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      uint64_t rank = lcp.initBackward(queries[i]);
-      uint64_t res = rlcp.psv(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
+      size_type rank = lcp.initBackward(queries[i]);
+      size_type res = rlcp.psv(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
       if(res >= rlcp.size())
       {
-        for(uint64_t j = queries[i]; j > 0; j--)
+        for(size_type j = queries[i]; j > 0; j--)
         {
           if(lcp.accessBackward(j - 1, rank) < comp)
           {
@@ -506,7 +504,7 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
       }
       else
       {
-        for(uint64_t j = queries[i] - 1; j > res; j--)
+        for(size_type j = queries[i] - 1; j > res; j--)
         {
           if(lcp.accessBackward(j, rank) < comp)
           {
@@ -535,12 +533,12 @@ verifyPSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 void
 verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
-  uint64_t sum = 0;
+  std::vector<size_type> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
+  size_type sum = 0;
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < queries.size(); i++)
+    for(size_type i = 0; i < queries.size(); i++)
     {
       sum += rlcp.psev(queries[i]).first;
     }
@@ -552,13 +550,13 @@ verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   {
     double start = readTimer();
     bool ok = true;
-    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      uint64_t rank = lcp.initBackward(queries[i]);
-      uint64_t res = rlcp.psev(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
+      size_type rank = lcp.initBackward(queries[i]);
+      size_type res = rlcp.psev(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
       if(res >= rlcp.size())
       {
-        for(uint64_t j = queries[i]; j > 0; j--)
+        for(size_type j = queries[i]; j > 0; j--)
         {
           if(lcp.accessBackward(j - 1, rank) <= comp)
           {
@@ -569,7 +567,7 @@ verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
       }
       else
       {
-        for(uint64_t j = queries[i] - 1; j > res; j--)
+        for(size_type j = queries[i] - 1; j > res; j--)
         {
           if(lcp.accessBackward(j, rank) <= comp)
           {
@@ -598,12 +596,12 @@ verifyPSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 void
 verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
-  uint64_t sum = 0;
+  std::vector<size_type> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
+  size_type sum = 0;
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < queries.size(); i++)
+    for(size_type i = 0; i < queries.size(); i++)
     {
       sum += rlcp.nsv(queries[i]).first;
     }
@@ -615,13 +613,13 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   {
     double start = readTimer();
     bool ok = true;
-    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      uint64_t rank = lcp.initForward(queries[i]);
-      uint64_t res = rlcp.nsv(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
+      size_type rank = lcp.initForward(queries[i]);
+      size_type res = rlcp.nsv(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
       if(res >= rlcp.size())
       {
-        for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
+        for(size_type j = queries[i] + 1; j < lcp.size(); j++)
         {
           if(lcp.accessForward(j, rank) < comp)
           {
@@ -637,7 +635,7 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
           printError(lcp, i, queries[i], res, res, false);
           ok = false; break;
         }
-        for(uint64_t j = queries[i] + 1; j < res; j++)
+        for(size_type j = queries[i] + 1; j < res; j++)
         {
           if(lcp.accessForward(j, rank) < comp)
           {
@@ -661,12 +659,12 @@ verifyNSV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 void
 verifyNSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
 {
-  std::vector<uint64_t> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
-  uint64_t sum = 0;
+  std::vector<size_type> queries = randomPositions(PSV_NSV_QUERIES, lcp.size());
+  size_type sum = 0;
 
   {
     double start = readTimer();
-    for(uint64_t i = 0; i < queries.size(); i++)
+    for(size_type i = 0; i < queries.size(); i++)
     {
       sum += rlcp.nsev(queries[i]).first;
     }
@@ -678,13 +676,13 @@ verifyNSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
   {
     double start = readTimer();
     bool ok = true;
-    for(uint64_t i = 0; i < queries.size() && ok; i++)
+    for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      uint64_t rank = lcp.initForward(queries[i]);
-      uint64_t res = rlcp.nsev(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
+      size_type rank = lcp.initForward(queries[i]);
+      size_type res = rlcp.nsev(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
       if(res >= rlcp.size())
       {
-        for(uint64_t j = queries[i] + 1; j < lcp.size(); j++)
+        for(size_type j = queries[i] + 1; j < lcp.size(); j++)
         {
           if(lcp.accessForward(j, rank) <= comp)
           {
@@ -700,7 +698,7 @@ verifyNSEV(const RelativeLCP::lcp_type& lcp, const RelativeLCP& rlcp)
           printError(lcp, i, queries[i], res, res, false);
           ok = false; break;
         }
-        for(uint64_t j = queries[i] + 1; j < res; j++)
+        for(size_type j = queries[i] + 1; j < res; j++)
         {
           if(lcp.accessForward(j, rank) <= comp)
           {

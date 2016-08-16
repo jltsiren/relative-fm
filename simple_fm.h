@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -39,13 +39,13 @@ namespace relative
 /*
   A simple FM-index for byte alphabet.
 
-  The storage format is an int_vector<8> containing the BWT (with a contiguous alphabet)
+  The storage format is an sdsl::int_vector<8> containing the BWT (with a contiguous alphabet)
   in base_name.bwt, and a byte_alphabet mapping the original alphabet to the contiguous
   alphabet in base_name.alpha.
 
   RankStructure must support the following operations:
     - Queries: [i], rank(i, c), inverse_select(i)
-    - Constructor: (), (int_vector_buffer<8>, uint64_t)
+    - Constructor: (), (sdsl::int_vector_buffer<8>, size_type)
     - Basic operations: swap(), size(), load()
     - With the structure as a parameter: serialize(bwt, .., ..)
 */
@@ -83,7 +83,7 @@ public:
     }
     else
     {
-      int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
+      sdsl::int_vector_buffer<8> buffer(base_name + BWT_EXTENSION);
       RankStructure temp(buffer, buffer.size());
       this->bwt.swap(temp);
     }
@@ -98,15 +98,15 @@ public:
 
 //------------------------------------------------------------------------------
 
-  inline uint64_t size() const { return this->bwt.size(); }
-  inline uint64_t sequences() const { return this->alpha.C[1]; }
+  inline size_type size() const { return this->bwt.size(); }
+  inline size_type sequences() const { return this->alpha.C[1]; }
 
-  uint64_t reportSize(bool print = false) const
+  size_type reportSize(bool print = false) const
   {
-    uint64_t bwt_bytes = size_in_bytes(this->bwt);
-    uint64_t sa_bytes = size_in_bytes(this->sa_samples);
-    uint64_t isa_bytes = size_in_bytes(this->isa_samples);
-    uint64_t bytes = bwt_bytes + size_in_bytes(this->alpha) +
+    size_type bwt_bytes = sdsl::size_in_bytes(this->bwt);
+    size_type sa_bytes = sdsl::size_in_bytes(this->sa_samples);
+    size_type isa_bytes = sdsl::size_in_bytes(this->isa_samples);
+    size_type bytes = bwt_bytes + sdsl::size_in_bytes(this->alpha) +
       sizeof(this->sa_sample_rate) + sa_bytes + sizeof(this->isa_sample_rate) + isa_bytes;
 
     if(print)
@@ -150,13 +150,13 @@ public:
     else
     {
       std::string filename = base_name + BWT_EXTENSION;
-      int_vector_buffer<8> output(filename, std::ios::out);
-      int_vector<8> buffer(MEGABYTE, 0);
-      for(uint64_t i = 0; i < this->size(); i += MEGABYTE)
+      sdsl::int_vector_buffer<8> output(filename, std::ios::out);
+      sdsl::int_vector<8> buffer(MEGABYTE, 0);
+      for(size_type i = 0; i < this->size(); i += MEGABYTE)
       {
         range_type range(i, std::min(i + MEGABYTE, this->size()) - 1);
         this->extractBWT(range, buffer);
-        for(uint64_t j = range.first; j <= range.second; j++) { output[j] = buffer[j - i]; }
+        for(size_type j = range.first; j <= range.second; j++) { output[j] = buffer[j - i]; }
       }
       output.close();
     }
@@ -170,31 +170,31 @@ public:
         std::cerr << "SimpleFM::writeTo(): Cannot open SA sample file " << filename << std::endl;
         return;
       }
-      write_member(this->sa_sample_rate, output); this->sa_samples.serialize(output);
-      write_member(this->isa_sample_rate, output); this->isa_samples.serialize(output);
+      sdsl::write_member(this->sa_sample_rate, output); this->sa_samples.serialize(output);
+      sdsl::write_member(this->isa_sample_rate, output); this->isa_samples.serialize(output);
       output.close();
     }
   }
 
 //------------------------------------------------------------------------------
 
-  inline range_type LF(range_type range, uint8_t c) const
+  inline range_type LF(range_type range, char_type c) const
   {
     if(!hasChar(this->alpha, c)) { return range_type(1, 0); }
     return relative::LF(this->bwt, this->alpha, range, c);
   }
 
   // Returns (LF(i), BWT[i]) = (LF(i), char(LF(i))); the character is a comp value.
-  inline range_type LF(uint64_t i) const
+  inline range_type LF(size_type i) const
   {
     auto temp = this->bwt.inverse_select(i);
     return range_type(temp.first + this->alpha.C[temp.second], temp.second);
   }
 
-  uint64_t Psi(uint64_t i) const
+  size_type Psi(size_type i) const
   {
     if(i >= this->size()) { return this->size(); }
-    uint64_t comp = relative::findComp(this->alpha, i);
+    size_type comp = relative::findComp(this->alpha, i);
     return this->bwt.select(i + 1 - this->alpha.C[comp], comp);
   }
 
@@ -202,9 +202,9 @@ public:
     Iterate Psi k times; returns size() if SA[i]+k >= size().
     Use force = true if the index does not support locate() and extract().
   */
-  uint64_t Psi(uint64_t i, uint64_t k, bool force = false) const
+  size_type Psi(size_type i, size_type k, bool force = false) const
   {
-    uint64_t threshold = (force ? ~(uint64_t)0 : this->sample_rate + this->isa_sample_rate);
+    size_type threshold = (force ? ~(size_type)0 : this->sample_rate + this->isa_sample_rate);
     return relative::Psi(*this, i, k, threshold);
   }
 
@@ -218,7 +218,7 @@ public:
     {
       --end;
       res = this->LF(res, *end);
-      if(isEmpty(res)) { return range_type(1, 0); }
+      if(Range::empty(res)) { return range_type(1, 0); }
     }
     return res;
   }
@@ -227,9 +227,9 @@ public:
   template<class ByteVector>
   void extractBWT(range_type range, ByteVector& buffer) const
   {
-    if(isEmpty(range) || range.second >= this->size()) { return; }
-    buffer.resize(length(range));
-    for(uint64_t i = 0; i < buffer.size(); i++)
+    if(Range::empty(range) || range.second >= this->size()) { return; }
+    buffer.resize(Range::length(range));
+    for(size_type i = 0; i < buffer.size(); i++)
     {
       buffer[i] = this->alpha.comp2char[this->bwt[range.first + i]];
     }
@@ -263,7 +263,7 @@ public:
   }
 
   // Call supportsLocate() first.
-  inline uint64_t locate(uint64_t i) const
+  inline size_type locate(size_type i) const
   {
     return relative::locate(*this, i);
   }
@@ -296,17 +296,17 @@ public:
   }
 
   // Call supportsExtract() first.
-  inline std::string extract(uint64_t from, uint64_t to) const
+  inline std::string extract(size_type from, size_type to) const
   {
     return relative::extract(*this, range_type(from, to));
   }
 
   // Returns ISA[i]. Call supportsExtract() first.
-  inline uint64_t inverse(uint64_t i) const
+  inline size_type inverse(size_type i) const
   {
     if(i >= this->size()) { return this->size(); }
 
-    uint64_t bwt_pos = 0, text_pos =
+    size_type bwt_pos = 0, text_pos =
       ((i + this->isa_sample_rate - 1) / this->isa_sample_rate) * this->isa_sample_rate;
     if(text_pos >= this->size()) { text_pos = this->size() - 1; }
     else { bwt_pos = this->isa_samples[text_pos / this->isa_sample_rate]; }
@@ -324,8 +324,8 @@ public:
 
   RankStructure bwt;
   Alphabet      alpha;
-  uint64_t      sa_sample_rate, isa_sample_rate;
-  int_vector<0> sa_samples, isa_samples;
+  size_type      sa_sample_rate, isa_sample_rate;
+  sdsl::int_vector<0> sa_samples, isa_samples;
 
 //------------------------------------------------------------------------------
 
@@ -357,8 +357,8 @@ private:
     std::ifstream in(filename.c_str(), std::ios_base::binary);
     if(in)
     {
-      read_member(this->sa_sample_rate, in); this->sa_samples.load(in);
-      read_member(this->isa_sample_rate, in); this->isa_samples.load(in);
+      sdsl::read_member(this->sa_sample_rate, in); this->sa_samples.load(in);
+      sdsl::read_member(this->isa_sample_rate, in); this->isa_samples.load(in);
       in.close();
     }
   }

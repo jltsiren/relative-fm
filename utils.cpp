@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015 Genome Research Ltd.
+  Copyright (c) 2015, 2016 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -48,32 +48,35 @@ const std::string ROPEBWT_ALPHABET("\0ACGTN", 6);
 //------------------------------------------------------------------------------
 
 void
-printSize(const std::string& header, uint64_t bytes, uint64_t data_size, uint64_t indent)
+printHeader(const std::string& header, size_type indent)
 {
   std::string padding;
   if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
-
-  std::cout << header << ":" << padding << inMegabytes(bytes) << " MB (" << inBPC(bytes, data_size) << " bpc)" << std::endl;
+  std::cout << header << ":" << padding;
 }
 
 void
-printTime(const std::string& header, uint64_t found, uint64_t matches, uint64_t bytes, double seconds, bool occs, uint64_t indent)
+printSize(const std::string& header, size_type bytes, size_type data_size, size_type indent)
 {
-  std::string padding;
-  if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
+  printHeader(header, indent);
+  std::cout << inMegabytes(bytes) << " MB (" << inBPC(bytes, data_size) << " bpc)" << std::endl;
+}
 
-  std::cout << header << ":" << padding << "Found " << found << " patterns with " << matches << " occ in "
-    << seconds << " seconds (";
+void
+printTime(const std::string& header, size_type found, size_type matches, size_type bytes, double seconds, bool occs, size_type indent)
+{
+  printHeader(header, indent);
+
+  std::cout << "Found " << found << " patterns with " << matches << " occ in " << seconds << " seconds (";
   if(occs) { std::cout << (matches / seconds) << " occ/s)" << std::endl; }
   else     { std::cout << (inMegabytes(bytes) / seconds) << " MB/s)" << std::endl; }
 }
 
 void
-printTime(const std::string& header, uint64_t queries, double seconds, uint64_t indent)
+printTime(const std::string& header, size_type queries, double seconds, size_type indent)
 {
-  std::string padding;
-  if(header.length() + 1 < indent) { padding = std::string(indent - 1 - header.length(), ' '); }
-  std::cout << header << ":" << padding << queries << " queries in " << seconds << " seconds ("
+  printHeader(header, indent);
+  std::cout << queries << " queries in " << seconds << " seconds ("
             << inMicroseconds(seconds / queries) << " µs/query)" << std::endl;
 }
 
@@ -85,7 +88,7 @@ readTimer()
   return omp_get_wtime();
 }
 
-uint64_t
+size_type
 memoryUsage()
 {
   rusage usage;
@@ -93,13 +96,13 @@ memoryUsage()
 #ifdef RUSAGE_IN_BYTES
   return usage.ru_maxrss;
 #else
-  return ((uint64_t)1024) * usage.ru_maxrss;
+  return KILOBYTE * usage.ru_maxrss;
 #endif
 }
 
 //------------------------------------------------------------------------------
 
-uint64_t
+size_type
 readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_empty_rows)
 {
   std::ifstream input(filename.c_str(), std::ios_base::binary);
@@ -109,7 +112,7 @@ readRows(const std::string& filename, std::vector<std::string>& rows, bool skip_
     return 0;
   }
 
-  uint64_t chars = 0;
+  size_type chars = 0;
   while(input)
   {
     std::string buf;
