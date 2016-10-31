@@ -41,23 +41,16 @@ The following datasets have been used in the articles based on the relative FM-i
 
 ## Future development
 
-* RLZ pointer encoding: use the new generalized RLZ.
-  * Both for `RelativeLCP` and `RLZFM`.
+* RLZ pointer encoding: Option to use RLZAP.
 * Optimizations:
   * In `RelativeFM::inverse()`, position *i-1* can provide faster access to *ISA[i]*, if it is an lcs-position.
   * In `increasingSubsequence()`, we could use binary search (or an index) in the left/right match arrays, instead of storing the values in arrays `smallest` and `previous`.
   * RLCP construction may not need separate LCP and DLCP arrays.
   * Left and right matches do not have to be adjacent to the current suffix in the mutual suffix array. The original definition used the nearest suffix (of the target sequence) on one side and the adjacent suffix on the other side. Could we use the nearest suffix on both sides?
-  * Specialized `getComplement()` for `RLSequence`.
   * Could it be more space-efficient to store the leaf values in the RLCP minimum tree relative to their parents?
 * Implementation:
-  * Clean up the code and remove unnecessary experimental ideas.
-  * Use class-specific `size_type` instead of `uint64_t` when possible.
   * Add copy constructors, assignment operators etc. to the classes.
   * Switch to SDSL structures as references.
-* RLZ bitvector:
-  * Not all structures are required for all queries. Try moving them to rank/select support structures.
-  * Implement full decompression.
 * Alternative solutions:
   * `hyb_vector` could work well in LCS bitvectors, once it supports select queries.
   * Gap encoded / run-length encoded bitvectors with Huffman coded gap lengths could be useful somewhere (see Nicola Prezza: A Compressed-Gap Data-Aware Measure for Indexable Dictionaries).

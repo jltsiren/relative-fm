@@ -128,8 +128,6 @@ std::ostream& operator<<(std::ostream& stream, const std::pair<A, B>& data)
 
 //------------------------------------------------------------------------------
 
-enum LoadMode { mode_plain, mode_native };
-
 template<class IntegerType>
 inline size_type
 bit_length(IntegerType val)
@@ -408,40 +406,6 @@ Psi(const Index& index, size_type i, size_type k, size_type threshold)
 }
 
 //------------------------------------------------------------------------------
-
-/*
-  Some SDSL extensions. The vector functions are only needed for sequence.cpp/.h.
-*/
-
-template<class element>
-size_type
-write_vector(const std::vector<element>& vec, std::ostream& out, sdsl::structure_tree_node* v, std::string name)
-{
-  sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(vec));
-  size_type written_bytes = 0;
-  written_bytes += sdsl::write_member(vec.size(), out, child, "size");
-  out.write((char*)(vec.data()), vec.size() * sizeof(element));
-  written_bytes += vec.size() * sizeof(element);
-  sdsl::structure_tree::add_size(v, written_bytes);
-  return written_bytes;
-}
-
-template<class element>
-void
-read_vector(std::vector<element>& vec, std::istream& in)
-{
-  size_type size = 0;
-  sdsl::read_member(size, in);
-  {
-    std::vector<element> temp;
-    vec.swap(temp);
-  }
-  {
-    std::vector<element> temp(size);
-    in.read((char*)(temp.data()), temp.size() * sizeof(element));
-    vec.swap(temp);
-  }
-}
 
 /*
   Generic in-memory construction from sdsl::int_vector_buffer<8> and size. Not very space-efficient, as it
