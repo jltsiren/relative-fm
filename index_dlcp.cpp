@@ -30,7 +30,7 @@ using namespace relative;
 
 //------------------------------------------------------------------------------
 
-//#define STORE_PLAIN_DLCP
+#define STORE_PLAIN_DLCP
 
 //------------------------------------------------------------------------------
 
@@ -41,7 +41,7 @@ main(int argc, char** argv)
   {
     std::cerr << "Usage: index_dlcp input1 [input2 ...]" << std::endl;
     std::cerr << std::endl;
-    return 1;
+    std::exit(EXIT_SUCCESS);
   }
 
   std::cout << "Indexing the differential LCP array" << std::endl;
