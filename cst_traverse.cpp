@@ -127,7 +127,7 @@ main(int argc, char** argv)
       std::string name = "cst_fully";
       sdsl::cst_fully<> cst;
       buildCST(cst, seq_name, name);
-//      traverse(cst, name);
+      traverse(cst, name);
       std::cout << std::endl;
     }
 

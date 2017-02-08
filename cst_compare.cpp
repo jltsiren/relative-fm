@@ -136,7 +136,7 @@ main(int argc, char** argv)
     std::string name = "cst_fully";
     sdsl::cst_fully<> cst;
     buildCST(cst, target_name, name);
-//    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
   }
 
@@ -284,7 +284,7 @@ matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
       next_depth = cst.depth(prev);
       while(next_depth < depth)
       {
-        typename CST::size_type bwt_pos;
+        typename CST::size_type bwt_pos = 0;
         next = cst.child(next, seq[i + next_depth], bwt_pos);
         next_depth = cst.depth(next);
         if(next_depth <= depth) { prev = next; }
