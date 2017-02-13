@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren and Simon Gog
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -202,17 +202,7 @@ main(int argc, char** argv)
       double seconds = readTimer() - start;
       std::cout << "LCP array built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
       std::string filename = base_name + LCP_EXTENSION;
-      std::ofstream out(filename.c_str(), std::ios_base::binary);
-      if(!out)
-      {
-        std::cerr << "build_bwt: Cannot open LCP file " << filename << std::endl;
-      }
-      else
-      {
-        lcp.serialize(out); out.close();
-        std::cout << "LCP array written to " << filename << std::endl;
-      }
-      sdsl::remove(sdsl::cache_file_name(sdsl::conf::KEY_LCP, config));
+      sdsl::store_to_file(lcp, filename);
     }
 
     std::cout << std::endl;

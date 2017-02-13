@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -41,7 +41,7 @@ void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 template<class CST>
 void matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
   std::vector<range_type>& ranges, std::vector<size_type>& depths,
-  const std::string& name, size_type indent = 18);
+  const std::string& name);
 
 //------------------------------------------------------------------------------
 
@@ -136,7 +136,9 @@ main(int argc, char** argv)
     std::string name = "cst_fully";
     sdsl::cst_fully<> cst;
     buildCST(cst, target_name, name);
-    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    // cst_fully is either buggy or orders of magnitude slower than the others,
+    // or its interface is incompatible.
+    //matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
   }
 
@@ -259,7 +261,7 @@ template<class CST>
 void
 matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
   std::vector<range_type>& ranges, std::vector<size_type>& depths,
-  const std::string& name, size_type indent)
+  const std::string& name)
 {
   sdsl::util::clear(ranges); sdsl::util::clear(depths);
 
@@ -297,10 +299,8 @@ matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
   }
   double seconds = readTimer() - start;
 
-  std::string padding;
-  if(name.length() + 1 < indent) { padding = std::string(indent - 1 - name.length(), ' '); }
-  std::cout << name << ":" << padding << "Average maximal match: " << (total_length / (double)(cst.size()))
-                    << " (" << seconds << " seconds)" << std::endl;
+  printHeader(name);
+  std::cout << "Average maximal match: " << (total_length / (double)(cst.size())) << " (" << seconds << " seconds)" << std::endl;
 }
 
 //------------------------------------------------------------------------------

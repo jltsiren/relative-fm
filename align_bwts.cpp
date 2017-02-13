@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -43,7 +43,7 @@ main(int argc, char** argv)
   // FIXME add support for mode_ropebwt
   if(argc < 3)
   {
-    std::cerr << "Usage: align_bwts [parameters] ref seq1 [seq2 ...]" << std::endl;
+    std::cerr << "Usage: align_bwts [parameters] reference target1 [target2 ...]" << std::endl;
 
     std::cerr << "  -b N  Set BWT block size to N (default "
               << align_parameters::BLOCK_SIZE << ")" << std::endl;

@@ -1,4 +1,6 @@
 *.o
+librfm.a
+
 *.aux
 *.bak
 *.bbl
@@ -8,18 +10,13 @@
 relative.log
 paper.log
 
-align_bwts
 build_bwt
-lcs
+align_bwts
+build_rlcp
 query_test
-bwt_benchmark
-test_rlz
-build_rlzfm
-index_dlcp
-verify
-mutate
 cst_traverse
 cst_compare
+mutate
 
 col2vector
 fasta2seq

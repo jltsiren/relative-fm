@@ -1,4 +1,5 @@
 SDSL_DIR=../sdsl-lite
+RLZAP_DIR=../rlzap
 
 # In OS X, getrusage() returns maximum resident set size in bytes.
 # In Linux, the value is in kilobytes, so this line should be commented out.
@@ -22,42 +23,43 @@ PARALLEL_FLAGS=-fopenmp -D_GLIBCXX_PARALLEL
 OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(PARALLEL_FLAGS)
 
 include $(SDSL_DIR)/Make.helper
-CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR)
+CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR) -I$(RLZAP_DIR)/include -I$(RLZAP_DIR)/ext_libs/boost/include -I$(RLZAP_DIR)/ext_libs/sais/include
 LIBOBJS=relative_fm.o utils.o support.o relative_lcp.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
-LIBS=-L$(LIB_DIR) -lsdsl -ldivsufsort -ldivsufsort64
-PROGRAMS=align_bwts build_bwt query_test index_dlcp verify mutate cst_traverse cst_compare
+LIBS=-L$(LIB_DIR) -L$(RLZAP_DIR)/build -lsdsl -ldivsufsort -ldivsufsort64 -lrlz_lib
+LIBRARY=librfm.a
+PROGRAMS=build_bwt align_bwts build_rlcp query_test cst_traverse cst_compare mutate
 
 all: $(PROGRAMS)
 
 %.o:%.cpp $(HEADERS)
 	$(MY_CXX) $(CXX_FLAGS) -c $<
 
-align_bwts:align_bwts.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+$(LIBRARY):$(LIBOBJS)
+	ar rcs $@ $(LIBOBJS)
 
-build_bwt:build_bwt.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+build_bwt:build_bwt.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
-query_test:query_test.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+align_bwts:align_bwts.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
-index_dlcp:index_dlcp.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+build_rlcp:build_rlcp.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
-verify:verify.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+query_test:query_test.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
-mutate:mutate.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+cst_traverse:cst_traverse.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
-cst_traverse:cst_traverse.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+cst_compare:cst_compare.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
-cst_compare:cst_compare.o $(LIBOBJS)
-	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBOBJS) $(LIBS)
+mutate:mutate.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
 clean:
-	rm -f $(PROGRAMS) $(OBJS)
+	rm -f $(PROGRAMS) $(LIBRARY) $(OBJS)

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
 
   Author: Jouni Siren <jouni.siren@iki.fi>
 
@@ -35,11 +35,13 @@ using namespace relative;
 template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
-template<class CST>
-void traverseHash(CST& cst, const std::string& name, size_type indent = 18);
+void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
 template<class CST>
-void traverse(CST& cst, const std::string& name, size_type indent = 18);
+void traverseHash(CST& cst, const std::string& name);
+
+template<class CST>
+void traverse(CST& cst, const std::string& name);
 
 //------------------------------------------------------------------------------
 
@@ -79,14 +81,25 @@ main(int argc, char** argv)
     std::cout << std::endl;
 
     {
+      std::string name = "Relative (slow)";
       RelativeFM<> rfm(ref_fm, seq_name);
       RelativeLCP rlcp(ref_lcp, seq_name);
       RelativeCST<> rcst(rfm, rlcp);
-      printSize("Relative CST", rcst.reportSize(), rcst.size());
+      printSize(name, rcst.reportSize(), rcst.size());
 #ifdef USE_HASH
-      traverseHash(rcst, "Relative CST");
+      traverseHash(rcst, name);
 #else
-      traverse(rcst, "Relative CST");
+      traverse(rcst, name);
+#endif
+      std::cout << std::endl;
+
+      name = "Relative (fast)";
+      buildSelect(rfm, name);
+      printSize(name, rcst.reportSize(), rcst.size());
+#ifdef USE_HASH
+      traverseHash(rcst, name);
+#else
+      traverse(rcst, name);
 #endif
       std::cout << std::endl;
     }
@@ -127,7 +140,9 @@ main(int argc, char** argv)
       std::string name = "cst_fully";
       sdsl::cst_fully<> cst;
       buildCST(cst, seq_name, name);
-      traverse(cst, name);
+      // cst_fully is either buggy or orders of magnitude slower than the others,
+      // or its interface is incompatible.
+      //traverse(cst, name);
       std::cout << std::endl;
     }
 
@@ -168,6 +183,21 @@ buildCST(CST& cst, const std::string& base_name, const std::string& type)
   printSize(type, sdsl::size_in_bytes(cst), cst.size());
 }
 
+void
+buildSelect(RelativeFM<>& rfm, const std::string& base_name)
+{
+  if(rfm.fastSelect()) { return; }
+  if(!(rfm.loadSelect(base_name)))
+  {
+    double start = readTimer();
+    rfm.buildSelect();
+    double seconds = readTimer() - start;
+    std::cout << "Select structures built in " << seconds << " seconds" << std::endl;
+    std::cout << std::endl;
+    rfm.writeSelect(base_name);
+  }
+}
+
 //------------------------------------------------------------------------------
 
 inline size_type
@@ -186,7 +216,7 @@ hashNode(const sdsl::bp_interval<size_type>& node, size_type hash)
 
 template<class CST>
 void
-traverseHash(CST& cst, const std::string& name, size_type indent)
+traverseHash(CST& cst, const std::string& name)
 {
   double start = readTimer();
   size_type nodes = 0, hash = FNV_OFFSET_BASIS;
@@ -197,15 +227,13 @@ traverseHash(CST& cst, const std::string& name, size_type indent)
   }
   double seconds = readTimer() - start;
 
-  std::string padding;
-  if(name.length() + 1 < indent) { padding = std::string(indent - 1 - name.length(), ' '); }
-  std::cout << name << ":" << padding << nodes << " nodes in " << seconds
-            << " seconds (hash " << hash << ")" << std::endl;
+  printHeader(name);
+  std::cout << nodes << " nodes in " << seconds << " seconds (hash " << hash << ")" << std::endl;
 }
 
 template<class CST>
 void
-traverse(CST& cst, const std::string& name, size_type indent)
+traverse(CST& cst, const std::string& name)
 {
   double start = readTimer();
   size_type nodes = 0;
@@ -215,9 +243,8 @@ traverse(CST& cst, const std::string& name, size_type indent)
   }
   double seconds = readTimer() - start;
 
-  std::string padding;
-  if(name.length() + 1 < indent) { padding = std::string(indent - 1 - name.length(), ' '); }
-  std::cout << name << ":" << padding << nodes << " nodes in " << seconds << " seconds" << std::endl;
+  printHeader(name);
+  std::cout << nodes << " nodes in " << seconds << " seconds" << std::endl;
 }
 
 //------------------------------------------------------------------------------
