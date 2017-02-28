@@ -126,8 +126,7 @@ main(int argc, char** argv)
 
   mainLoop(argc - optind, argv + optind, parameters, lcp);
 
-  double memory = inMegabytes(memoryUsage());
-  std::cout << "Memory usage: " << memory << " MB" << std::endl;
+  std::cout << "Memory usage: " << inGigabytes(memoryUsage()) << " GB" << std::endl;
   std::cout << std::endl;
 
   return 0;

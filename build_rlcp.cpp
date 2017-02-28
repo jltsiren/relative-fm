@@ -44,21 +44,33 @@ main(int argc, char** argv)
   std::cout << std::endl;
 
   std::string ref_name = std::string(argv[1]) + LCP_EXTENSION;
-  printHeader("Reference");
-  std::cout << ref_name << std::endl;
+  printHeader("Reference"); std::cout << ref_name << std::endl;
   SLArray reference;
   sdsl::load_from_file(reference, ref_name);
+  printHeader("Length"); std::cout << reference.size() << std::endl;
   std::cout << std::endl;
 
   for(int i = 2; i < argc; i++)
   {
     std::string target_name = std::string(argv[i]) + LCP_EXTENSION;
-    printHeader("Target");
-    std::cout << target_name << std::endl;
+    printHeader("Target"); std::cout << target_name << std::endl;
     SLArray target;
     sdsl::load_from_file(target, target_name);
+    printHeader("Length"); std::cout << target.size() << std::endl;
+
+    double start = readTimer();
+    auto rlcp = rlz::lcp::index_build<size_type>(target.begin(), target.end(), reference.begin(), reference.end());
+    double seconds = readTimer() - start;
+    printHeader("Construction"); std::cout << seconds << " seconds" << std::endl;
+    printSize("RLCP size", sdsl::size_in_bytes(rlcp), rlcp.size());
+    std::string rlcp_name = std::string(argv[i]) + RLCP_EXTENSION;
+    sdsl::store_to_file(rlcp, rlcp_name);
+
     std::cout << std::endl;
   }
+
+  std::cout << "Memory usage: " << inGigabytes(memoryUsage()) << " GB" << std::endl;
+  std::cout << std::endl;
 
   return 0;
 }

@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -76,6 +76,8 @@ extern const std::string LCP_EXTENSION;               // .lcp
 extern const std::string DLCP_EXTENSION;              // .dlcp
 extern const std::string DLCP_INDEX_EXTENSION;        // .dlcp_index
 extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;  // \0ACGNT
+
+extern const std::string RLCP_EXTENSION;              // .rlcp
 
 //------------------------------------------------------------------------------
 

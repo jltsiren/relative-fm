@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -444,6 +444,83 @@ public:
   sdsl::int_vector<8> small;
   sdsl::int_vector<0> large;
   sdsl::int_vector<0> samples;
+
+//------------------------------------------------------------------------------
+
+  class iterator :
+    public std::iterator<std::random_access_iterator_tag, SLArray::value_type>
+  {
+  public:
+    typedef SLArray::size_type size_type;
+
+    iterator() : data(0), pos(0), rank(0) {}
+
+    iterator(const SLArray* array, size_type offset) :
+      data(array), pos(offset)
+    {
+      if(offset == 0) { this->rank = 0; }
+      else if(offset >= array->size()) { this->rank = array->largeValues(); }
+      else { this->rank = array->large_rank(offset); }
+    }
+
+    iterator operator++ ()
+    {
+      if(this->data->small[this->pos] == SLArray::LARGE_VALUE) { this->rank++; }
+      this->pos++;
+      return *this;
+    }
+
+    iterator operator-- ()
+    {
+      this->pos--;
+      if(this->data->small[this->pos] == SLArray::LARGE_VALUE) { this->rank--; }
+      return *this;
+    }
+
+    iterator& operator+= (size_type n)
+    {
+      this->pos += n; this->rank = this->data->large_rank(this->pos);
+      return *this;
+    }
+
+    iterator& operator-= (size_type n)
+    {
+      this->pos -= n; this->rank = this->data->large_rank(this->pos);
+      return *this;
+    }
+
+    difference_type operator- (const iterator& another) const
+    {
+      return this->pos - another.pos;
+    }
+
+    iterator operator++ (int) { iterator res(*this); operator++(); return res; }
+    iterator operator-- (int) { iterator res(*this); operator--(); return res; }
+    iterator operator+ (size_type n) const { iterator res(*this); res += n; return res; }
+    iterator operator- (size_type n) const { iterator res(*this); res -= n; return res; }
+
+    bool operator== (const iterator& another) const { return (this->pos == another.pos); }
+    bool operator!= (const iterator& another) const { return (this->pos != another.pos); }
+    bool operator<  (const iterator& another) const { return (this->pos <  another.pos); }
+    bool operator<= (const iterator& another) const { return (this->pos <= another.pos); }
+    bool operator>= (const iterator& another) const { return (this->pos >= another.pos); }
+    bool operator>  (const iterator& another) const { return (this->pos >  another.pos); }
+
+    value_type operator* () const
+    {
+      if(this->data->small[this->pos] != SLArray::LARGE_VALUE) { return this->data->small[this->pos]; }
+      else { return this->data->large[this->rank]; }
+    }
+
+    value_type operator[] (size_type n) const { return this->data->operator[](this->pos + n); }
+
+  private:
+    const SLArray*     data;
+    SLArray::size_type pos, rank;
+  };
+
+  iterator begin() const { return iterator(this, 0); }
+  iterator end() const { return iterator(this, this->size()); }
 
 //------------------------------------------------------------------------------
 

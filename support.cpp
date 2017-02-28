@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2015, 2016 Genome Research Ltd.
+  Copyright (c) 2015, 2016, 2017 Genome Research Ltd.
   Copyright (c) 2014 Jouni Siren
 
   Author: Jouni Siren <jouni.siren@iki.fi>
@@ -587,20 +587,12 @@ SLArray::load(std::istream& in)
 sdsl::int_vector<64>
 SLArray::extract(size_type from, size_type to) const
 {
-  to = std::min(to, this->size());
+  from = std::min(from, this->size()); to = std::min(to, this->size());
+
   sdsl::int_vector<64> result(to - from, 0);
-  if(this->largeValues() == 0)
-  {
-    for(size_type i = from, j = 0; i < to; i++, j++) { result[j] = this->small[i]; }
-  }
-  else
-  {
-    size_type rank = this->initForward(from);
-    for(size_type i = from, j = 0; i < to; i++, j++)
-    {
-      result[j] = this->accessForward(i, rank);
-    }
-  }
+  iterator iter(this, from);
+  for(size_type i = 0; i < result.size(); i++, ++iter) { result[i] = *iter; }
+
   return result;
 }
 
