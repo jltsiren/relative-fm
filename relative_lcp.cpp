@@ -95,7 +95,6 @@ RelativeLCP::reportSize(bool print) const
     printSize("Tree", tree_bytes, this->size());
 #endif
     printSize("Relative LCP", bytes, this->size());
-    std::cout << std::endl;
   }
 
   return bytes;

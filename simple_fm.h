@@ -107,7 +107,6 @@ public:
       if(this->isa_sample_rate > 0) { printSize("ISA samples", isa_bytes, this->size()); }
 #endif
       printSize("Simple FM", bytes, this->size());
-      std::cout << std::endl;
     }
 
     return bytes;

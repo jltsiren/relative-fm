@@ -219,7 +219,6 @@ public:
         << inMegabytes(seq_delta) << " MB)" << std::endl;
   #endif
       printSize("Relative FM", bytes, this->size());
-      std::cout << std::endl;
     }
 
     return bytes;

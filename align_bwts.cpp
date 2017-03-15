@@ -139,7 +139,7 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp)
 {
   std::string ref_name = argv[0];
   SimpleFM<bwt_type> ref(ref_name);
-  ref.reportSize(true);
+  ref.reportSize(true); std::cout << std::endl;
   RelativeLCP::lcp_type ref_lcp;
   RelativeLCP::index_type ref_index;
   if(lcp)
@@ -162,8 +162,8 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp)
     std::cout << std::endl;
 
     rel.writeTo(seq_name);
-    seq.reportSize(true);
-    rel.reportSize(true);
+    seq.reportSize(true); std::cout << std::endl;
+    rel.reportSize(true); std::cout << std::endl;
 
     if(lcp)
     {
@@ -177,7 +177,7 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp)
 
       printSize("LCP array", sdsl::size_in_bytes(seq_lcp), seq.size()); std::cout << std::endl;
       rlcp.writeTo(seq_name);
-      rlcp.reportSize(true);
+      rlcp.reportSize(true); std::cout << std::endl;
     }
 
     std::cout << std::endl;

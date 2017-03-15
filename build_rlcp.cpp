@@ -22,9 +22,7 @@
   SOFTWARE.
 */
 
-#include <rlz/lcp/api.hpp>
-
-#include "support.h"
+#include "new_relative_lcp.h"
 
 using namespace relative;
 
@@ -59,12 +57,13 @@ main(int argc, char** argv)
     printHeader("Length"); std::cout << target.size() << std::endl;
 
     double start = readTimer();
-    auto rlcp = rlz::lcp::index_build<size_type>(target.begin(), target.end(), reference.begin(), reference.end());
+    NewRelativeLCP rlcp(reference, target);
     double seconds = readTimer() - start;
     printHeader("Construction"); std::cout << seconds << " seconds" << std::endl;
-    printSize("RLCP size", sdsl::size_in_bytes(rlcp), rlcp.size());
-    std::string rlcp_name = std::string(argv[i]) + RLCP_EXTENSION;
-    sdsl::store_to_file(rlcp, rlcp_name);
+    double phrase_length = rlcp.size() / (double)(rlcp.phrases());
+    printHeader("Phrases"); std::cout << rlcp.phrases() << " (average length " << phrase_length << ")" << std::endl;
+    rlcp.reportSize(true);
+    rlcp.writeTo(argv[i]);
 
     std::cout << std::endl;
   }

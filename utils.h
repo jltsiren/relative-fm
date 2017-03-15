@@ -77,8 +77,6 @@ extern const std::string DLCP_EXTENSION;              // .dlcp
 extern const std::string DLCP_INDEX_EXTENSION;        // .dlcp_index
 extern const std::string SIMPLE_FM_DEFAULT_ALPHABET;  // \0ACGNT
 
-extern const std::string RLCP_EXTENSION;              // .rlcp
-
 //------------------------------------------------------------------------------
 
 /*

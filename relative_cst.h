@@ -97,7 +97,6 @@ public:
       printSize("FM-index", index_bytes, this->size());
       printSize("Relative LCP", lcp_bytes, this->size());
       printSize("Relative CST", bytes, this->size());
-      std::cout << std::endl;
     }
 
     return bytes;

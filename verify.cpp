@@ -111,17 +111,17 @@ main(int argc, char** argv)
     std::cout << std::endl;
 
     SimpleFM<> seq_fm(seq_name);
-    seq_fm.reportSize(true);
+    seq_fm.reportSize(true); std::cout << std::endl;
 
     RelativeFM<> rfm(ref_fm, seq_name);
-    rfm.reportSize(true);
+    rfm.reportSize(true); std::cout << std::endl;
 
     RelativeLCP::lcp_type seq_lcp;
     sdsl::load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
     printSize("LCP array", sdsl::size_in_bytes(seq_lcp), seq_lcp.size()); std::cout << std::endl;
 
     RelativeLCP rlcp(ref_lcp, seq_name);
-    rlcp.reportSize(true);
+    rlcp.reportSize(true); std::cout << std::endl;
 
 #ifdef VERIFY_FORWARD_SEARCH
     buildSelect(rfm, seq_name);
