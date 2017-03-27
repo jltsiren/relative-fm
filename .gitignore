@@ -17,6 +17,7 @@ query_test
 cst_traverse
 cst_compare
 mutate
+verify
 
 col2vector
 fasta2seq

@@ -22,6 +22,8 @@
   SOFTWARE.
 */
 
+#include <stack>
+
 #include "new_relative_lcp.h"
 
 namespace relative
@@ -207,6 +209,146 @@ NewRelativeLCP::loadFrom(std::istream& input)
   sdsl::read_member(this->branching_factor, input);
   this->tree.load(input);
   this->offsets.load(input);
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  Update (i, tree[i]) for rmt node i.
+*/
+inline void
+updateRes(const NewRelativeLCP& lcp, range_type& res, size_type i)
+{
+  if(lcp.tree[i] < res.second) { res.first = i; res.second = lcp.tree[i]; }
+}
+
+/*
+  RMQ within a phrase in range [from, to]. The upper bound may be outside
+  the phrase.
+
+  - if from == 0, the range starts from the beginning of the given phrase
+  - otherwise the phrase is determined from the starting position
+*/
+range_type
+rmq(const NewRelativeLCP& lcp, size_type phrase, size_type from, size_type to)
+{
+  NewRelativeLCP::rlcp_type::iter begin, curr, end;
+  if(from == 0)
+  {
+    std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
+  }
+  else
+  {
+    std::tie(begin, curr, end) = lcp.array.iterator_position(from);
+  }
+
+  range_type res = lcp.notFound();
+  while(curr != end && curr.position() <= to)
+  {
+    if(*curr < res.second) { res.first = curr.position(); res.second = *curr; }
+    ++curr;
+  }
+
+  return res;
+}
+
+range_type
+NewRelativeLCP::rmq(range_type range) const
+{
+  return this->rmq(range.first, range.second);
+}
+
+range_type
+NewRelativeLCP::rmq(size_type sp, size_type ep) const
+{
+  if(sp > ep || ep >= this->size()) { return this->notFound(); }
+  if(sp == ep) { return range_type(sp, this->operator[](sp)); }
+
+  size_type phrase_from = this->array.phrase_id(sp), phrase_to = this->array.phrase_id(ep);
+  range_type res = this->notFound();
+
+  // Process the full blocks first.
+  // FIXME The first and the last block could also be full...
+  if(phrase_to == phrase_from + 2)  // Just a single full phrase.
+  {
+    res = relative::rmq(*this, phrase_from + 1, 0, this->size());
+  }
+  else if(phrase_to > phrase_from + 2)
+  {
+    /*
+      Invariants:
+        - left < right
+        - nodes before subtree(left) are processed
+        - nodes after subtree(right) are in tail
+        - res contains (i, tree[i]) for the rmq in the processed range
+    */
+    size_type level = 0, left = phrase_from + 1, right = phrase_to - 1;
+    std::stack<range_type> tail;  // Process the right tail last.
+    while(true)
+    {
+      size_type left_par = rmtParent(*this, left, level), right_par = rmtParent(*this, right, level);
+      if(left_par == right_par)
+      {
+        for(size_type i = left; i <= right; i++) { updateRes(*this, res, i); }
+        break;
+      }
+      else
+      {
+        size_type left_child = rmtFirstChild(*this, left_par, level + 1);
+        if(left != left_child)
+        {
+          size_type last_child = rmtLastSibling(*this, left_child, level);
+          for(size_type i = left; i <= last_child; i++) { updateRes(*this, res, i); }
+          left_par++;
+        }
+
+        size_type right_child = rmtLastChild(*this, right_par, level + 1);
+        if(right != right_child)
+        {
+          size_type first_child = rmtFirstSibling(*this, right_child, level);
+          for(size_type i = right; i >= first_child; i--) { tail.push(range_type(i, this->tree[i])); }
+          right_par--;
+        }
+
+        if(left_par >= right_par)
+        {
+          if(left_par == right_par) { updateRes(*this, res, left_par); }
+          break;
+        }
+      }
+      left = left_par; right = right_par; level++;
+    }
+
+    // Check the tail.
+    while(!(tail.empty()))
+    {
+      range_type temp = tail.top(); tail.pop();
+      if(temp.second < res.second) { res = temp; }
+    }
+
+    // Find the leftmost leaf in subtree(res.first) containing the value res.second.
+    level = rmtLevel(*this, res.first);
+    while(level > 0)
+    {
+      res.first = rmtFirstChild(*this, res.first, level); level--;
+      while(this->tree[res.first] != res.second) { res.first++; }
+    }
+    res = relative::rmq(*this, res.first, 0, this->size());
+  }
+
+  // Process the partial blocks.
+  if(this->tree[phrase_from] <= res.second)
+  {
+    range_type temp = relative::rmq(*this, phrase_from, sp, ep);
+    if(temp.second <= res.second) { res = temp; }
+  }
+  if(phrase_from < phrase_to && this->tree[phrase_to] < res.second)
+  {
+    range_type temp = relative::rmq(*this, phrase_to, 0, ep);
+    if(temp.second < res.second) { res = temp; }
+  }
+
+  return res;
 }
 
 //------------------------------------------------------------------------------

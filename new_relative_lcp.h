@@ -89,7 +89,7 @@ public:
   range_type rmq(range_type range) const;
 
   // Returned when a psv/nsv/rmq query cannot find a suitable value.
-  inline range_type notFound() const { return range_type(this->values(), this->values()); }
+  inline range_type notFound() const { return range_type(this->size() + this->values(), this->size()); }
 
 //------------------------------------------------------------------------------
 
