@@ -460,32 +460,44 @@ public:
     {
       if(offset == 0) { this->rank = 0; }
       else if(offset >= array->size()) { this->rank = array->largeValues(); }
-      else { this->rank = array->large_rank(offset); }
+      else if(array->small[offset] == SLArray::LARGE_VALUE) { this->rank = array->large_rank(offset); }
+      else { this->rank = UNKNOWN_RANK; }
     }
+
+    size_type position() const { return this->pos; }
 
     iterator operator++ ()
     {
       if(this->data->small[this->pos] == SLArray::LARGE_VALUE) { this->rank++; }
       this->pos++;
+      if(this->data->small[this->pos] == SLArray::LARGE_VALUE && this->rank == UNKNOWN_RANK)
+      {
+        this->rank = this->data->large_rank(this->pos);
+      }
       return *this;
     }
 
     iterator operator-- ()
     {
       this->pos--;
-      if(this->data->small[this->pos] == SLArray::LARGE_VALUE) { this->rank--; }
+      if(this->data->small[this->pos] == SLArray::LARGE_VALUE)
+      {
+        this->rank = (this->rank == UNKNOWN_RANK ? this->data->large_rank(this->pos) : this->rank - 1);
+      }
       return *this;
     }
 
     iterator& operator+= (size_type n)
     {
-      this->pos += n; this->rank = this->data->large_rank(this->pos);
+      this->pos += n;
+      this->rank = (this->data->small[this->pos] == SLArray::LARGE_VALUE ? this->data->large_rank(this->pos) : UNKNOWN_RANK);
       return *this;
     }
 
     iterator& operator-= (size_type n)
     {
-      this->pos -= n; this->rank = this->data->large_rank(this->pos);
+      this->pos -= n;
+      this->rank = (this->data->small[this->pos] == SLArray::LARGE_VALUE ? this->data->large_rank(this->pos) : UNKNOWN_RANK);
       return *this;
     }
 
@@ -515,8 +527,14 @@ public:
     value_type operator[] (size_type n) const { return this->data->operator[](this->pos + n); }
 
   private:
-    const SLArray*     data;
-    SLArray::size_type pos, rank;
+    const SLArray* data;
+    size_type      pos, rank;
+
+    /*
+      Computing the rank is expensive, and iterators often do not need it at all. Hence we
+      determine the rank only when it is required.
+    */
+    const static size_type UNKNOWN_RANK = ~(size_type)0;
   };
 
   iterator begin() const { return iterator(this, 0); }

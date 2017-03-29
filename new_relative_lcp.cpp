@@ -223,6 +223,34 @@ updateRes(const NewRelativeLCP& lcp, range_type& res, size_type i)
 }
 
 /*
+  Update (i, tree[i]) for rmt node range [left, right].
+*/
+void
+updateRes(const NewRelativeLCP& lcp, range_type& res, size_type left, size_type right)
+{
+  NewRelativeLCP::lcp_type::iterator iter(&(lcp.tree), left);
+  while(iter.position() <= right)
+  {
+    if(*iter < res.second) { res.first = iter.position(); res.second = *iter; }
+    ++iter;
+  }
+}
+
+/*
+  Add (i, tree[i]) to the stack for rmt node range [left, right], assuming that left > 0.
+*/
+void
+addToTail(const NewRelativeLCP& lcp, std::stack<range_type>& tail, size_type left, size_type right)
+{
+  NewRelativeLCP::lcp_type::iterator iter(&(lcp.tree), right);
+  while(iter.position() >= left)
+  {
+    tail.push(range_type(iter.position(), *iter));
+    --iter;
+  }
+}
+
+/*
   RMQ within a phrase in range [from, to]. The upper bound may be outside
   the phrase.
 
@@ -289,7 +317,7 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
       size_type left_par = rmtParent(*this, left, level), right_par = rmtParent(*this, right, level);
       if(left_par == right_par)
       {
-        for(size_type i = left; i <= right; i++) { updateRes(*this, res, i); }
+        updateRes(*this, res, left, right);
         break;
       }
       else
@@ -298,7 +326,7 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
         if(left != left_child)
         {
           size_type last_child = rmtLastSibling(*this, left_child, level);
-          for(size_type i = left; i <= last_child; i++) { updateRes(*this, res, i); }
+          updateRes(*this, res, left, last_child);
           left_par++;
         }
 
@@ -306,7 +334,7 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
         if(right != right_child)
         {
           size_type first_child = rmtFirstSibling(*this, right_child, level);
-          for(size_type i = right; i >= first_child; i--) { tail.push(range_type(i, this->tree[i])); }
+          addToTail(*this, tail, first_child, right);
           right_par--;
         }
 
@@ -331,7 +359,9 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
     while(level > 0)
     {
       res.first = rmtFirstChild(*this, res.first, level); level--;
-      while(this->tree[res.first] != res.second) { res.first++; }
+      lcp_type::iterator iter(&tree, res.first);
+      while(*iter != res.second) { ++iter; }
+      res.first = iter.position();
     }
     res = relative::rmq(*this, res.first, 0, this->size());
   }
