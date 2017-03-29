@@ -365,6 +365,9 @@ private:
   This class stores an integer array in two parts. Small values less than 255 are stored in
   an sdsl::int_vector<8>, while large values are marked with 255 and stored separately in an
   sdsl::int_vector<0>.
+
+  The byte array contains a 0 at the end of the array as a guard. This makes it possible to
+  avoid bounds checking in the iterator.
 */
 class SLArray
 {
@@ -396,7 +399,7 @@ public:
   size_type serialize(std::ostream& out, sdsl::structure_tree_node* v = nullptr, std::string name = "") const;
   void load(std::istream& in);
 
-  inline size_type size() const { return this->small.size(); }
+  inline size_type size() const { return this->small.size() - 1; }
   inline size_type largeValues() const { return this->large.size(); }
 
 //------------------------------------------------------------------------------
@@ -549,7 +552,7 @@ private:
   void
   buildFrom(IntVector& source)
   {
-    sdsl::util::assign(this->small, sdsl::int_vector<8>(source.size(), 0));
+    sdsl::util::assign(this->small, sdsl::int_vector<8>(source.size() + 1, 0));
 
     size_type  large_values = 0;
     value_type max_large = 0;

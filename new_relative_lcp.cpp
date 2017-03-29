@@ -95,7 +95,7 @@ rmtLevel(const NewRelativeLCP& lcp, size_type node)
 NewRelativeLCP::NewRelativeLCP(const lcp_type& ref, const lcp_type& seq) :
   reference(ref), branching_factor(BRANCHING_FACTOR)
 {
-  this->array = rlz::lcp::index_build<value_type>(seq.begin(), seq.end(), ref.begin(), ref.end());
+  this->array = rlz::lcp::index_build<value_type>(seq.begin(), seq.end(), ref.begin(), ref.end(), MAX_PHRASE);
 
  // Determine the number of levels.
   size_type level_count = 1, level_size = this->phrases();
@@ -121,6 +121,10 @@ NewRelativeLCP::NewRelativeLCP(const lcp_type& ref, const lcp_type& seq) :
   {
     rlcp_type::iter begin, end;
     std::tie(begin, end) = this->array.iterator_phrase_id(i);
+    if(end - begin > MAX_PHRASE)
+    {
+      std::cerr << "NewRelativeLCP::NewRelativeLCP: Phrase " << i << " from " << begin.position() << " to " << end.position() << " (length " << (end - begin) << ")" << std::endl;
+    }
     while(begin != end) { tree_buffer[i] = std::min(tree_buffer[i], *begin); ++begin; }
   }
   for(size_type level = 0; level < this->levels(); level++)

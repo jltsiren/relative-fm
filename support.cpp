@@ -501,7 +501,8 @@ LCS::select(const LCS::vector_type& vec, const LCS::vector_type::rank_1_type& ra
 
 //------------------------------------------------------------------------------
 
-SLArray::SLArray()
+SLArray::SLArray() :
+  small(sdsl::int_vector<8>(1, 0))
 {
 }
 

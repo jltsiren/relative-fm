@@ -44,6 +44,7 @@ public:
   typedef rlz::lcp::LcpIndex<lcp_type::iterator, lcp_type::value_type> rlcp_type;
 
   const static size_type BRANCHING_FACTOR = 64; // For the range minima tree.
+  const static size_type MAX_PHRASE = 1024;     // Long phrases are a performance issue.
   const static std::string EXTENSION; // .rlcp
 
 //------------------------------------------------------------------------------
