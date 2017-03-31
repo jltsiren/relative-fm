@@ -387,4 +387,194 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
 
 //------------------------------------------------------------------------------
 
+/*
+  PSV in the given phrase. Returns (psv_pos, LCP[psv_pos]) or lcp.notFound() if
+  the PSV does not exist.
+
+  - If 'phrase' is defined, compare against 'lcp_value' in that phrase.
+  - Otherwise compare against LCP[pos] in the prefix of that phrase and
+    define both 'phrase' and 'lcp_value'.
+*/
+template<class Comparator>
+range_type
+psvPhrase(const NewRelativeLCP& lcp, size_type& phrase, size_type pos, size_type& lcp_value, const Comparator& comp)
+{
+  NewRelativeLCP::rlcp_type::iter begin, curr, end;
+  if(phrase >= lcp.phrases())
+  {
+    std::tie(begin, curr, end) = lcp.array.iterator_position(pos);
+    phrase = lcp.array.phrase_id(pos);
+    lcp_value = *curr;
+  }
+  else
+  {
+    std::tie(begin, curr) = lcp.array.iterator_phrase_id(phrase);
+  }
+
+  while(curr != begin)
+  {
+    --curr;
+    if(comp(*curr, lcp_value)) { return range_type(curr.position(), *curr); }
+  }
+  return lcp.notFound();
+}
+
+/*
+  Find the last value less than 'lcp_value' between 'from' (inclusive) and 'to' (exclusive)
+  in the range minima tree. Return value will be lcp.notFound() if no such value exists.
+*/
+template<class Comparator>
+range_type
+psvTree(const NewRelativeLCP& lcp, size_type from, size_type to, size_type lcp_value, const Comparator& comp)
+{
+  NewRelativeLCP::lcp_type::iterator iter(&(lcp.tree), to);
+  while(iter.position() > from)
+  {
+    --iter;
+    if(comp(*iter, lcp_value)) { return range_type(iter.position(), *iter); }
+  }
+  return lcp.notFound();
+}
+
+template<class Comparator>
+range_type
+psv(const NewRelativeLCP& lcp, size_type pos, const Comparator& comp)
+{
+  if(pos == 0 || pos >= lcp.size()) { return lcp.notFound(); }
+
+  // Check the current phrase first.
+  size_type phrase = lcp.phrases();
+  size_type lcp_value = 0;
+  range_type res = psvPhrase(lcp, phrase, pos, lcp_value, comp);
+  if(res.first < lcp.size() || phrase == 0) { return res; } // psv in the same phrase or does not exist.
+
+  // Find the children of the lowest common ancestor of psv(pos) and 'pos'.
+  size_type level = 0;
+  while(phrase != rmtRoot(lcp))
+  {
+    res = psvTree(lcp, rmtFirstSibling(lcp, phrase, level), phrase, lcp_value, comp);
+    if(res.first < lcp.values()) { break; }
+    phrase = rmtParent(lcp, phrase, level); level++;
+  }
+  if(res.first >= lcp.values()) { return res; } // Not found.
+
+  // Go to the leaf containing psv(pos).
+  while(level > 0)
+  {
+    size_type from = rmtFirstChild(lcp, res.first, level); level--;
+    res = psvTree(lcp, from, rmtLastSibling(lcp, from, level) + 1, lcp_value, comp);
+  }
+
+  return psvPhrase(lcp, res.first, lcp.size(), lcp_value, comp);
+}
+
+range_type
+NewRelativeLCP::psv(size_type pos) const
+{
+  return relative::psv(*this, pos, std::less<value_type>());
+}
+
+range_type
+NewRelativeLCP::psev(size_type pos) const
+{
+  return relative::psv(*this, pos, std::less_equal<value_type>());
+}
+
+//------------------------------------------------------------------------------
+
+/*
+  NSV in the given phrase. Returns (nsv_pos, LCP[nsv_pos]) or lcp.notFound() if
+  the NSV does not exist.
+
+  - If 'phrase' is defined, compare against 'lcp_value' in that phrase.
+  - Otherwise compare against LCP[pos] in the suffix of that phrase and
+    define both 'phrase' and 'lcp_value'.
+*/
+template<class Comparator>
+range_type
+nsvPhrase(const NewRelativeLCP& lcp, size_type& phrase, size_type pos, size_type& lcp_value, const Comparator& comp)
+{
+  NewRelativeLCP::rlcp_type::iter begin, curr, end;
+  if(phrase >= lcp.phrases())
+  {
+    std::tie(begin, curr, end) = lcp.array.iterator_position(pos);
+    phrase = lcp.array.phrase_id(pos);
+    lcp_value = *curr; ++curr;
+  }
+  else
+  {
+    std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
+  }
+
+  while(curr != end)
+  {
+    if(comp(*curr, lcp_value)) { return range_type(curr.position(), *curr); }
+    ++curr;
+  }
+  return lcp.notFound();
+}
+
+/*
+  Find the first value less than 'lcp_value' between 'from' and 'to' (inclusive)
+  in the range minima tree. Return value will be lcp.notFound() if no such value exists.
+*/
+template<class Comparator>
+range_type
+nsvTree(const NewRelativeLCP& lcp, size_type from, size_type to, size_type lcp_value, const Comparator& comp)
+{
+  NewRelativeLCP::lcp_type::iterator iter(&(lcp.tree), from);
+  while(iter.position() <= to)
+  {
+    if(comp(*iter, lcp_value)) { return range_type(iter.position(), *iter); }
+    ++iter;
+  }
+  return lcp.notFound();
+}
+
+template<class Comparator>
+range_type
+nsv(const NewRelativeLCP& lcp, size_type pos, const Comparator& comp)
+{
+  if(pos + 1 >= lcp.size()) { return lcp.notFound(); }
+
+  // Check the current phrase first.
+  size_type phrase = lcp.phrases();
+  size_type lcp_value = 0;
+  range_type res = nsvPhrase(lcp, phrase, pos, lcp_value, comp);
+  if(res.first < lcp.size() || phrase + 1 >= lcp.phrases()) { return res; } // nsv in the same phrase or does not exist.
+
+  // Find the children of the lowest common ancestor of 'pos' and nsv(pos).
+  size_type level = 0;
+  while(phrase != rmtRoot(lcp))
+  {
+    res = nsvTree(lcp, phrase + 1, rmtLastSibling(lcp, phrase, level), lcp_value, comp);
+    if(res.first < lcp.values()) { break; }
+    phrase = rmtParent(lcp, phrase, level); level++;
+  }
+  if(res.first >= lcp.values()) { return res; } // Not found.
+
+  // Go to the leaf containing nsv(pos).
+  while(level > 0)
+  {
+    size_type from = rmtFirstChild(lcp, res.first, level); level--;
+    res = nsvTree(lcp, from, rmtLastSibling(lcp, from, level), lcp_value, comp);
+  }
+
+  return nsvPhrase(lcp, res.first, lcp.size(), lcp_value, comp);
+}
+
+range_type
+NewRelativeLCP::nsv(size_type pos) const
+{
+  return relative::nsv(*this, pos, std::less<value_type>());
+}
+
+range_type
+NewRelativeLCP::nsev(size_type pos) const
+{
+  return relative::nsv(*this, pos, std::less_equal<value_type>());
+}
+
+//------------------------------------------------------------------------------
+
 } // namespace relative

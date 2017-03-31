@@ -40,12 +40,12 @@ using namespace relative;
 //#define VERIFY_LF
 //#define VERIFY_PSI
 
-//#define VERIFY_LCP
+#define VERIFY_LCP
 #define VERIFY_RMQ
-//#define VERIFY_PSV
-//#define VERIFY_PSEV
-//#define VERIFY_NSV
-//#define VERIFY_NSEV
+#define VERIFY_PSV
+#define VERIFY_PSEV
+#define VERIFY_NSV
+#define VERIFY_NSEV
 
 // Verify the queries or just run the speed tests.
 #define VERIFY_QUERIES
@@ -463,20 +463,15 @@ printLCP(const NewRelativeLCP::lcp_type& lcp, size_type pos)
 
 void
 printError(const NewRelativeLCP::lcp_type& lcp, size_type query, size_type query_pos,
-  size_type error_pos, size_type val, bool psv)
+  size_type error_pos, range_type res, const std::string& query_name)
 {
   std::cerr << "Query " << query << ", position " << query_pos << std::endl;
   printLCP(lcp, query_pos);
-  if(psv) { std::cerr << "  psv("; } else { std::cerr << "  nsv("; }
-  std::cerr << query_pos << ") = ";
-  if(val >= lcp.size()) { std::cerr << "null"; } else { std::cerr << val; }
-  std::cerr << std::endl;
+  std::cerr << "  " << query_name << "(" << query_pos << ") = " << res << std::endl;
   printLCP(lcp, error_pos);
 }
 
 //------------------------------------------------------------------------------
-
-/*
 
 void
 verifyPSV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
@@ -500,32 +495,36 @@ verifyPSV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
     bool ok = true;
     for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      size_type rank = lcp.initBackward(queries[i]);
-      size_type res = rlcp.psv(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
-      if(res >= rlcp.size())
+      NewRelativeLCP::lcp_type::iterator iter(&lcp, queries[i]);
+      range_type res = rlcp.psv(queries[i]);
+      NewRelativeLCP::value_type lcp_value = lcp[queries[i]];
+      if(res.first >= rlcp.size())
       {
-        for(size_type j = queries[i]; j > 0; j--)
+        while(iter.position() > 0)
         {
-          if(lcp.accessBackward(j - 1, rank) < comp)
+          --iter;
+          if(*iter < lcp_value)
           {
-            printError(lcp, i, queries[i], j - 1, res, true);
+            printError(lcp, i, queries[i], iter.position(), res, "psv");
             ok = false; break;
           }
         }
       }
       else
       {
-        for(size_type j = queries[i] - 1; j > res; j--)
+        --iter;
+        while(iter.position() > res.first)
         {
-          if(lcp.accessBackward(j, rank) < comp)
+          if(*iter < lcp_value)
           {
-            printError(lcp, i, queries[i], j, res, true);
+            printError(lcp, i, queries[i], iter.position(), res, "psv");
             ok = false; break;
           }
+          --iter;
         }
-        if(lcp.accessBackward(res, rank) >= comp)
+        if(ok && (*iter >= lcp_value || *iter != res.second))
         {
-          printError(lcp, i, queries[i], res, res, true);
+          printError(lcp, i, queries[i], iter.position(), res, "psv");
           ok = false; break;
         }
       }
@@ -539,11 +538,7 @@ verifyPSV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
   std::cout << std::endl;
 }
 
-*/
-
 //------------------------------------------------------------------------------
-
-/*
 
 void
 verifyPSEV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
@@ -567,32 +562,36 @@ verifyPSEV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
     bool ok = true;
     for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      size_type rank = lcp.initBackward(queries[i]);
-      size_type res = rlcp.psev(queries[i]).first, comp = lcp.accessBackward(queries[i], rank);
-      if(res >= rlcp.size())
+      NewRelativeLCP::lcp_type::iterator iter(&lcp, queries[i]);
+      range_type res = rlcp.psev(queries[i]);
+      NewRelativeLCP::value_type lcp_value = lcp[queries[i]];
+      if(res.first >= rlcp.size())
       {
-        for(size_type j = queries[i]; j > 0; j--)
+        while(iter.position() > 0)
         {
-          if(lcp.accessBackward(j - 1, rank) <= comp)
+          --iter;
+          if(*iter <= lcp_value)
           {
-            printError(lcp, i, queries[i], j - 1, res, true);
+            printError(lcp, i, queries[i], iter.position(), res, "psev");
             ok = false; break;
           }
         }
       }
       else
       {
-        for(size_type j = queries[i] - 1; j > res; j--)
+        --iter;
+        while(iter.position() > res.first)
         {
-          if(lcp.accessBackward(j, rank) <= comp)
+          if(*iter <= lcp_value)
           {
-            printError(lcp, i, queries[i], j, res, true);
+            printError(lcp, i, queries[i], iter.position(), res, "psev");
             ok = false; break;
           }
+          --iter;
         }
-        if(lcp.accessBackward(res, rank) > comp)
+        if(ok && (*iter > lcp_value || *iter != res.second))
         {
-          printError(lcp, i, queries[i], res, res, true);
+          printError(lcp, i, queries[i], iter.position(), res, "psev");
           ok = false; break;
         }
       }
@@ -606,11 +605,7 @@ verifyPSEV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
   std::cout << std::endl;
 }
 
-*/
-
 //------------------------------------------------------------------------------
-
-/*
 
 void
 verifyNSV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
@@ -634,33 +629,36 @@ verifyNSV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
     bool ok = true;
     for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      size_type rank = lcp.initForward(queries[i]);
-      size_type res = rlcp.nsv(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
-      if(res >= rlcp.size())
+      NewRelativeLCP::lcp_type::iterator iter(&lcp, queries[i] + 1);
+      range_type res = rlcp.nsv(queries[i]);
+      NewRelativeLCP::value_type lcp_value = lcp[queries[i]];
+      if(res.first >= rlcp.size())
       {
-        for(size_type j = queries[i] + 1; j < lcp.size(); j++)
+        while(iter.position() < lcp.size())
         {
-          if(lcp.accessForward(j, rank) < comp)
+          if(*iter < lcp_value)
           {
-            printError(lcp, i, queries[i], j, res, false);
+            printError(lcp, i, queries[i], iter.position(), res, "nsv");
             ok = false; break;
           }
+          ++iter;
         }
       }
       else
       {
-        if(lcp[res] >= comp)
+        while(iter.position() < res.first)
         {
-          printError(lcp, i, queries[i], res, res, false);
-          ok = false; break;
-        }
-        for(size_type j = queries[i] + 1; j < res; j++)
-        {
-          if(lcp.accessForward(j, rank) < comp)
+          if(*iter < lcp_value)
           {
-            printError(lcp, i, queries[i], j, res, false);
+            printError(lcp, i, queries[i], iter.position(), res, "nsv");
             ok = false; break;
           }
+          ++iter;
+        }
+        if(ok && (*iter >= lcp_value || *iter != res.second))
+        {
+          printError(lcp, i, queries[i], iter.position(), res, "nsv");
+          ok = false; break;
         }
       }
     }
@@ -673,11 +671,7 @@ verifyNSV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
   std::cout << std::endl;
 }
 
-*/
-
 //------------------------------------------------------------------------------
-
-/*
 
 void
 verifyNSEV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
@@ -701,33 +695,36 @@ verifyNSEV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
     bool ok = true;
     for(size_type i = 0; i < queries.size() && ok; i++)
     {
-      size_type rank = lcp.initForward(queries[i]);
-      size_type res = rlcp.nsev(queries[i]).first, comp = lcp.accessForward(queries[i], rank);
-      if(res >= rlcp.size())
+      NewRelativeLCP::lcp_type::iterator iter(&lcp, queries[i] + 1);
+      range_type res = rlcp.nsev(queries[i]);
+      NewRelativeLCP::value_type lcp_value = lcp[queries[i]];
+      if(res.first >= rlcp.size())
       {
-        for(size_type j = queries[i] + 1; j < lcp.size(); j++)
+        while(iter.position() < lcp.size())
         {
-          if(lcp.accessForward(j, rank) <= comp)
+          if(*iter <= lcp_value)
           {
-            printError(lcp, i, queries[i], j, res, false);
+            printError(lcp, i, queries[i], iter.position(), res, "nsev");
             ok = false; break;
           }
+          ++iter;
         }
       }
       else
       {
-        if(lcp[res] > comp)
+        while(iter.position() < res.first)
         {
-          printError(lcp, i, queries[i], res, res, false);
-          ok = false; break;
-        }
-        for(size_type j = queries[i] + 1; j < res; j++)
-        {
-          if(lcp.accessForward(j, rank) <= comp)
+          if(*iter <= lcp_value)
           {
-            printError(lcp, i, queries[i], j, res, false);
+            printError(lcp, i, queries[i], iter.position(), res, "nsev");
             ok = false; break;
           }
+          ++iter;
+        }
+        if(ok && (*iter > lcp_value || *iter != res.second))
+        {
+          printError(lcp, i, queries[i], iter.position(), res, "nsev");
+          ok = false; break;
         }
       }
     }
@@ -739,7 +736,5 @@ verifyNSEV(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
   if(sum == 0) { std::cout << "This should not happen!" << std::endl; }
   std::cout << std::endl;
 }
-
-*/
 
 //------------------------------------------------------------------------------
