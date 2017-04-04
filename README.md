@@ -1,6 +1,6 @@
 # Relative FM-index
 
-This is an implementation of the Relative FM-index (RFM) and the Relative Compressed Suffix Tree (RCST). [The early implementatation](http://jltsiren.kapsi.fi/relative-fm) is available elsewhere.
+This is an implementation of the Relative FM-index (RFM) and the Relative Compressed Suffix Tree (RCST). [The early implementatation](https://jltsiren.kapsi.fi/relative-fm) is available elsewhere.
 
 To compile, install the [Succinct Data Structures Library 2.0](https://github.com/simongog/sdsl-lite) and set `SDSL_DIR` in the makefile to point to the SDSL directory. The implementation uses OpenMP, libstdc++ parallel mode, and C++11, so g++ 4.7 or newer is required.
 
@@ -64,11 +64,11 @@ The following datasets have been used in the articles based on the relative FM-i
 
 Djamal Belazzougui, Travis Gagie, Simon Gog, Giovanni Manzini, and Jouni Sirén: **Relative FM-indexes**.
 Proc. SPIRE 2014, Springer LNCS 8799, pp. 52-65, Ouro Preto, Brazil, October 20-22, 2014.
-[DOI: 10.1007/978-3-319-11918-2_6](http://dx.doi.org/10.1007/978-3-319-11918-2_6)
+[DOI: 10.1007/978-3-319-11918-2_6](https://doi.org/10.1007/978-3-319-11918-2_6)
 
 Christina Boucher, Alexander Bowe, Travis Gagie, Giovanni Manzini, and Jouni Sirén: **Relative Select**.
 Proc. SPIRE 2015, Springer LNCS 9309, pp. 149-155, London, UK, September 1-3, 2015.
-[DOI: 10.1007/978-3-319-23826-5_15](http://dx.doi.org/10.1007/978-3-319-23826-5_15)
+[DOI: 10.1007/978-3-319-23826-5_15](https://doi.org/10.1007/978-3-319-23826-5_15)
 
 Travis Gagie, Gonzalo Navarro, Simon J. Puglisi, and Jouni Sirén: **Relative Compressed Suffix Trees**.
-[arXiv:1508.02550](http://arxiv.org/abs/1508.02550)
+[arXiv:1508.02550](https://arxiv.org/abs/1508.02550)
