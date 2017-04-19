@@ -255,23 +255,17 @@ addToTail(const NewRelativeLCP& lcp, std::stack<range_type>& tail, size_type lef
 }
 
 /*
-  RMQ within a phrase in range [from, to]. The upper bound may be outside
-  the phrase.
-
-  - if from == 0, the range starts from the beginning of the given phrase
-  - otherwise the phrase is determined from the starting position
+  RMQ in the intersection of the given phrase and the range [from, to],
+  assuming that the intersection is non-empty.
 */
 range_type
-rmq(const NewRelativeLCP& lcp, size_type phrase, size_type from, size_type to)
+rmqPhrase(const NewRelativeLCP& lcp, size_type phrase, size_type from, size_type to)
 {
-  NewRelativeLCP::rlcp_type::iter begin, curr, end;
-  if(from == 0)
+  NewRelativeLCP::rlcp_type::iter curr, end;
+  std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
+  if(from > curr.position())
   {
-    std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
-  }
-  else
-  {
-    std::tie(begin, curr, end) = lcp.array.iterator_position(from);
+    curr = std::next(curr, from - curr.position());
   }
 
   range_type res = lcp.notFound();
@@ -303,7 +297,7 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
   // FIXME The first and the last block could also be full...
   if(phrase_to == phrase_from + 2)  // Just a single full phrase.
   {
-    res = relative::rmq(*this, phrase_from + 1, 0, this->size());
+    res = rmqPhrase(*this, phrase_from + 1, 0, this->size());
   }
   else if(phrase_to > phrase_from + 2)
   {
@@ -367,18 +361,18 @@ NewRelativeLCP::rmq(size_type sp, size_type ep) const
       while(*iter != res.second) { ++iter; }
       res.first = iter.position();
     }
-    res = relative::rmq(*this, res.first, 0, this->size());
+    res = rmqPhrase(*this, res.first, 0, this->size());
   }
 
   // Process the partial blocks.
   if(this->tree[phrase_from] <= res.second)
   {
-    range_type temp = relative::rmq(*this, phrase_from, sp, ep);
+    range_type temp = rmqPhrase(*this, phrase_from, sp, ep);
     if(temp.second <= res.second) { res = temp; }
   }
   if(phrase_from < phrase_to && this->tree[phrase_to] < res.second)
   {
-    range_type temp = relative::rmq(*this, phrase_to, 0, ep);
+    range_type temp = rmqPhrase(*this, phrase_to, 0, ep);
     if(temp.second < res.second) { res = temp; }
   }
 
@@ -399,11 +393,12 @@ template<class Comparator>
 range_type
 psvPhrase(const NewRelativeLCP& lcp, size_type& phrase, size_type pos, size_type& lcp_value, const Comparator& comp)
 {
-  NewRelativeLCP::rlcp_type::iter begin, curr, end;
+  NewRelativeLCP::rlcp_type::iter begin, curr;
   if(phrase >= lcp.phrases())
   {
-    std::tie(begin, curr, end) = lcp.array.iterator_position(pos);
     phrase = lcp.array.phrase_id(pos);
+    std::tie(begin, curr) = lcp.array.iterator_phrase_id(phrase);
+    curr = std::next(begin, pos - begin.position());
     lcp_value = *curr;
   }
   else
@@ -494,11 +489,12 @@ template<class Comparator>
 range_type
 nsvPhrase(const NewRelativeLCP& lcp, size_type& phrase, size_type pos, size_type& lcp_value, const Comparator& comp)
 {
-  NewRelativeLCP::rlcp_type::iter begin, curr, end;
+  NewRelativeLCP::rlcp_type::iter curr, end;
   if(phrase >= lcp.phrases())
   {
-    std::tie(begin, curr, end) = lcp.array.iterator_position(pos);
     phrase = lcp.array.phrase_id(pos);
+    std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
+    curr = std::next(curr, pos - curr.position());
     lcp_value = *curr; ++curr;
   }
   else

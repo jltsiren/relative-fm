@@ -43,12 +43,12 @@ using namespace relative;
 #define VERIFY_LCP
 #define VERIFY_RMQ
 #define VERIFY_PSV
-#define VERIFY_PSEV
+//#define VERIFY_PSEV
 #define VERIFY_NSV
-#define VERIFY_NSEV
+//#define VERIFY_NSEV
 
 // Verify the queries or just run the speed tests.
-#define VERIFY_QUERIES
+//#define VERIFY_QUERIES
 
 const size_type LF_QUERIES = 10 * MILLION;
 const size_type PSI_QUERIES = 10 * MILLION;
