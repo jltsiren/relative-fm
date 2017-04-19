@@ -459,12 +459,9 @@ public:
     iterator() : data(0), pos(0), rank(0) {}
 
     iterator(const SLArray* array, size_type offset) :
-      data(array), pos(offset)
+      data(array), pos(offset),
+      rank(array->small[offset] == SLArray::LARGE_VALUE ? array->large_rank(offset) : UNKNOWN_RANK)
     {
-      if(offset == 0) { this->rank = 0; }
-      else if(offset >= array->size()) { this->rank = array->largeValues(); }
-      else if(array->small[offset] == SLArray::LARGE_VALUE) { this->rank = array->large_rank(offset); }
-      else { this->rank = UNKNOWN_RANK; }
     }
 
     size_type position() const { return this->pos; }
