@@ -40,8 +40,8 @@ using namespace relative;
 //#define VERIFY_LF
 //#define VERIFY_PSI
 
-#define VERIFY_LCP
-#define VERIFY_RMQ
+//#define VERIFY_LCP
+//#define VERIFY_RMQ
 #define VERIFY_PSV
 //#define VERIFY_PSEV
 #define VERIFY_NSV

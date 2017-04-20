@@ -538,6 +538,11 @@ nsv(const NewRelativeLCP& lcp, size_type pos, const Comparator& comp)
   size_type lcp_value = 0;
   range_type res = nsvPhrase(lcp, phrase, pos, lcp_value, comp);
   if(res.first < lcp.size() || phrase + 1 >= lcp.phrases()) { return res; } // nsv in the same phrase or does not exist.
+  if(comp(lcp.tree[phrase + 1], lcp_value)) // nsv is in the next phrase.
+  {
+    phrase++;
+    return nsvPhrase(lcp, phrase, 0, lcp_value, comp);
+  }
 
   // Find the children of the lowest common ancestor of 'pos' and nsv(pos).
   size_type level = 0;
