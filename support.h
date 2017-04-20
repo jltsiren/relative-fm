@@ -466,7 +466,7 @@ public:
 
     size_type position() const { return this->pos; }
 
-    iterator operator++ ()
+    iterator& operator++ ()
     {
       if(this->data->small[this->pos] == SLArray::LARGE_VALUE) { this->rank++; }
       this->pos++;
@@ -477,7 +477,7 @@ public:
       return *this;
     }
 
-    iterator operator-- ()
+    iterator& operator-- ()
     {
       this->pos--;
       if(this->data->small[this->pos] == SLArray::LARGE_VALUE)
@@ -487,15 +487,21 @@ public:
       return *this;
     }
 
-    iterator& operator+= (size_type n)
+    iterator& operator+= (difference_type n)
     {
+      if(n == 0) { return *this; }
+      else if(n == 1) { return this->operator++(); }
+      else if(n == -1) { return this->operator--(); }
       this->pos += n;
       this->rank = (this->data->small[this->pos] == SLArray::LARGE_VALUE ? this->data->large_rank(this->pos) : UNKNOWN_RANK);
       return *this;
     }
 
-    iterator& operator-= (size_type n)
+    iterator& operator-= (difference_type n)
     {
+      if(n == 0) { return *this; }
+      else if(n == 1) { return this->operator--(); }
+      else if(n == -1) { return this->operator++(); }
       this->pos -= n;
       this->rank = (this->data->small[this->pos] == SLArray::LARGE_VALUE ? this->data->large_rank(this->pos) : UNKNOWN_RANK);
       return *this;
@@ -508,8 +514,8 @@ public:
 
     iterator operator++ (int) { iterator res(*this); operator++(); return res; }
     iterator operator-- (int) { iterator res(*this); operator--(); return res; }
-    iterator operator+ (size_type n) const { iterator res(*this); res += n; return res; }
-    iterator operator- (size_type n) const { iterator res(*this); res -= n; return res; }
+    iterator operator+ (difference_type n) const { iterator res(*this); res += n; return res; }
+    iterator operator- (difference_type n) const { iterator res(*this); res -= n; return res; }
 
     bool operator== (const iterator& another) const { return (this->pos == another.pos); }
     bool operator!= (const iterator& another) const { return (this->pos != another.pos); }
