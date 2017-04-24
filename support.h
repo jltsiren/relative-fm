@@ -411,25 +411,6 @@ public:
   }
 
   /*
-    These versions provide faster sequential access to the array.
-    Initialize rank with initForward/initBackward and iterate over successive
-    positions with the same rank variable.
-  */
-
-  inline size_type initForward(size_type i) const { return this->large_rank(i); }
-  inline size_type initBackward(size_type i) const { return this->large_rank(i + 1); }
-
-  inline value_type accessForward(size_type i, size_type& rank) const
-  {
-    return (this->small[i] < LARGE_VALUE ? this->small[i] : this->large[rank++]);
-  }
-
-  inline value_type accessBackward(size_type i, size_type& rank) const
-  {
-    return (this->small[i] < LARGE_VALUE ? this->small[i] : this->large[--rank]);
-  }
-
-  /*
     Semiopen interval [from, to). Minimal sanity checking.
   */
   sdsl::int_vector<64> extract(size_type from, size_type to) const;
