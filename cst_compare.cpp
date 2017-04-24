@@ -64,7 +64,7 @@ main(int argc, char** argv)
   SimpleFM<> ref_fm(ref_name);
   size_type fm_bytes = ref_fm.reportSize();
   printSize("FM-index", fm_bytes, ref_fm.size());
-  RelativeLCP::lcp_type ref_lcp;
+  NewRelativeLCP::lcp_type ref_lcp;
   sdsl::load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
   size_type lcp_bytes = sdsl::size_in_bytes(ref_lcp);
   printSize("LCP array", lcp_bytes, ref_lcp.size());
@@ -93,7 +93,7 @@ main(int argc, char** argv)
   {
     std::string name = "Relative (slow)";
     RelativeFM<> rfm(ref_fm, target_name);
-    RelativeLCP rlcp(ref_lcp, target_name);
+    NewRelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
     printSize(name, rcst.reportSize(), rcst.size());
     matchingStatistics(rcst, seq, rcst_ranges, rcst_depths, name);

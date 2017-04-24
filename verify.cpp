@@ -27,8 +27,7 @@
 
 #include <sdsl/rmq_support.hpp>
 
-#include "relative_fm.h"
-#include "new_relative_lcp.h"
+#include "relative_cst.h"
 
 using namespace relative;
 
@@ -40,8 +39,8 @@ using namespace relative;
 //#define VERIFY_LF
 //#define VERIFY_PSI
 
-//#define VERIFY_LCP
-//#define VERIFY_RMQ
+#define VERIFY_LCP
+#define VERIFY_RMQ
 #define VERIFY_PSV
 //#define VERIFY_PSEV
 #define VERIFY_NSV
@@ -175,8 +174,6 @@ main(int argc, char** argv)
 
 //------------------------------------------------------------------------------
 
-/*
-
 template<class Index>
 void
 findQueries(const Index& index, const std::string& type,
@@ -205,25 +202,23 @@ verifyForwardSearch(const SimpleFM<>& fm, const RelativeFM<>& rfm, const NewRela
   RelativeCST<> rcst(rfm, lcp);
   findQueries(rcst, "Relative CST", patterns, cst_results);
 
+#ifdef VERIFY_QUERIES
+  bool ok = true;
+  for(size_type i = 0; i < patterns.size(); i++)
   {
-    bool ok = true;
-    for(size_type i = 0; i < patterns.size(); i++)
+    if(fm_results[i] != cst_results[i])
     {
-      if(fm_results[i] != cst_results[i])
-      {
-        std::cerr << "verify: Query " << i << ", pattern " << patterns[i] << std::endl;
-        std::cerr << "  SimpleFM: " << fm_results[i] << std::endl;
-        std::cerr << "  Relative CST: " << cst_results[i] << std::endl;
-        ok = false; break;
-      }
+      std::cerr << "verify: Query " << i << ", pattern " << patterns[i] << std::endl;
+      std::cerr << "  SimpleFM: " << fm_results[i] << std::endl;
+      std::cerr << "  Relative CST: " << cst_results[i] << std::endl;
+      ok = false; break;
     }
-    if(ok) { std::cout << "Results successfully verified" << std::endl; }
   }
+  if(ok) { std::cout << "Results successfully verified" << std::endl; }
+#endif
 
   std::cout << std::endl;
 }
-
-*/
 
 //------------------------------------------------------------------------------
 

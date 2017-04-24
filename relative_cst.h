@@ -28,7 +28,7 @@
 #include <sdsl/suffix_trees.hpp>
 
 #include "relative_fm.h"
-#include "relative_lcp.h"
+#include "new_relative_lcp.h"
 
 namespace relative
 {
@@ -77,7 +77,7 @@ public:
   typedef sdsl::cst_dfs_const_forward_iterator<RelativeCST> const_iterator;
 
 //------------------------------------------------------------------------------
-  RelativeCST(const IndexType& _index, const RelativeLCP& _lcp) :
+  RelativeCST(const IndexType& _index, const NewRelativeLCP& _lcp) :
     index(_index), lcp(_lcp)
   {
   }
@@ -102,8 +102,8 @@ public:
     return bytes;
   }
 
-  const IndexType&   index;
-  const RelativeLCP& lcp;
+  const IndexType&      index;
+  const NewRelativeLCP& lcp;
 
 //------------------------------------------------------------------------------
 
@@ -168,7 +168,8 @@ public:
 
     size_type k = (v.left_lcp > v.right_lcp ? v.sp : v.ep + 1);
     range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
-    if(left.first >= this->size()) { left.first = 0; }  // No psv found.
+    if(left.first >= this->size()) { left.first = 0; left.second = 0; } // No psv found.
+    if(right.first >= this->size()) { right.first = this->size(); right.second = 0; }
 
     return node_type(left.first, right.first - 1, left.second, right.second);
   }
@@ -199,6 +200,7 @@ public:
     if(v.left_lcp > v.right_lcp) { return this->root(); } // v is the last child of its parent.
 
     range_type right = this->lcp.nsev(v.ep + 1);
+    if(right.first >= this->size()) { right.first = this->size(); right.second = 0; }
 
     return node_type(v.ep + 1, right.first - 1, v.right_lcp, right.second);
   }
@@ -249,6 +251,8 @@ public:
     size_type sp = this->index.Psi(v.sp), ep = this->index.Psi(v.ep);
     size_type k = this->lcp.rmq(sp + 1, ep).first;
     range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
+    if(left.first >= this->size()) { left.first = 0; left.second = 0; }
+    if(right.first >= this->size()) { right.first = this->size(); right.second = 0; }
 
     return node_type(left.first, right.first - 1, left.second, right.second);
   }
