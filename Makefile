@@ -24,7 +24,7 @@ OTHER_FLAGS=$(RUSAGE_FLAGS) $(RUN_FLAGS) $(VERBOSE_FLAGS) $(VECTOR_FLAGS) $(PARA
 
 include $(SDSL_DIR)/Make.helper
 CXX_FLAGS=$(MY_CXX_FLAGS) $(OTHER_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR) -I$(RLZAP_DIR)/include -I$(RLZAP_DIR)/ext_libs/boost/include -I$(RLZAP_DIR)/ext_libs/sais/include
-LIBOBJS=relative_fm.o utils.o support.o relative_lcp.o new_relative_lcp.o
+LIBOBJS=relative_fm.o utils.o support.o new_relative_lcp.o
 SOURCES=$(wildcard *.cpp)
 HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)

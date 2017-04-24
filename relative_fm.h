@@ -38,7 +38,7 @@ struct align_parameters
   const static size_type BLOCK_SIZE      = 1024; // Split the BWTs into blocks of this size or less.
   const static size_type MAX_LENGTH      = 32;   // Maximum length of a pattern used to split the BWTs.
   const static size_type SEED_LENGTH     = 4;    // Generate all patterns of this length before parallelizing.
-  const static int      MAX_D           = 8192; // Number of diagonals to consider in Myers' algorithm.
+  const static int       MAX_D           = 8192; // Number of diagonals to consider in Myers' algorithm.
   const static size_type SA_SAMPLE_RATE  = 0;    // Sample rate for relative FM.
   const static size_type ISA_SAMPLE_RATE  = 0;   // Sample rate for relative FM.
 

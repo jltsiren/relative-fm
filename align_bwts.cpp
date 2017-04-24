@@ -27,13 +27,12 @@
 #include <unistd.h>
 
 #include "relative_fm.h"
-#include "relative_lcp.h"
 
 using namespace relative;
 
 //------------------------------------------------------------------------------
 
-void mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp);
+void mainLoop(int argc, char** argv, const align_parameters& parameters);
 
 //------------------------------------------------------------------------------
 
@@ -54,15 +53,13 @@ main(int argc, char** argv)
     std::cerr << "  -p    Preallocate buffers for LCS computation" << std::endl;
 
     std::cerr << "  -i    Find a BWT-invariant subsequence that supports SA/ISA samples" << std::endl;
-    std::cerr << "  -L    Build also the relative LCP array" << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
   align_parameters parameters;
-  bool lcp = false;
   int c = 0;
-  while((c = getopt(argc, argv, "b:d:l:piL")) != -1)
+  while((c = getopt(argc, argv, "b:d:l:pi")) != -1)
   {
     switch(c)
     {
@@ -85,8 +82,6 @@ main(int argc, char** argv)
         parameters.isa_sample_rate = align_parameters::SECONDARY_ISA_SAMPLE_RATE;
       }
       break;
-    case 'L':
-      lcp = true; break;
     case '?':
       return 2;
     default:
@@ -94,14 +89,7 @@ main(int argc, char** argv)
     }
   }
 
-  if(lcp)
-  {
-    std::cout << "Relative FM-index and LCP array builder" << std::endl;
-  }
-  else
-  {
-    std::cout << "Relative FM-index builder" << std::endl;
-  }
+  std::cout << "Relative FM-index builder" << std::endl;
   std::cout << "Using OpenMP with " << omp_get_max_threads() << " threads" << std::endl;
   std::cout << std::endl;
   std::cout << "Algorithm: " << (parameters.invariant ? "invariant" : "partitioning") << std::endl;
@@ -124,7 +112,7 @@ main(int argc, char** argv)
   std::cout << "Reference: " << argv[optind] << std::endl;
   std::cout << std::endl;
 
-  mainLoop(argc - optind, argv + optind, parameters, lcp);
+  mainLoop(argc - optind, argv + optind, parameters);
 
   std::cout << "Memory usage: " << inGigabytes(memoryUsage()) << " GB" << std::endl;
   std::cout << std::endl;
@@ -135,19 +123,11 @@ main(int argc, char** argv)
 //------------------------------------------------------------------------------
 
 void
-mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp)
+mainLoop(int argc, char** argv, const align_parameters& parameters)
 {
   std::string ref_name = argv[0];
   SimpleFM<bwt_type> ref(ref_name);
   ref.reportSize(true); std::cout << std::endl;
-  RelativeLCP::lcp_type ref_lcp;
-  RelativeLCP::index_type ref_index;
-  if(lcp)
-  {
-    sdsl::load_from_file(ref_lcp, ref_name + LCP_EXTENSION);
-    sdsl::load_from_file(ref_index, ref_name + DLCP_INDEX_EXTENSION);
-    printSize("LCP array", sdsl::size_in_bytes(ref_lcp), ref.size()); std::cout << std::endl;
-  }
   std::cout << std::endl;
 
   for(int arg = 1; arg < argc; arg++)
@@ -164,22 +144,6 @@ mainLoop(int argc, char** argv, const align_parameters& parameters, bool lcp)
     rel.writeTo(seq_name);
     seq.reportSize(true); std::cout << std::endl;
     rel.reportSize(true); std::cout << std::endl;
-
-    if(lcp)
-    {
-      RelativeLCP::lcp_type seq_lcp;
-      sdsl::load_from_file(seq_lcp, seq_name + LCP_EXTENSION);
-      start = readTimer();
-      RelativeLCP rlcp(ref_lcp, seq_lcp, ref_index, true);
-      seconds = readTimer() - start;
-      std::cout << "Relative LCP array built in " << seconds << " seconds" << std::endl;
-      std::cout << std::endl;
-
-      printSize("LCP array", sdsl::size_in_bytes(seq_lcp), seq.size()); std::cout << std::endl;
-      rlcp.writeTo(seq_name);
-      rlcp.reportSize(true); std::cout << std::endl;
-    }
-
     std::cout << std::endl;
   }
 }
