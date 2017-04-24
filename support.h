@@ -489,9 +489,6 @@ public:
 
     iterator& operator+= (difference_type n)
     {
-      if(n == 0) { return *this; }
-      else if(n == 1) { return this->operator++(); }
-      else if(n == -1) { return this->operator--(); }
       this->pos += n;
       this->rank = (this->data->small[this->pos] == SLArray::LARGE_VALUE ? this->data->large_rank(this->pos) : UNKNOWN_RANK);
       return *this;
@@ -499,9 +496,6 @@ public:
 
     iterator& operator-= (difference_type n)
     {
-      if(n == 0) { return *this; }
-      else if(n == 1) { return this->operator--(); }
-      else if(n == -1) { return this->operator++(); }
       this->pos -= n;
       this->rank = (this->data->small[this->pos] == SLArray::LARGE_VALUE ? this->data->large_rank(this->pos) : UNKNOWN_RANK);
       return *this;

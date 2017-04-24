@@ -265,7 +265,7 @@ rmqPhrase(const NewRelativeLCP& lcp, size_type phrase, size_type from, size_type
   std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
   if(from > curr.position())
   {
-    curr = std::next(curr, from - curr.position());
+    std::advance(curr, from - curr.position());
   }
 
   range_type res = lcp.notFound();
@@ -494,7 +494,7 @@ nsvPhrase(const NewRelativeLCP& lcp, size_type& phrase, size_type pos, size_type
   {
     phrase = lcp.array.phrase_id(pos);
     std::tie(curr, end) = lcp.array.iterator_phrase_id(phrase);
-    curr = std::next(curr, pos - curr.position());
+    std::advance(curr, pos - curr.position());
     lcp_value = *curr; ++curr;
   }
   else
