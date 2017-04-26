@@ -43,6 +43,9 @@ void traverseHash(CST& cst, const std::string& name);
 template<class CST>
 void traverse(CST& cst, const std::string& name);
 
+template<class CST>
+void traverseCount(CST& cst, const std::string& name);
+
 //------------------------------------------------------------------------------
 
 int
@@ -140,9 +143,8 @@ main(int argc, char** argv)
       std::string name = "cst_fully";
       sdsl::cst_fully<> cst;
       buildCST(cst, seq_name, name);
-      // cst_fully is either buggy or orders of magnitude slower than the others,
-      // or its interface is incompatible.
-      //traverse(cst, name);
+      // cst_fully uses around 100 microseconds / node.
+      //traverseCount(cst, name);
       std::cout << std::endl;
     }
 
@@ -240,6 +242,30 @@ traverse(CST& cst, const std::string& name)
   for(auto iter = cst.begin(); iter != cst.end(); ++iter)
   {
     if(iter.visit() == 1) { nodes++; }
+  }
+  double seconds = readTimer() - start;
+
+  printHeader(name);
+  std::cout << nodes << " nodes in " << seconds << " seconds" << std::endl;
+}
+
+template<class CST>
+void
+traverseCount(CST& cst, const std::string& name)
+{
+  double start = readTimer();
+  size_type nodes = 0;
+  for(auto iter = cst.begin(); iter != cst.end(); ++iter)
+  {
+    if(iter.visit() == 1)
+    {
+      nodes++;
+      if(nodes % 100000 == 0)
+      {
+        double secs = readTimer() - start;
+        std::cout << nodes << " nodes in " << secs << " seconds" << std::endl;
+      }
+    }
   }
   double seconds = readTimer() - start;
 

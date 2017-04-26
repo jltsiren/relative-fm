@@ -136,8 +136,7 @@ main(int argc, char** argv)
     std::string name = "cst_fully";
     sdsl::cst_fully<> cst;
     buildCST(cst, target_name, name);
-    // cst_fully is either buggy or orders of magnitude slower than the others,
-    // or its interface is incompatible.
+    // cst_fully is around two orders of magnitude slower than anything else.
     //matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
     std::cout << std::endl;
   }

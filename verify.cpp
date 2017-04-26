@@ -36,8 +36,8 @@ using namespace relative;
 // This reads patterns from file 'patterns'.
 //#define VERIFY_FORWARD_SEARCH
 
-//#define VERIFY_LF
-//#define VERIFY_PSI
+#define VERIFY_LF
+#define VERIFY_PSI
 
 #define VERIFY_LCP
 #define VERIFY_RMQ
@@ -354,6 +354,60 @@ buildSelect(RelativeFM<>& rfm, const std::string& base_name)
 
 //------------------------------------------------------------------------------
 
+struct RLCPIterator
+{
+  typedef NewRelativeLCP::size_type       size_type;
+  typedef NewRelativeLCP::value_type      value_type;
+  typedef NewRelativeLCP::rlcp_type::iter phrase_iterator;
+
+  RLCPIterator(const NewRelativeLCP& rlcp) :
+    source(rlcp), phrase(0)
+  {
+    std::tie(this->curr, this->end) = this->source.array.iterator_phrase_id(this->phrase);
+  }
+
+  void toEnd()
+  {
+    this->phrase = this->source.phrases() - 1;
+    std::tie(this->curr, this->end) = this->source.array.iterator_phrase_id(this->phrase);
+    this->curr = this->end;
+  }
+
+  inline RLCPIterator& operator++ ()
+  {
+    ++(this->curr);
+    if(this->curr == this->end && this->phrase + 1 < this->source.phrases())
+    {
+      this->phrase++;
+      std::tie(this->curr, this->end) = this->source.array.iterator_phrase_id(this->phrase);
+    }
+    return *this;
+  }
+
+  inline value_type operator* () const { return *(this->curr); }
+
+  inline bool operator== (const RLCPIterator& another) const
+  {
+    return (this->curr.position() == another.curr.position());
+  }
+
+  inline bool operator!= (const RLCPIterator& another) const
+  {
+    return (this->curr.position() != another.curr.position());
+  }
+
+  inline size_type operator- (const RLCPIterator& another) const
+  {
+    return this->position() - another.position();
+  }
+
+  inline size_type position() const { return this->curr.position(); }
+
+  const NewRelativeLCP& source;
+  size_type             phrase;
+  phrase_iterator       curr, end;
+};
+
 void
 verifyLCP(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
 {
@@ -366,20 +420,25 @@ verifyLCP(const NewRelativeLCP::lcp_type& lcp, const NewRelativeLCP& rlcp)
 
   sum += timeQueries(rlcp, positions, "RLCP (random)");
 
-  sum += timeQueries(rlcp, "RLCP (seq)");
+  {
+    RLCPIterator begin(rlcp), end(rlcp);
+    end.toEnd();
+    sum += timeQueries(begin, end, "RLCP (seq)");
+  }
 
 #ifdef VERIFY_QUERIES
   {
     double start = readTimer();
-    NewRelativeLCP::lcp_type::iterator curr = lcp.begin();
+    NewRelativeLCP::lcp_type::iterator lcp_iter = lcp.begin();
+    RLCPIterator rlcp_iter(rlcp);
     for(size_type i = 0; i < rlcp.size(); i++)
     {
-      if(rlcp[i] != *curr)
+      if(*rlcp_iter != *lcp_iter)
       {
-        std::cerr << "rlcp[" << i << "] = " << rlcp[i] << ", lcp[" << i << "] = " << *curr << std::endl;
+        std::cerr << "rlcp[" << i << "] = " << *rlcp_iter << ", lcp[" << i << "] = " << *lcp_iter << std::endl;
         break;
       }
-      ++curr;
+      ++lcp_iter; ++rlcp_iter;
     }
     double seconds = readTimer() - start;
     std::cout << "Relative LCP array verified in " << seconds << " seconds" << std::endl;
