@@ -32,6 +32,25 @@ using namespace relative;
 
 //#define USE_HASH
 
+struct Timer
+{
+  const static size_type  INTERVAL = MILLION; // Check time after INTERVAL nodes.
+  constexpr static double MAX_TIME = 86400.0; // Stop after MAX_TIME seconds.
+
+  inline static bool check(size_type i, size_type& next_check, double start_time)
+  {
+    if(i < next_check) { return false; }
+    next_check += INTERVAL;
+    return (readTimer() - start_time >= MAX_TIME);
+  }
+
+  static void print()
+  {
+    printHeader("Timer");
+    std::cout << "INTERVAL = " << INTERVAL << ", MAX_TIME = " << MAX_TIME << std::endl;
+  }
+};
+
 template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
@@ -43,9 +62,6 @@ void traverseHash(CST& cst, const std::string& name);
 template<class CST>
 void traverse(CST& cst, const std::string& name);
 
-template<class CST>
-void traverseCount(CST& cst, const std::string& name);
-
 //------------------------------------------------------------------------------
 
 int
@@ -55,14 +71,17 @@ main(int argc, char** argv)
   {
     std::cerr << "Usage: cst_traverse ref seq1 [seq2 ...]" << std::endl;
     std::cerr << std::endl;
-    return 1;
+    std::exit(EXIT_SUCCESS);
   }
 
   std::cout << "DFS traversal in compressed suffix trees" << std::endl;
   std::cout << std::endl;
 
+  Timer::print();
+  std::cout << std::endl;
+
   std::string ref_name = argv[1];
-  std::cout << "Reference: " << ref_name << std::endl;
+  printHeader("Reference"); std::cout << ref_name << std::endl;
   std::cout << std::endl;
 
   SimpleFM<> ref_fm(ref_name);
@@ -74,13 +93,12 @@ main(int argc, char** argv)
   printSize("LCP array", lcp_bytes, ref_lcp.size());
   printSize("Reference data", fm_bytes + lcp_bytes, ref_fm.size());
   std::cout << std::endl;
-
   std::cout << std::endl;
 
   for(int arg = 2; arg < argc; arg++)
   {
     std::string seq_name = argv[arg];
-    std::cout << "Sequence: " << seq_name << std::endl;
+    printHeader("Target"); std::cout << seq_name << std::endl;
     std::cout << std::endl;
 
     {
@@ -97,7 +115,7 @@ main(int argc, char** argv)
       std::cout << std::endl;
 
       name = "Relative (fast)";
-      buildSelect(rfm, name);
+      buildSelect(rfm, seq_name);
       printSize(name, rcst.reportSize(), rcst.size());
 #ifdef USE_HASH
       traverseHash(rcst, name);
@@ -143,15 +161,14 @@ main(int argc, char** argv)
       std::string name = "cst_fully";
       sdsl::cst_fully<> cst;
       buildCST(cst, seq_name, name);
-      // cst_fully uses around 100 microseconds / node.
-      //traverseCount(cst, name);
+      traverse(cst, name);
       std::cout << std::endl;
     }
 
     std::cout << std::endl;
   }
 
-  std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
+  std::cout << "Memory usage: " << inGigabytes(memoryUsage()) << " GB" << std::endl;
   std::cout << std::endl;
 
   return 0;
@@ -238,39 +255,22 @@ void
 traverse(CST& cst, const std::string& name)
 {
   double start = readTimer();
-  size_type nodes = 0;
-  for(auto iter = cst.begin(); iter != cst.end(); ++iter)
-  {
-    if(iter.visit() == 1) { nodes++; }
-  }
-  double seconds = readTimer() - start;
-
-  printHeader(name);
-  std::cout << nodes << " nodes in " << seconds << " seconds" << std::endl;
-}
-
-template<class CST>
-void
-traverseCount(CST& cst, const std::string& name)
-{
-  double start = readTimer();
-  size_type nodes = 0;
+  size_type nodes = 0, next_check = Timer::INTERVAL;
+  bool timeout = false;
   for(auto iter = cst.begin(); iter != cst.end(); ++iter)
   {
     if(iter.visit() == 1)
     {
       nodes++;
-      if(nodes % 100000 == 0)
-      {
-        double secs = readTimer() - start;
-        std::cout << nodes << " nodes in " << secs << " seconds" << std::endl;
-      }
+      if(Timer::check(nodes, next_check, start)) { timeout = true; break; }
     }
   }
   double seconds = readTimer() - start;
 
   printHeader(name);
-  std::cout << nodes << " nodes in " << seconds << " seconds" << std::endl;
+  std::cout << nodes << " nodes in " << seconds << " seconds";
+  if(timeout) { std::cout << " (timeout)"; }
+  std::cout << std::endl;
 }
 
 //------------------------------------------------------------------------------

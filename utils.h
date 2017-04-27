@@ -390,14 +390,14 @@ extract(const Index& index, range_type range)
 }
 
 /*
-  Iterates index.Psi() k times. Uses inverse() and locate() if 2 * k >= threshold.
+  Iterates index.Psi() k times. Uses inverse() and locate() if k >= threshold.
   Return index.size() if i >= index.size() or SA[i]+k >= index.size().
 */
 template<class Index>
 size_type
 Psi(const Index& index, size_type i, size_type k, size_type threshold)
 {
-  if(2 * k >= threshold) { return index.inverse(index.locate(i) + k); }
+  if(k >= threshold) { return index.inverse(index.locate(i) + k); }
   else
   {
     for(size_type j = 0; j < k; j++) { i = index.Psi(i); }

@@ -284,14 +284,22 @@ public:
     Iterate Psi k times; returns size() if SA[i]+k >= size().
     Use force = true if the index does not support locate() and extract().
     NOTE: The divisor of the threshold has been selected by experimenting with different values.
+
+    Basic threshold is the average distance to the nearest SA and ISA samples.
+    If k >= threshold, it is cheaper to use locate() and inverse() than iterate Psi().
+
+    With slow select(), iteration is so expensive that it is always a bad idea.
+
+    With fast select(), one step with Psi() is comparable to 1.5 steps with LF() in the
+    relative index or 10 steps in the reference. We assume that a locate() / inverse()
+    query does two steps in the relative index and the remaining steps in the reference.
   */
   size_type Psi(size_type i, size_type k, bool force = false) const
   {
-    size_type threshold = ~(size_type)0;
-    if(!force)
+    size_type threshold = (force ? ~(size_type)0 : 1);
+    if(!force && this->fastSelect())
     {
-      threshold = this->reference.sa_sample_rate + this->reference.isa_sample_rate;
-      threshold /= (this->fastSelect() ? 3 : 20);
+      threshold = 2 + (this->reference.sa_sample_rate + this->reference.isa_sample_rate) / 20;
     }
     return relative::Psi(*this, i, k, threshold);
   }

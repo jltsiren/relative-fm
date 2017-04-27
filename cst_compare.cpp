@@ -33,15 +33,69 @@ using namespace relative;
 
 //#define VERIFY_RESULTS
 
+struct Timer
+{
+  const static size_type  INTERVAL = MILLION; // Check time after INTERVAL positions.
+  constexpr static double MAX_TIME = 86400.0; // Stop after MAX_TIME seconds.
+
+  inline static bool check(size_type i, size_type& next_check, double start_time)
+  {
+    if(i < next_check) { return false; }
+    next_check += INTERVAL;
+    return (readTimer() - start_time >= MAX_TIME);
+  }
+
+  static void print()
+  {
+    printHeader("Timer");
+    std::cout << "INTERVAL = " << INTERVAL << ", MAX_TIME = " << MAX_TIME << std::endl;
+  }
+};
+
+//------------------------------------------------------------------------------
+
+struct MaximalMatch
+{
+  size_type  start, length;
+  range_type range;
+
+  MaximalMatch() {}
+
+  MaximalMatch(size_type i, size_type depth, range_type rng) :
+    start(i), length(depth), range(rng)
+  {
+  }
+
+  bool operator!= (const MaximalMatch& another) const
+  {
+    return (this->start != another.start || this->length != another.length || this->range != another.range);
+  }
+
+  bool operator< (const MaximalMatch& another) const
+  {
+    return (this->start < another.start);
+  }
+};
+
+std::ostream& operator<<(std::ostream& stream, const MaximalMatch& match)
+{
+  return stream << "(" << match.start << ", " << match.length << ", " << match.range << ")";
+}
+
+//------------------------------------------------------------------------------
+
 template<class CST>
 void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
 void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
 template<class CST>
-void matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
-  std::vector<range_type>& ranges, std::vector<size_type>& depths,
-  const std::string& name);
+void forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results, const std::string& name);
+
+template<>
+void forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results, const std::string& name);
 
 //------------------------------------------------------------------------------
 
@@ -52,14 +106,18 @@ main(int argc, char** argv)
   {
     std::cerr << "Usage: cst_compare reference target sequence" << std::endl;
     std::cerr << std::endl;
-    return 1;
+    std::exit(EXIT_SUCCESS);
   }
 
-  std::cout << "Finding the matching statistics with a CST" << std::endl;
+  std::cout << "Finding maximal matches with a CST" << std::endl;
+  std::cout << std::endl;
+
+  Timer::print();
   std::cout << std::endl;
 
   std::string ref_name = argv[1];
-  std::cout << "Reference: " << ref_name << std::endl;
+  printHeader("Reference"); std::cout << ref_name << std::endl;
+  std::cout << std::endl;
 
   SimpleFM<> ref_fm(ref_name);
   size_type fm_bytes = ref_fm.reportSize();
@@ -70,49 +128,48 @@ main(int argc, char** argv)
   printSize("LCP array", lcp_bytes, ref_lcp.size());
   printSize("Reference data", fm_bytes + lcp_bytes, ref_fm.size());
   std::cout << std::endl;
+  std::cout << std::endl;
 
   std::string target_name = argv[2];
-  std::cout << "Target: " << target_name << std::endl;
+  printHeader("Target"); std::cout << target_name << std::endl;
   std::string seq_name = argv[3];
   sdsl::int_vector<8> seq;
   {
-    std::ifstream in(seq_name.c_str(), std::ios_base::binary);
+    std::ifstream in(seq_name, std::ios_base::binary);
     if(!in)
     {
-      std::cerr << "cst_compare: Cannot open sequence file " << seq_name << std::endl;
-      return 2;
+      std::cerr << "cst_compare: Cannot open query file " << seq_name << std::endl;
+      std::exit(EXIT_FAILURE);
     }
     size_type size = sdsl::util::file_size(seq_name); seq.resize(size);
     in.read((char*)(seq.data()), size); in.close();
   }
-  std::cout << "Sequence: " << seq_name << " (" << seq.size() << " bytes)" << std::endl;
+  printHeader("Query"); std::cout << seq_name << " (" << seq.size() << " bytes)" << std::endl;
   std::cout << std::endl;
 
-  std::vector<range_type> rcst_ranges;
-  std::vector<size_type>   rcst_depths;
+  std::vector<MaximalMatch> rcst_results;
   {
     std::string name = "Relative (slow)";
     RelativeFM<> rfm(ref_fm, target_name);
     NewRelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
     printSize(name, rcst.reportSize(), rcst.size());
-    matchingStatistics(rcst, seq, rcst_ranges, rcst_depths, name);
+    forwardSearch(rcst, seq, rcst_results, name);
     std::cout << std::endl;
 
     name = "Relative (fast)";
     buildSelect(rfm, target_name);
     printSize(name, rcst.reportSize(), rcst.size());
-    matchingStatistics(rcst, seq, rcst_ranges, rcst_depths, name);
+    forwardSearch(rcst, seq, rcst_results, name);
     std::cout << std::endl;
   }
 
-  std::vector<range_type> cst_ranges;
-  std::vector<size_type>   cst_depths;
+  std::vector<MaximalMatch> cst_results;
   {
     std::string name = "cst_sct3_dac";
     sdsl::cst_sct3<> cst;
     buildCST(cst, target_name, name);
-    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    forwardSearch(cst, seq, cst_results, name);
     std::cout << std::endl;
   }
 
@@ -120,7 +177,7 @@ main(int argc, char** argv)
     std::string name = "cst_sct3_plcp";
     sdsl::cst_sct3<sdsl::csa_wt<>, sdsl::lcp_support_sada<>> cst;
     buildCST(cst, target_name, name);
-    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    forwardSearch(cst, seq, cst_results, name);
     std::cout << std::endl;
   }
 
@@ -128,7 +185,7 @@ main(int argc, char** argv)
     std::string name = "cst_sada";
     sdsl::cst_sada<> cst;
     buildCST(cst, target_name, name);
-    matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    forwardSearch(cst, seq, cst_results, name);
     std::cout << std::endl;
   }
 
@@ -136,27 +193,35 @@ main(int argc, char** argv)
     std::string name = "cst_fully";
     sdsl::cst_fully<> cst;
     buildCST(cst, target_name, name);
-    // cst_fully is around two orders of magnitude slower than anything else.
-    //matchingStatistics(cst, seq, cst_ranges, cst_depths, name);
+    std::vector<MaximalMatch> fcst_results;
+    forwardSearch(cst, seq, fcst_results, name);
     std::cout << std::endl;
   }
 
 #ifdef VERIFY_RESULTS
-  for(size_type i = 0; i < seq.size(); i++)
+  if(rcst_results.size() != cst_results.size())
   {
-    if(rcst_ranges[i] != cst_ranges[i] || rcst_depths[i] != cst_depths[i])
+    std::cerr << "cst_compare: The number of maximal matches does not match:" << std::endl;
+    std::cerr << "  RCST: " << rcst_results.size() << std::endl;
+    std::cerr << "  CST:  " << cst_results.size() << std::endl;
+  }
+  parallelQuickSort(rcst_results.begin(), rcst_results.end());
+  parallelQuickSort(cst_results.begin(), cst_results.end());
+  for(size_type i = 0; i < rcst_results.size(); i++)
+  {
+    if(rcst_results[i] != cst_results[i])
     {
-      std::cerr << "cst_compare: Matching statistics for " << seq_name << "[" << i << "]:" << std::endl;
-      std::cerr << "  Relative CST: range " << rcst_ranges[i] << ", depth " << rcst_depths[i] << std::endl;
-      std::cerr << "  CST:          range " << cst_ranges[i] << ", depth " << cst_depths[i] << std::endl;
+      std::cerr << "cst_compare: Maximal match " << i << ":" << std::endl;
+      std::cerr << "  RCST: " << rcst_results[i] << std::endl;
+      std::cerr << "  CST:  " << cst_results[i] << std::endl;
       break;
     }
   }
-  std::cout << "Matching statistics verified." << std::endl;
+  std::cout << "Maximal matches verified." << std::endl;
   std::cout << std::endl;
 #endif
 
-  std::cout << "Memory used: " << inMegabytes(memoryUsage()) << " MB" << std::endl;
+  std::cout << "Memory usage: " << inGigabytes(memoryUsage()) << " GB" << std::endl;
   std::cout << std::endl;
 
   return 0;
@@ -208,8 +273,8 @@ buildSelect(RelativeFM<>& rfm, const std::string& base_name)
 //------------------------------------------------------------------------------
 
 template<class CST>
-void
-maximalMatch(const CST& cst, const sdsl::int_vector<8>& seq,
+bool
+matchForward(const CST& cst, const sdsl::int_vector<8>& seq,
   typename CST::node_type& prev, typename CST::node_type& next,
   size_type start_offset, typename CST::size_type& depth,
   typename CST::size_type& next_depth)
@@ -217,6 +282,7 @@ maximalMatch(const CST& cst, const sdsl::int_vector<8>& seq,
   typename CST::size_type bwt_pos =
     (depth >= next_depth ? 0 : get_char_pos(cst.lb(next), depth - 1, cst.csa));
 
+  bool match_extended = false;
   while(start_offset + depth < seq.size())
   {
     auto comp = cst.csa.char2comp[seq[start_offset + depth]];
@@ -233,14 +299,19 @@ maximalMatch(const CST& cst, const sdsl::int_vector<8>& seq,
       if(bwt_pos < cst.csa.C[comp] || bwt_pos >= cst.csa.C[comp + 1]) { break; }
     }
 
-    depth++;
+    depth++; match_extended = true;
     if(depth >= next_depth) { prev = next; }
   }
+
+  return match_extended;
 }
 
+/*
+  RCST does not have the same members as SDSL suffix trees.
+*/
 template<>
-void
-maximalMatch(const RelativeCST<>& cst, const sdsl::int_vector<8>& seq,
+bool
+matchForward(const RelativeCST<>& cst, const sdsl::int_vector<8>& seq,
   RelativeCST<>::node_type& prev, RelativeCST<>::node_type& next,
   size_type start_offset, RelativeCST<>::size_type& depth,
   RelativeCST<>::size_type& next_depth)
@@ -248,38 +319,79 @@ maximalMatch(const RelativeCST<>& cst, const sdsl::int_vector<8>& seq,
   RelativeCST<>::size_type bwt_pos =
     (depth >= next_depth ? cst.size() : cst.index.Psi(cst.lb(next), depth - 1));
 
+  bool match_extended = false;
   while(start_offset + depth < seq.size() &&
     cst.forward_search(next, next_depth, depth, seq[start_offset + depth], bwt_pos))
   {
-    depth++;
+    depth++; match_extended = true;
     if(depth >= next_depth) { prev = next; }
   }
+
+  return match_extended;
 }
+
+/*
+  cst_fully uses a different child() function.
+*/
+template<>
+bool
+matchForward(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
+  sdsl::cst_fully<>::node_type& prev, sdsl::cst_fully<>::node_type& next,
+  size_type start_offset, sdsl::cst_fully<>::size_type& depth,
+  sdsl::cst_fully<>::size_type& next_depth)
+{
+  sdsl::cst_fully<>::size_type bwt_pos =
+    (depth >= next_depth ? 0 : get_char_pos(cst.lb(next), depth - 1, cst.csa));
+
+  bool match_extended = false;
+  while(start_offset + depth < seq.size())
+  {
+    auto comp = cst.csa.char2comp[seq[start_offset + depth]];
+    if(comp == 0 && seq[start_offset + depth] != 0) { break; }
+    if(depth >= next_depth) // Next node reached, follow a new edge.
+    {
+      if(cst.is_leaf(next)) { break; }
+      sdsl::cst_fully<>::node_type temp = cst.child(next, seq[start_offset + depth], next_depth);
+      if(temp == cst.root()) { break; }
+      next = temp; next_depth = cst.depth(next);
+      bwt_pos = get_char_pos(cst.lb(next), depth, cst.csa);
+    }
+    else  // Continue in the edge.
+    {
+      bwt_pos = cst.csa.psi[bwt_pos];
+      if(bwt_pos < cst.csa.C[comp] || bwt_pos >= cst.csa.C[comp + 1]) { break; }
+    }
+
+    depth++; match_extended = true;
+    if(depth >= next_depth) { prev = next; }
+  }
+
+  return match_extended;
+}
+
+//------------------------------------------------------------------------------
 
 template<class CST>
 void
-matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
-  std::vector<range_type>& ranges, std::vector<size_type>& depths,
-  const std::string& name)
+forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results, const std::string& name)
 {
-  sdsl::util::clear(ranges); sdsl::util::clear(depths);
+  sdsl::util::clear(results);
 
-  // prev is the last node we have fully matched.
-  // If next != prev, we are in the edge from prev to next.
   double start = readTimer();
+
+  /*
+    'prev' is the last node we have fully matched.
+    'next' is the node matching the current substring.
+    If next != prev, we are in the edge from 'prev' to 'next'.
+  */
   typename CST::node_type prev = cst.root(), next = cst.root();
   typename CST::size_type depth = 0, next_depth = 0;
-  maximalMatch(cst, seq, prev, next, 0, depth, next_depth);
-  ranges.push_back(range_type(cst.lb(next), cst.rb(next)));
-  depths.push_back(depth);
-  size_type total_length = depth;
-  for(size_type i = 1; i < seq.size(); i++)
+  size_type total_length = 0;
+  bool timeout = false;
+  for(size_type i = 0, next_check = Timer::INTERVAL; i < seq.size(); i++)
   {
-    if(depth == 0)
-    {
-      maximalMatch(cst, seq, prev, next, i, depth, next_depth);
-    }
-    else
+    if(depth > 0)
     {
       next = prev = cst.sl(prev); depth--;
       next_depth = cst.depth(prev);
@@ -290,16 +402,75 @@ matchingStatistics(const CST& cst, const sdsl::int_vector<8>& seq,
         next_depth = cst.depth(next);
         if(next_depth <= depth) { prev = next; }
       }
-      maximalMatch(cst, seq, prev, next, i, depth, next_depth);
     }
-    ranges.push_back(range_type(cst.lb(next), cst.rb(next)));
-    depths.push_back(depth);
-    total_length += depth;
+    if(matchForward(cst, seq, prev, next, i, depth, next_depth))
+    {
+      results.push_back(MaximalMatch(i, depth, range_type(cst.lb(next), cst.rb(next))));
+      total_length += depth;
+    }
+    if(Timer::check(i + 1, next_check, start)) { timeout = true; break; }
   }
-  double seconds = readTimer() - start;
 
+  double seconds = readTimer() - start;
   printHeader(name);
-  std::cout << "Average maximal match: " << (total_length / (double)(cst.size())) << " (" << seconds << " seconds)" << std::endl;
+  std::cout << results.size() << " matches of average length "
+            <<( total_length / (double)(results.size()))
+            << " in " << seconds << " seconds";
+  if(timeout) { std::cout << " (timeout)"; }
+  std::cout << std::endl;
+}
+
+/*
+  cst_fully uses a different child() function.
+*/
+template<>
+void
+forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results, const std::string& name)
+{
+  sdsl::util::clear(results);
+
+  double start = readTimer();
+
+  /*
+    'prev' is the last node we have fully matched.
+    'next' is the node matching the current substring.
+    If next != prev, we are in the edge from 'prev' to 'next'.
+  */
+  sdsl::cst_fully<>::node_type prev = cst.root(), next = cst.root();
+  sdsl::cst_fully<>::size_type depth = 0, next_depth = 0;
+  size_type total_length = 0;
+  bool timeout = false;
+  for(size_type i = 0, next_check = Timer::INTERVAL; i < seq.size(); i++)
+  {
+    if(depth > 0)
+    {
+      next = prev = cst.sl(prev); depth--;
+      next_depth = cst.depth(prev);
+      while(next_depth < depth)
+      {
+        sdsl::cst_fully<>::size_type bwt_pos = 0;
+        next = cst.child(next, seq[i + next_depth], next_depth);
+        next_depth = cst.depth(next);
+        if(next_depth <= depth) { prev = next; }
+      }
+    }
+    if(matchForward(cst, seq, prev, next, i, depth, next_depth))
+    {
+      results.push_back(MaximalMatch(i, depth, range_type(cst.lb(next), cst.rb(next))));
+      total_length += depth;
+    }
+    if(Timer::check(i + 1, next_check, start)) { timeout = true; break; }
+  }
+
+  double seconds = readTimer() - start;
+  printHeader(name);
+  std::cout << results.size() << " matches of average length "
+            <<( total_length / (double)(results.size()))
+            << " in " << seconds << " seconds";
+  if(timeout) { std::cout << " (timeout)"; }
+  std::cout << std::endl;
 }
 
 //------------------------------------------------------------------------------
+

@@ -193,7 +193,11 @@ public:
   */
   size_type Psi(size_type i, size_type k, bool force = false) const
   {
-    size_type threshold = (force ? ~(size_type)0 : this->sample_rate + this->isa_sample_rate);
+    size_type threshold = ~(size_type)0;
+    if(!force)
+    {
+      threshold = (this->sample_rate + this->isa_sample_rate) / 4;  // LF is 2x faster than Psi.
+    }
     return relative::Psi(*this, i, k, threshold);
   }
 
