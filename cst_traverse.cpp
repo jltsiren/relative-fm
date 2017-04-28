@@ -47,7 +47,7 @@ struct Timer
   static void print()
   {
     printHeader("Timer");
-    std::cout << "INTERVAL = " << INTERVAL << ", MAX_TIME = " << MAX_TIME << std::endl;
+    std::cout << "interval=" << INTERVAL << ", max_time=" << MAX_TIME << std::endl;
   }
 };
 

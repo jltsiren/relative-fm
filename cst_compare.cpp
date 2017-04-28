@@ -48,7 +48,7 @@ struct Timer
   static void print()
   {
     printHeader("Timer");
-    std::cout << "INTERVAL = " << INTERVAL << ", MAX_TIME = " << MAX_TIME << std::endl;
+    std::cout << "interval=" << INTERVAL << ", max_time=" << MAX_TIME << std::endl;
   }
 };
 
@@ -89,12 +89,20 @@ void buildCST(CST& cst, const std::string& base_name, const std::string& type);
 
 void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
+//------------------------------------------------------------------------------
+
 template<class CST>
 void forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
   std::vector<MaximalMatch>& results, const std::string& name);
 
 template<>
 void forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results, const std::string& name);
+
+//------------------------------------------------------------------------------
+
+template<class CST>
+void backwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
   std::vector<MaximalMatch>& results, const std::string& name);
 
 //------------------------------------------------------------------------------
@@ -472,5 +480,51 @@ forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
   std::cout << std::endl;
 }
 
+//------------------------------------------------------------------------------
+/*
+template<class CST>
+void
+backwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results, const std::string& name)
+{
+  sdsl::util::clear(results);
+
+  double start = readTimer();
+
+  size_type total_length = 0;
+  typename CST::node_type curr = cst.root();
+  bool timeout = false;
+  for(size_type i = 1, next_check = Timer::INTERVAL; i <= seq.size(); i++)
+  {
+    size_type pos = seq.size() - i;
+    if(depth > 0)
+    {
+      next = prev = cst.sl(prev); depth--;
+      next_depth = cst.depth(prev);
+      while(next_depth < depth)
+      {
+        typename CST::size_type bwt_pos = 0;
+        next = cst.child(next, seq[i + next_depth], bwt_pos);
+        next_depth = cst.depth(next);
+        if(next_depth <= depth) { prev = next; }
+      }
+    }
+    if(matchForward(cst, seq, prev, next, i, depth, next_depth))
+    {
+      results.push_back(MaximalMatch(i, depth, range_type(cst.lb(next), cst.rb(next))));
+      total_length += depth;
+    }
+    if(Timer::check(i, next_check, start)) { timeout = true; break; }
+  }
+
+  double seconds = readTimer() - start;
+  printHeader(name);
+  std::cout << results.size() << " matches of average length "
+            <<( total_length / (double)(results.size()))
+            << " in " << seconds << " seconds";
+  if(timeout) { std::cout << " (timeout)"; }
+  std::cout << std::endl;
+}
+*/
 //------------------------------------------------------------------------------
 

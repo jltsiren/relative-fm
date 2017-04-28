@@ -39,11 +39,14 @@ struct rcst_node
 {
   size_type sp, ep;
   size_type left_lcp, right_lcp; // lcp[sp], lcp[ep + 1]
+  size_type node_lcp;            // depth(v); can be UNKNOWN
 
-  rcst_node() : sp(0), ep(0), left_lcp(0), right_lcp(0) {}
+  const static size_type UNKNOWN = ~(size_type)0;
 
-  rcst_node(size_type _sp, size_type _ep, size_type left, size_type right) :
-    sp(_sp), ep(_ep), left_lcp(left), right_lcp(right)
+  rcst_node() : sp(0), ep(0), left_lcp(0), right_lcp(0), node_lcp(UNKNOWN) {}
+
+  rcst_node(size_type _sp, size_type _ep, size_type left, size_type right, size_type depth = UNKNOWN) :
+    sp(_sp), ep(_ep), left_lcp(left), right_lcp(right), node_lcp(depth)
   {
   }
 
@@ -56,6 +59,8 @@ struct rcst_node
   {
     return (this->sp != node.sp || this->ep != node.ep);
   }
+
+  inline range_type range () const { return range_type(this->sp, this->ep); }
 };
 
 std::ostream&
@@ -159,19 +164,30 @@ public:
     Tree operations from Fischer2009a pages 7-8 with fixes/optimizations from Abeliuk2013 pages 14-15.
   */
 
-  inline node_type root() const { return node_type(0, this->size() - 1, 0, 0); }
+  inline node_type root() const { return node_type(0, this->size() - 1, 0, 0, 0); }
+  inline range_type root_range() const { return range_type(0, this->size() - 1); }
+
   inline bool is_leaf(const node_type& v) const { return (v.sp == v.ep); }
+  inline bool is_leaf(range_type range) const { return (range.first == range.second); }
 
   node_type parent(const node_type& v) const
   {
     if(v == this->root()) { return this->root(); }
 
-    size_type k = (v.left_lcp > v.right_lcp ? v.sp : v.ep + 1);
-    range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
-    if(left.first >= this->size()) { left.first = 0; left.second = 0; } // No psv found.
-    if(right.first >= this->size()) { right.first = this->size(); right.second = 0; }
+    size_type node_lcp = std::max(v.left_lcp, v.right_lcp);
+    range_type left(v.sp, v.left_lcp), right(v.ep + 1, v.right_lcp);
+    if(v.left_lcp == node_lcp)
+    {
+      left = this->lcp.psv(v.sp);
+      if(left == this->lcp.notFound()) { left = range_type(0, 0); }
+    }
+    if(v.right_lcp == node_lcp)
+    {
+      right = this->lcp.nsv(v.ep + 1);
+      if(right == this->lcp.notFound()) { right = range_type(this->size(), 0); }
+    }
 
-    return node_type(left.first, right.first - 1, left.second, right.second);
+    return node_type(left.first, right.first - 1, left.second, right.second, node_lcp);
   }
 
   // i is 1-based.
@@ -254,14 +270,33 @@ public:
     if(left.first >= this->size()) { left.first = 0; left.second = 0; }
     if(right.first >= this->size()) { right.first = this->size(); right.second = 0; }
 
-    return node_type(left.first, right.first - 1, left.second, right.second);
+    size_type node_lcp = (v.node_lcp == node_type::UNKNOWN ? node_type::UNKNOWN : v.node_lcp - 1);
+    return node_type(left.first, right.first - 1, left.second, right.second, node_lcp);
   }
+
+  // Weiner link / LF mapping.
+  /*node_type wl(const node_type& v, char_type c) const
+  {
+    // FIXME implement, see cst_sct3, GCSA2
+  }*/
 
   size_type depth(const node_type& v) const
   {
-    if(this->is_leaf(v)) { return this->size() - this->index.locate(v.sp) - 1; }
-    else if(v == this->root()) { return 0; }
-    else { return this->lcp.rmq(v.sp + 1, v.ep).second; }
+    if(v.node_lcp == node_type::UNKNOWN) { return this->depth(v.range()); }
+    else { return v.node_lcp; }
+  }
+
+  size_type depth(node_type& v) const
+  {
+    if(v.node_lcp == node_type::UNKNOWN) { v.node_lcp = this->depth(v.range()); }
+    return v.node_lcp;
+  }
+
+  size_type depth(range_type range) const
+  {
+    if(this->is_leaf(range)) { return this->size() - this->index.locate(range.first) - 1; }
+    else if(range == this->root_range()) { return 0; }
+    else { return this->lcp.rmq(range.first + 1, range.second).second; }
   }
 
   inline size_type lb(const node_type& v) const { return v.sp; }
