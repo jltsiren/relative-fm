@@ -35,35 +35,36 @@
 using namespace relative;
 
 
+const size_type DEFAULT_SA_SAMPLE_RATE  = 17;
+const size_type DEFAULT_ISA_SAMPLE_RATE = 64;
+
+
 int
 main(int argc, char** argv)
 {
   if(argc < 2)
   {
     std::cerr << "Usage: build_bwt [options] input1 [input2 ...]" << std::endl;
-    std::cerr << "  -a    Write the alphabet file." << std::endl;
-    std::cerr << "  -i N  Sample one out of N ISA values (default 0)." << std::endl;
-    std::cerr << "  -l    Build the LCP array." << std::endl;
-    std::cerr << "  -s N  Sample one out of N SA values (default 0)." << std::endl;
+    std::cerr << "  -i N  Sample one out of N ISA values (default " << DEFAULT_ISA_SAMPLE_RATE << ")." << std::endl;
+    std::cerr << "  -l    Also build the LCP array." << std::endl;
+    std::cerr << "  -s N  Sample one out of N SA values (default " << DEFAULT_SA_SAMPLE_RATE << ")." << std::endl;
     std::cerr << std::endl;
     return 1;
   }
 
-  bool write_alphabet = false, build_lcp = false, options = false;
-  size_type sa_sample_rate = 0, isa_sample_rate = 0;
+  bool build_lcp = false;
+  size_type sa_sample_rate = DEFAULT_SA_SAMPLE_RATE, isa_sample_rate = DEFAULT_ISA_SAMPLE_RATE;
   int c = 0;
-  while((c = getopt(argc, argv, "ai:ls:")) != -1)
+  while((c = getopt(argc, argv, "i:ls:")) != -1)
   {
     switch(c)
     {
-    case 'a':
-      write_alphabet = true; options = true; break;
     case 'i':
-      isa_sample_rate = atol(optarg); options = true; break;
+      isa_sample_rate = atol(optarg); break;
     case 'l':
-      build_lcp = true; options = true; break;
+      build_lcp = true; break;
     case 's':
-      sa_sample_rate = atol(optarg); options = true; break;
+      sa_sample_rate = atol(optarg); break;
     case '?':
       return 2;
     default:
@@ -72,15 +73,11 @@ main(int argc, char** argv)
   }
 
   std::cout << "BWT construction" << std::endl;
-  if(options)
-  {
-    std::cout << "Options:";
-    if(write_alphabet) { std::cout << " alphabet"; }
-    if(isa_sample_rate > 0) { std::cout << " isa_sample_rate=" << isa_sample_rate; }
-    if(build_lcp) { std::cout << " lcp"; }
-    if(sa_sample_rate > 0) { std::cout << " sa_sample_rate=" << sa_sample_rate; }
-    std::cout << std::endl;
-  }
+  std::cout << "Options:";
+  if(isa_sample_rate > 0) { std::cout << " isa_sample_rate=" << isa_sample_rate; }
+  if(build_lcp) { std::cout << " lcp"; }
+  if(sa_sample_rate > 0) { std::cout << " sa_sample_rate=" << sa_sample_rate; }
+  std::cout << std::endl;
   std::cout << std::endl;
 
   for(int i = optind; i < argc; i++)
@@ -113,12 +110,12 @@ main(int argc, char** argv)
       divsufsort64((const unsigned char*)(text.data()), (int64_t*)(sa.data()), size + 1);
       if(sa_sample_rate > 0)
       {
-        sdsl::util::assign(sa_samples, sdsl::int_vector<0>(size / sa_sample_rate + 1, 0, bit_length(size)));
+        sa_samples = sdsl::int_vector<0>(size / sa_sample_rate + 1, 0, bit_length(size));
         for(size_type i = 0; i <= size; i += sa_sample_rate) { sa_samples[i / sa_sample_rate] = sa[i]; }
       }
       if(isa_sample_rate > 0)
       {
-        sdsl::util::assign(isa_samples, sdsl::int_vector<0>(size / isa_sample_rate + 1, 0, bit_length(size)));
+        isa_samples = sdsl::int_vector<0>(size / isa_sample_rate + 1, 0, bit_length(size));
         for(size_type i = 0; i <= size; i++)
         {
           if(sa[i] % isa_sample_rate == 0) { isa_samples[sa[i] / isa_sample_rate] = i; }
@@ -133,37 +130,30 @@ main(int argc, char** argv)
       std::cout << "BWT built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
     }
 
-    // Compact the alphabet and write it if necessary.
+    // Compact the alphabet and write it.
     {
       Alphabet alpha(text);
       for(size_type i = 0; i <= size; i++) { text[i] = alpha.char2comp[text[i]]; }
-      if(write_alphabet)
+      std::string filename = base_name + ALPHA_EXTENSION;
+      if(!(sdsl::store_to_file(alpha, filename)))
       {
-        std::string filename = base_name + ALPHA_EXTENSION;
-        std::ofstream out(filename.c_str(), std::ios_base::binary);
-        if(!out)
-        {
-          std::cerr << "build_bwt: Cannot open alphabet file " << filename << std::endl;
-        }
-        else
-        {
-          alpha.serialize(out); out.close();
-          std::cout << "Alphabet written to " << filename << std::endl;
-        }
+        std::cerr << "build_bwt: Cannot write to alphabet file " << filename << std::endl;
+      }
+      else
+      {
+        std::cout << "Alphabet written to " << filename << std::endl;
       }
     }
 
     // Write BWT.
     {
       std::string filename = base_name + BWT_EXTENSION;
-      std::ofstream out(filename.c_str(), std::ios_base::binary);
-      if(!out)
+      if(!(sdsl::store_to_file(text, filename)))
       {
         std::cerr << "build_bwt: Cannot open BWT file " << filename << std::endl;
       }
       else
       {
-        text.serialize(out); out.close();
         std::cout << "BWT written to " << filename << std::endl;
         if(build_lcp)
         {
@@ -203,6 +193,7 @@ main(int argc, char** argv)
       std::cout << "LCP array built in " << seconds << " seconds (" << (inMegabytes(size) / seconds) << " MB/s)" << std::endl;
       std::string filename = base_name + LCP_EXTENSION;
       sdsl::store_to_file(lcp, filename);
+      lcp_buffer.close(); std::remove(sdsl::cache_file_name(sdsl::conf::KEY_LCP, config).c_str());
     }
 
     std::cout << std::endl;
