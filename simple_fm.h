@@ -169,7 +169,7 @@ public:
 
   inline range_type LF(range_type range, char_type c) const
   {
-    if(!hasChar(this->alpha, c)) { return range_type(1, 0); }
+    if(!hasChar(this->alpha, c)) { return Range::empty_range(); }
     return relative::LF(this->bwt, this->alpha, range, c);
   }
 
@@ -211,7 +211,7 @@ public:
     {
       --end;
       res = this->LF(res, *end);
-      if(Range::empty(res)) { return range_type(1, 0); }
+      if(Range::empty(res)) { return Range::empty_range(); }
     }
     return res;
   }

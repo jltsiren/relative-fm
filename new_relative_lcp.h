@@ -76,8 +76,6 @@ public:
   /*
     The return value is (res, LCP[res]) or notFound(). RMQ always returns the leftmost
     minimum value.
-
-    FIXME implement
   */
 
   range_type psv(size_type pos) const;

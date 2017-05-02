@@ -60,7 +60,7 @@ struct rcst_node
     return (this->sp != node.sp || this->ep != node.ep);
   }
 
-  inline range_type range () const { return range_type(this->sp, this->ep); }
+  inline range_type range() const { return range_type(this->sp, this->ep); }
 };
 
 std::ostream&
@@ -124,7 +124,7 @@ public:
 
     while(from != to)
     {
-      if(!(this->forward_search(next, next_depth, depth, *from, bwt_pos))) { return range_type(1, 0); }
+      if(!(this->forward_search(next, next_depth, depth, *from, bwt_pos))) { return Range::empty_range(); }
       ++from; depth++;
     }
 
@@ -166,6 +166,13 @@ public:
 
   inline node_type root() const { return node_type(0, this->size() - 1, 0, 0, 0); }
   inline range_type root_range() const { return range_type(0, this->size() - 1); }
+
+  inline node_type node(size_type sp, size_type ep) const
+  {
+    size_type right_lcp = (ep + 1 >= this->size() ? 0 : this->lcp[ep + 1]);
+    return node_type(sp, ep, this->lcp[sp], right_lcp);
+  }
+  inline node_type node(range_type range) const { return this->node(range.first, range.second); }
 
   inline bool is_leaf(const node_type& v) const { return (v.sp == v.ep); }
   inline bool is_leaf(range_type range) const { return (range.first == range.second); }
@@ -265,20 +272,13 @@ public:
     }
 
     size_type sp = this->index.Psi(v.sp), ep = this->index.Psi(v.ep);
-    size_type k = this->lcp.rmq(sp + 1, ep).first;
-    range_type left = this->lcp.psv(k), right = this->lcp.nsv(k);
+    range_type depth = this->lcp.rmq(sp + 1, ep);
+    range_type left = this->lcp.psv(depth.first), right = this->lcp.nsv(depth.first);
     if(left.first >= this->size()) { left.first = 0; left.second = 0; }
     if(right.first >= this->size()) { right.first = this->size(); right.second = 0; }
 
-    size_type node_lcp = (v.node_lcp == node_type::UNKNOWN ? node_type::UNKNOWN : v.node_lcp - 1);
-    return node_type(left.first, right.first - 1, left.second, right.second, node_lcp);
+    return node_type(left.first, right.first - 1, left.second, right.second, depth.second);
   }
-
-  // Weiner link / LF mapping.
-  /*node_type wl(const node_type& v, char_type c) const
-  {
-    // FIXME implement, see cst_sct3, GCSA2
-  }*/
 
   size_type depth(const node_type& v) const
   {

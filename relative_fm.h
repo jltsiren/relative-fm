@@ -252,6 +252,12 @@ public:
 
 //------------------------------------------------------------------------------
 
+  inline range_type LF(range_type range, char_type c) const
+  {
+    size_type begin = cumulative(this->alpha, c);
+    return range_type(begin + this->rank(range.first, c), begin + this->rank(range.second + 1, c) - 1);
+  }
+
   inline range_type LF(size_type i) const
   {
     size_type lcs_bits = this->bwt_lcs.seq_rank(i + 1);  // Up to position i in seq.
@@ -312,11 +318,9 @@ public:
     while(begin != end)
     {
       --end;
-      if(!hasChar(this->alpha, *end)) { return range_type(1, 0); }
-      size_type begin = cumulative(this->alpha, *end);
-      res.first = begin + this->rank(res.first, *end);
-      res.second = begin + this->rank(res.second + 1, *end) - 1;
-      if(Range::length(res) == 0) { return range_type(1, 0); }
+      if(!hasChar(this->alpha, *end)) { return Range::empty_range(); }
+      res = this->LF(res, *end);
+      if(Range::empty(res)) { return Range::empty_range(); }
     }
     return res;
   }

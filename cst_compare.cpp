@@ -31,8 +31,6 @@ using namespace relative;
 
 //------------------------------------------------------------------------------
 
-//#define VERIFY_RESULTS
-
 struct Timer
 {
   const static size_type  INTERVAL = MILLION; // Check time after INTERVAL positions.
@@ -93,17 +91,21 @@ void buildSelect(RelativeFM<>& fm, const std::string& base_name);
 
 template<class CST>
 void forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
-  std::vector<MaximalMatch>& results, const std::string& name);
+  std::vector<MaximalMatch>& results);
 
 template<>
 void forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
-  std::vector<MaximalMatch>& results, const std::string& name);
+  std::vector<MaximalMatch>& results);
 
 //------------------------------------------------------------------------------
 
 template<class CST>
 void backwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
-  std::vector<MaximalMatch>& results, const std::string& name);
+  std::vector<MaximalMatch>& results);
+
+template<>
+void backwardSearch(const RelativeCST<>& cst, const sdsl::int_vector<8>& seq,
+  std::vector<MaximalMatch>& results);
 
 //------------------------------------------------------------------------------
 
@@ -136,7 +138,6 @@ main(int argc, char** argv)
   printSize("LCP array", lcp_bytes, ref_lcp.size());
   printSize("Reference data", fm_bytes + lcp_bytes, ref_fm.size());
   std::cout << std::endl;
-  std::cout << std::endl;
 
   std::string target_name = argv[2];
   printHeader("Target"); std::cout << target_name << std::endl;
@@ -155,20 +156,22 @@ main(int argc, char** argv)
   printHeader("Query"); std::cout << seq_name << " (" << seq.size() << " bytes)" << std::endl;
   std::cout << std::endl;
 
-  std::vector<MaximalMatch> rcst_results;
+  std::vector<MaximalMatch> forward_results, backward_results;
   {
     std::string name = "Relative (slow)";
     RelativeFM<> rfm(ref_fm, target_name);
     NewRelativeLCP rlcp(ref_lcp, target_name);
     RelativeCST<> rcst(rfm, rlcp);
     printSize(name, rcst.reportSize(), rcst.size());
-    forwardSearch(rcst, seq, rcst_results, name);
+    forwardSearch(rcst, seq, forward_results);
+    backwardSearch(rcst, seq, backward_results);
     std::cout << std::endl;
 
     name = "Relative (fast)";
     buildSelect(rfm, target_name);
     printSize(name, rcst.reportSize(), rcst.size());
-    forwardSearch(rcst, seq, rcst_results, name);
+    forwardSearch(rcst, seq, forward_results);
+    backwardSearch(rcst, seq, backward_results);
     std::cout << std::endl;
   }
 
@@ -177,7 +180,8 @@ main(int argc, char** argv)
     std::string name = "cst_sct3_dac";
     sdsl::cst_sct3<> cst;
     buildCST(cst, target_name, name);
-    forwardSearch(cst, seq, cst_results, name);
+    forwardSearch(cst, seq, cst_results);
+    backwardSearch(cst, seq, cst_results);
     std::cout << std::endl;
   }
 
@@ -185,7 +189,8 @@ main(int argc, char** argv)
     std::string name = "cst_sct3_plcp";
     sdsl::cst_sct3<sdsl::csa_wt<>, sdsl::lcp_support_sada<>> cst;
     buildCST(cst, target_name, name);
-    forwardSearch(cst, seq, cst_results, name);
+    forwardSearch(cst, seq, cst_results);
+    backwardSearch(cst, seq, cst_results);
     std::cout << std::endl;
   }
 
@@ -193,7 +198,8 @@ main(int argc, char** argv)
     std::string name = "cst_sada";
     sdsl::cst_sada<> cst;
     buildCST(cst, target_name, name);
-    forwardSearch(cst, seq, cst_results, name);
+    forwardSearch(cst, seq, cst_results);
+    backwardSearch(cst, seq, cst_results);
     std::cout << std::endl;
   }
 
@@ -202,32 +208,40 @@ main(int argc, char** argv)
     sdsl::cst_fully<> cst;
     buildCST(cst, target_name, name);
     std::vector<MaximalMatch> fcst_results;
-    forwardSearch(cst, seq, fcst_results, name);
+    forwardSearch(cst, seq, fcst_results);
+    backwardSearch(cst, seq, cst_results);
     std::cout << std::endl;
   }
 
-#ifdef VERIFY_RESULTS
-  if(rcst_results.size() != cst_results.size())
+  // Verify the results.
+  bool ok = true;
+  if(forward_results.size() != cst_results.size() || backward_results.size() != cst_results.size())
   {
     std::cerr << "cst_compare: The number of maximal matches does not match:" << std::endl;
-    std::cerr << "  RCST: " << rcst_results.size() << std::endl;
-    std::cerr << "  CST:  " << cst_results.size() << std::endl;
+    std::cerr << "  Forward:  " << forward_results.size() << std::endl;
+    std::cerr << "  Backward: " << backward_results.size() << std::endl;
+    std::cerr << "  CST:      " << cst_results.size() << std::endl;
+    ok = false;
   }
-  parallelQuickSort(rcst_results.begin(), rcst_results.end());
-  parallelQuickSort(cst_results.begin(), cst_results.end());
-  for(size_type i = 0; i < rcst_results.size(); i++)
+  else
   {
-    if(rcst_results[i] != cst_results[i])
+    parallelQuickSort(forward_results.begin(), forward_results.end());
+    parallelQuickSort(backward_results.begin(), backward_results.end());
+    parallelQuickSort(cst_results.begin(), cst_results.end());
+    for(size_type i = 0; i < cst_results.size(); i++)
     {
-      std::cerr << "cst_compare: Maximal match " << i << ":" << std::endl;
-      std::cerr << "  RCST: " << rcst_results[i] << std::endl;
-      std::cerr << "  CST:  " << cst_results[i] << std::endl;
-      break;
+      if(forward_results[i] != cst_results[i] || backward_results[i] != cst_results[i])
+      {
+        std::cerr << "cst_compare: Maximal match " << i << ":" << std::endl;
+        std::cerr << "  Forward:  " << forward_results[i] << std::endl;
+        std::cerr << "  Backward: " << backward_results[i] << std::endl;
+        std::cerr << "  CST:      " << cst_results[i] << std::endl;
+        ok = false; break;
+      }
     }
   }
-  std::cout << "Maximal matches verified." << std::endl;
+  if(ok) { std::cout << "Maximal matches verified." << std::endl; }
   std::cout << std::endl;
-#endif
 
   std::cout << "Memory usage: " << inGigabytes(memoryUsage()) << " GB" << std::endl;
   std::cout << std::endl;
@@ -381,8 +395,7 @@ matchForward(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
 
 template<class CST>
 void
-forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
-  std::vector<MaximalMatch>& results, const std::string& name)
+forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq, std::vector<MaximalMatch>& results)
 {
   sdsl::util::clear(results);
 
@@ -420,7 +433,7 @@ forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
   }
 
   double seconds = readTimer() - start;
-  printHeader(name);
+  printHeader("Forward");
   std::cout << results.size() << " matches of average length "
             <<( total_length / (double)(results.size()))
             << " in " << seconds << " seconds";
@@ -433,8 +446,7 @@ forwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
 */
 template<>
 void
-forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
-  std::vector<MaximalMatch>& results, const std::string& name)
+forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq, std::vector<MaximalMatch>& results)
 {
   sdsl::util::clear(results);
 
@@ -472,7 +484,7 @@ forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
   }
 
   double seconds = readTimer() - start;
-  printHeader(name);
+  printHeader("Forward");
   std::cout << results.size() << " matches of average length "
             <<( total_length / (double)(results.size()))
             << " in " << seconds << " seconds";
@@ -481,50 +493,100 @@ forwardSearch(const sdsl::cst_fully<>& cst, const sdsl::int_vector<8>& seq,
 }
 
 //------------------------------------------------------------------------------
-/*
+
 template<class CST>
 void
-backwardSearch(const CST& cst, const sdsl::int_vector<8>& seq,
-  std::vector<MaximalMatch>& results, const std::string& name)
+backwardSearch(const CST& cst, const sdsl::int_vector<8>& seq, std::vector<MaximalMatch>& results)
 {
   sdsl::util::clear(results);
 
   double start = readTimer();
 
+  /*
+    [sp, ep] is the lexicographic range for seq[pos + 1, pos + depth].
+  */
+  typename CST::size_type sp = 0, ep = cst.size() - 1;
+  typename CST::size_type depth = 0;
   size_type total_length = 0;
-  typename CST::node_type curr = cst.root();
   bool timeout = false;
   for(size_type i = 1, next_check = Timer::INTERVAL; i <= seq.size(); i++)
   {
     size_type pos = seq.size() - i;
-    if(depth > 0)
+    typename CST::size_type new_sp = 0, new_ep = 0;
+    sdsl::backward_search(cst.csa, sp, ep, seq[pos], new_sp, new_ep);
+    if(new_sp > new_ep)
     {
-      next = prev = cst.sl(prev); depth--;
-      next_depth = cst.depth(prev);
-      while(next_depth < depth)
+      if(depth > 0) { results.push_back(MaximalMatch(pos + 1, depth, range_type(sp, ep))); total_length += depth; }
+      typename CST::node_type node = cst.node(sp, ep);
+      do
       {
-        typename CST::size_type bwt_pos = 0;
-        next = cst.child(next, seq[i + next_depth], bwt_pos);
-        next_depth = cst.depth(next);
-        if(next_depth <= depth) { prev = next; }
+        node = cst.parent(node); sp = cst.lb(node); ep = cst.rb(node);
+        sdsl::backward_search(cst.csa, sp, ep, seq[pos], new_sp, new_ep);
       }
+      while(new_sp > new_ep && node != cst.root());
+      depth = cst.depth(node);
     }
-    if(matchForward(cst, seq, prev, next, i, depth, next_depth))
-    {
-      results.push_back(MaximalMatch(i, depth, range_type(cst.lb(next), cst.rb(next))));
-      total_length += depth;
-    }
+    if(new_sp <= new_ep) { sp = new_sp; ep = new_ep; depth++; }
     if(Timer::check(i, next_check, start)) { timeout = true; break; }
   }
+  if(depth > 0) { results.push_back(MaximalMatch(0, depth, range_type(sp, ep))); total_length += depth; }
 
   double seconds = readTimer() - start;
-  printHeader(name);
+  printHeader("Backward");
   std::cout << results.size() << " matches of average length "
             <<( total_length / (double)(results.size()))
             << " in " << seconds << " seconds";
   if(timeout) { std::cout << " (timeout)"; }
   std::cout << std::endl;
 }
+
+/*
+  RCST does not have the same members as SDSL suffix trees.
 */
+template<>
+void
+backwardSearch(const RelativeCST<>& cst, const sdsl::int_vector<8>& seq, std::vector<MaximalMatch>& results)
+{
+  sdsl::util::clear(results);
+
+  double start = readTimer();
+
+  /*
+    'prev' is the lexicographic range for seq[pos + 1, pos + depth].
+  */
+  range_type prev = cst.root_range();
+  RelativeCST<>::size_type depth = 0;
+  size_type total_length = 0;
+  bool timeout = false;
+  for(size_type i = 1, next_check = Timer::INTERVAL; i <= seq.size(); i++)
+  {
+    size_type pos = seq.size() - i;
+    range_type next = cst.index.LF(prev, seq[pos]);
+    if(Range::empty(next))
+    {
+      if(depth > 0) { results.push_back(MaximalMatch(pos + 1, depth, prev)); total_length += depth; }
+      RelativeCST<>::node_type node = cst.node(prev);
+      do
+      {
+        node = cst.parent(node); prev = node.range();
+        next = cst.index.LF(prev, seq[pos]);
+      }
+      while(Range::empty(next) && node != cst.root());
+      depth = cst.depth(node);
+    }
+    if(!(Range::empty(next))) { prev = next; depth++; }
+    if(Timer::check(i, next_check, start)) { timeout = true; break; }
+  }
+  if(depth > 0) { results.push_back(MaximalMatch(0, depth, prev)); total_length += depth; }
+
+  double seconds = readTimer() - start;
+  printHeader("Backward");
+  std::cout << results.size() << " matches of average length "
+            <<( total_length / (double)(results.size()))
+            << " in " << seconds << " seconds";
+  if(timeout) { std::cout << " (timeout)"; }
+  std::cout << std::endl;
+}
+
 //------------------------------------------------------------------------------
 
