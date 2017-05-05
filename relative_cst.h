@@ -255,6 +255,7 @@ public:
   }
 
   // i is 1-based; no sanity checking.
+  // FIXME Optimize retrieving LCP[i] and LCP[i+1].
   node_type select_leaf(size_type i) const
   {
     i--;
