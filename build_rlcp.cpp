@@ -46,6 +46,7 @@ main(int argc, char** argv)
   SLArray reference;
   sdsl::load_from_file(reference, ref_name);
   printHeader("Length"); std::cout << reference.size() << std::endl;
+  printSize("LCP array", sdsl::size_in_bytes(reference), reference.size());
   std::cout << std::endl;
 
   for(int i = 2; i < argc; i++)
