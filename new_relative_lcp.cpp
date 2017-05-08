@@ -127,7 +127,7 @@ NewRelativeLCP::NewRelativeLCP(const lcp_type& ref, const lcp_type& seq) :
     }
     while(begin != end) { tree_buffer[i] = std::min(tree_buffer[i], *begin); ++begin; }
   }
-  for(size_type level = 0; level < this->levels(); level++)
+  for(size_type level = 0; level + 1 < this->levels(); level++)
   {
     for(size_type i = this->offsets[level]; i < this->offsets[level + 1]; i++)
     {
