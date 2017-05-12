@@ -1,34 +1,37 @@
+
 # Use R --slave --args name axes [legend] < synth.R
 
 args = commandArgs()
 
 name = args[4]
 
-x = 3.3
+x = 3.4
 y = 3
 
 data <- read.csv(file = paste(name, ".csv", sep = ""), head = FALSE, sep = ";", dec = ".", check.names = FALSE)
 pdf(file = paste(name, ".pdf", sep = ""), width = x, height = y, paper = "special",
   family = "Helvetica", pointsize = 11)
-par(mar=c(4, 4, 1, 1))
+par(mar = c(4, 4, 1, 1))
 
 xrange = c(0.0001, 0.1)
 xscale = c("0.0001", "0.001", "0.01", "0.1")
 xtitle = ""
-xlabs = xscale
+xlabs = FALSE
 
 yrange = c(0, 15)
 yscale = c(0, 3, 6, 9, 12, 15)
 ytitle = ""
-ylabs = yscale
+ylabs = FALSE
 
 if(grepl("x", args[5]))
 {
   xtitle = "Mutation rate"
+  xlabs = xscale
 }
 if(grepl("y", args[5]))
 {
   ytitle = "Size (bpc)"
+  ylabs = yscale
 }
 
 plot(c(1),
@@ -42,25 +45,23 @@ plot(c(1),
   ylim = yrange,
   log = "x")
 
-axis(1, at = xscale, lab = xlabs, cex.axis = 0.8)
-axis(2, at = yscale, lab = ylabs, cex.axis = 0.8)
+axis(1, at = xscale, lab = xlabs)
+axis(2, at = yscale, lab = ylabs)
 box()
 
 nr = nrow(data)
 nc = ncol(data)
 xpos = c(0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1)
-symbols = c(04, 03, 08)
-if(nr < 3)
+
+symbols = c(00, 01, 02, 07)
+if(nr == 2)
 {
-  symbols = c(08, 03)
+  symbols = c(07, 12)
 }
 
-points(xpos, data[1, 2:nc], type = "b", pch = symbols[1], cex = 1.5)
-points(xpos, data[2, 2:nc], type = "b", pch = symbols[2], cex = 1.5)
-
-if(nr >= 3)
+for(i in c(1:nr))
 {
-  points(xpos, data[1, 2:nc] + data[2, 2:nc], type = "b", pch = symbols[3], cex = 1.5)  # RLCP
+  points(xpos, data[i, 2:nc], type = "b", pch = symbols[i], cex = 1.5)
 }
 
 if(length(args) > 5)

@@ -1,4 +1,3 @@
-
 \section{Introduction}
 
 The \emph{suffix tree} \cite{Weiner1973} is one of the most powerful bioinformatic tools to
@@ -7,22 +6,22 @@ A serious problem that hampers its wider use on large genome sequences is its
 size, which may be 10--20 bytes per character. In addition, the non-local
 access patterns required by most interesting problems solved with suffix trees
 complicate secondary-memory deployments. This problem has led to numerous
-efforts to reduce the size of suffix trees by representing them as sets of
-\emph{compressed data structures} \cite{Sadakane2007,Fischer2009a,Ohlebusch2009,Ohlebusch2010,Russo2011,Gog2011a,Abeliuk2013,Navarro2014a}, leading to
-\emph{compressed suffix trees} (\CST). Currently, the smallest
+efforts to reduce the size of suffix trees by representing them using 
+\emph{compressed data structures} \cite{Sadakane2007,Fischer2009a,Ohlebusch2009,Ohlebusch2010,Fis10,Russo2011,Gog2011a,GO13b,Abeliuk2013,Navarro2014a,Navarro2015,Ock15,BCGPR15}, 
+leading to \emph{compressed suffix trees} (\CST). Currently, the smallest
 \CST{} is the so-called \emph{fully-compressed suffix tree} (\FCST)
 \cite{Russo2011,Navarro2014a}, which uses 5 \emph{bits} per character (bpc)
 for DNA sequences, but takes milliseconds to simulate suffix
 tree navigation operations. In the other extreme, Sadakane's \CST{}
-\cite{Sadakane2007} uses about 12~bpc and operates in
+\cite{Sadakane2007,Gog2011a} uses about 12~bpc and operates in
 microseconds, and even nanoseconds for the simplest operations.
 
-A space usage of 12~bpc may seem reasonable to handle, for example, one human
+A space usage of 12~bpc may seem reasonable for e.g.\  one human
 genome, which has about 3.1 billion bases: it can be operated within a
 RAM of 4.5~GB (the representation contains the sequence as well). However,
 as the price of sequencing has fallen, sequencing the genomes of a large
 number of individuals has become a routine activity. The \emph{1000 Genomes
-Project} \cite{1000GP} sequenced the genomes of several thousand humans,
+Project} \cite{1000GP2015} sequenced the genomes of several thousand humans,
 while newer projects can be orders of magnitude larger. This has made the
 development of techniques for storing and analyzing huge amounts of sequence
 data flourish.
@@ -31,7 +30,7 @@ Just storing 1000 human genomes using a 12~bpc \CST{} requires almost 4.5~TB, wh
 is much more than the amount of memory available in a commodity server. Assuming that
 a single server has 256 gigabytes of memory, we would need a cluster of 18 servers to
 handle such a collection of \CST{}s (compared to over 100 with classical suffix
-tree implementations!). With the much smaller (and much slower) \FCST, this would
+tree implementations!). With the smaller (and much slower) \FCST, this would
 drop to 7--8 servers. It is clear that further space reductions in the
 representation of compressed suffix trees would lead to reductions in hardware, communication,
 and energy costs when implementing complex searches over large genomic
@@ -83,27 +82,30 @@ phrase (as no transitive referencing exists) and, at least if a good reference
 sequence has been found, offers compression competitive with the
 classical Lempel-Ziv. In our case, taking any random genome per species as the
 reference is good enough; more sophisticated techniques have been studied
-\cite{KPZ11}. Structures for direct access \cite{DG11,Ferrada2014}
+\cite{KPZ11,KBSCZ12}. Structures for direct access \cite{DG11,Ferrada2014}
 and even for pattern matching \cite{DJSS14,Belazzougui2014} have been developed
 on top of \RLZ.
 
 In this paper, we develop a \CST{} by augmenting the \emph{relative FM-index}
 \cite{Belazzougui2014} with structures based on \RLZ.
-On a collection of human genomes, we achieve as little as 3~bpc and operate
+On a collection of human genomes, we achieve less than 3~bpc and operate
 within microseconds. This performance is comparable to that of a previous \CST{}
 for this scenario \cite{Navarro2015}, but our \CST{}s have a different
 functionality. We have a separate \CST{} for each sequence, instead of a single
 \CST{} for their concatenation. Depending on the application, one kind of \CST{} or
 the other is necessary.
 
-Our compressed suffix tree, called \RCST, follows a trend of \CST{}s
-\cite{Fischer2009a,Ohlebusch2009,Ohlebusch2010,Gog2011a,Abeliuk2013} that use only a pattern-matching index
+Our compressed suffix tree, called \RST, follows a trend of \CST{}s
+\cite{Fischer2009a,Ohlebusch2009,Fis10,Ohlebusch2010,Gog2011a,Abeliuk2013} that use only a pattern-matching index
 (called \emph{suffix array}) and an array with the length of the longest common prefix
 between each suffix and the previous one in lexicographic order (called \LCP).
 We use the relative FM-index as our suffix array, and
 compress \LCP{} using \RLZ. On top of the \RLZ{} phrases we build a tree
-of range minima that enables fast queries for range minimum queries, as well as
+of range minima that enables fast range minimum queries, as well as
 next and previous smaller value queries, on \LCP{} \cite{Abeliuk2013}. All the \CST{} functionality
 is built on those queries \cite{Fischer2009a}. Our main algorithmic contribution
 is this \RLZ\nobreakdash-based representation of the \LCP{} array with the required extra
 functionality.
+
+Another approach to compressing a repetitive collection while supporting interesting queries is to build an automaton that accepts the sequences in the collection, and then index the state diagram as an acyclic directed graph (DAG); see, e.g.,~\cite{MaciucaEtAl16,PatenEtAl17,Siren17} for recent discussions.  The first data structure to take this approach was the Generalized Compressed Suffix Array (GCSA)~\cite{SVM14,Siren17}, which was designed for pangenomics so queries can return information about sequences not in the collection but that can be obtained from those in the collection by recombination.  The FM-index of an alignment (FMA)~\cite{NaKPLLMP16,NaEtAl17} is similar to the GCSA but indexes only the sequences in the collection. Whereas the GCSA conceptually embeds the automaton in a de Bruijn graph, the FMA embeds it in a coloured de Bruijn graph~\cite{IqbalEtAl12}, preserving its specificity.  Both the GCSA and FMA are practical but neither support the full functionality of a suffix tree.  The precursor to the FMA, the suffix tree of an alignment (STA)~\cite{NPCHIMP13} (see also~\cite{NPLHLMP13}), allows certain disjunctions in the suffix tree's edge labels in order to reduce the size of the tree while maintaining its functionality.  It differs from our approach because it is a single tree for the whole collection and not a separate one for each sequence. Also, unlike the FMA, the STA has not been implemented.  Both the STA and FMA divide the sequences in the collection into regions of variation and conserved regions, and depend on the conserved regions being long enough that they can be distinguished from each other and the variations.  This dependency makes these structures vulnerable to even a small change in even one sequence to an otherwise-conserved region, which could hamper their scalability.
+

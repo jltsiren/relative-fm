@@ -1,4 +1,3 @@
-
 \documentclass[a4paper,11pt]{llncs}
 \usepackage{fullpage}
 %\documentclass[10pt]{llncs}
@@ -27,7 +26,7 @@
 \newcommand{\GCT}{\textsf{GCT}}
 \newcommand{\FCST}{\textsf{FCST}}
 \newcommand{\CSTnpr}{\textsf{CST\nobreakdash-NPR}}
-\newcommand{\RCST}{\textsf{RCST}}
+\newcommand{\RST}{\textsf{RST}}
 
 % Suffix arrays etc.
 \newcommand{\SA}{\textsf{SA}}
@@ -36,6 +35,7 @@
 \newcommand{\CSA}{\textsf{CSA}}
 \newcommand{\FMI}{\textsf{FMI}}
 \newcommand{\SSA}{\textsf{SSA}}
+\newcommand{\SSArrr}{\textsf{SSA-RRR}}
 \newcommand{\CSAsada}{\textsf{CSA-Sada}}
 \newcommand{\RFM}{\textsf{RFM}}
 \newcommand{\mSA}{\ensuremath{\mathsf{SA}}}
@@ -66,6 +66,7 @@
 \newcommand{\mRLZ}{\ensuremath{\mathsf{RLZ}}}
 \newcommand{\LCS}{\textsf{LCS}}
 \newcommand{\mLCS}{\ensuremath{\mathsf{LCS}}}
+\newcommand{\mAli}{\ensuremath{\mathsf{Align}}}
 \newcommand{\mCS}{\ensuremath{\complement{\mathsf{LCS}}}}
 \newcommand{\mleft}{\ensuremath{\mathsf{left}}}
 \newcommand{\mright}{\ensuremath{\mathsf{right}}}
@@ -128,36 +129,47 @@
 \newcommand{\mus}{\textmu{}s}
 
 
-\title{Relative Compressed Suffix Trees\thanks{This work is funded in part by:
-by Fondecyt Project 1-140796; Basal Funds FB0001, Conicyt, Chile;
-by Academy of Finland grants 258308 and 250345 (CoECGR);
-by the Jenny and Antti Wihuri Foundation, Finland;
-and by the Wellcome Trust grant [098051].}}
+\title{Relative Suffix Trees\thanks{This work is funded in part by:
+Basal Funds FB0001, Conicyt, Chile;
+Fondecyt Grant 1-170048, Chile; 
+Academy of Finland grants 258308 and 250345 (CoECGR);
+the Jenny and Antti Wihuri Foundation, Finland;
+and the Wellcome Trust grant 098051.}}
 
 \author{
-Travis Gagie\inst{1}
+Andrea Farruggia\inst{1}
 \and
-Gonzalo Navarro\inst{2} %\fnmsep
-%\thanks{Funded in part by Fondecyt Project 1-140796, Chile, and Basal Funds
-%FB0001, Conicyt, Chile.}
+Travis Gagie\inst{2,3}
 \and
-Simon J. Puglisi\inst{1}
+Gonzalo Navarro\inst{2,4} 
 \and
-Jouni Sir\'en\inst{3}
+Simon J. Puglisi\inst{5}
+\and
+Jouni Sir\'en\inst{6}
 }
 
 \institute{
     Department of Computer Science,
-    University of Helsinki, Finland\\
-    \email{\{gagie,puglisi\}@cs.helsinki.fi}\\[1ex]
+    University of Pisa,
+    Italy.
+    \email{a.farruggia@di.unipi.it}\\[1ex]
 \and
-    Center for Biotechnology and Bioengineering, Department of Computer
-Science,
-    University of Chile, Chile\\
+    CeBiB -- Center for Biotechnology and Bioengineering, Chile\\[1ex]
+\and
+    School of Computer Science and Telecommunications, Diego Portales
+University, Chile.
+    \email{travis.gagie@gmail.com}\\[1ex]
+\and
+    Department of Computer Science,
+    University of Chile, Chile.
     \email{gnavarro@dcc.uchile.cl}\\[1ex]
 \and
-    Wellcome Trust Sanger Institute, United Kingdom\\
-    \email{jouni.siren@sanger.ac.uk}\\[1ex]
+    Department of Computer Science,
+    University of Helsinki, Finland.
+    \email{puglisi@cs.helsinki.fi}\\[1ex]
+\and
+    Wellcome Trust Sanger Institute, United Kingdom.
+    \email{jouni.siren@iki.fi}\\[1ex]
 }
 
 \date{}
