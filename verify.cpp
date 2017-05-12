@@ -111,6 +111,7 @@ main(int argc, char** argv)
     std::cout << std::endl;
 
     SimpleFM<> seq_fm(seq_name);
+    SimpleFM<sdsl::wt_huff<sdsl::rrr_vector<63>>> rrr_fm(seq_name);
     seq_fm.reportSize(true); std::cout << std::endl;
 
     RelativeFM<> rfm(ref_fm, seq_name);
@@ -130,11 +131,13 @@ main(int argc, char** argv)
 
 #ifdef VERIFY_LF
     verifyLF(seq_fm, "LF (FM)");
+    verifyLF(rrr_fm, "LF (RRR)");
     verifyLF(rfm, "LF (RFM)");
 #endif
 
 #ifdef VERIFY_PSI
     verifyPsi(seq_fm, "Psi (FM)");
+    verifyPsi(rrr_fm, "Psi (RRR)");
     verifyPsi(rfm, "Psi (RFM, slow)");
     buildSelect(rfm, seq_name);
     verifyPsi(rfm, "Psi (RFM, fast)");
