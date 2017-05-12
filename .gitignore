@@ -16,6 +16,7 @@ build_rlcp
 query_test
 cst_traverse
 cst_compare
+rlcp_size
 mutate
 verify
 

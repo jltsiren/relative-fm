@@ -30,7 +30,7 @@ HEADERS=$(wildcard *.h)
 OBJS=$(SOURCES:.cpp=.o)
 LIBS=-L$(LIB_DIR) -L$(RLZAP_DIR)/build -lsdsl -ldivsufsort -ldivsufsort64 -lrlz_lib
 LIBRARY=librfm.a
-PROGRAMS=build_bwt align_bwts build_rlcp query_test cst_traverse cst_compare mutate verify
+PROGRAMS=build_bwt align_bwts build_rlcp query_test cst_traverse cst_compare rlcp_size mutate verify
 
 all: $(PROGRAMS)
 
@@ -56,6 +56,9 @@ cst_traverse:cst_traverse.o $(LIBRARY)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
 cst_compare:cst_compare.o $(LIBRARY)
+	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
+
+rlcp_size:rlcp_size.o $(LIBRARY)
 	$(MY_CXX) $(CXX_FLAGS) -o $@ $< $(LIBRARY) $(LIBS)
 
 mutate:mutate.o $(LIBRARY)
