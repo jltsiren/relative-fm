@@ -1,6 +1,8 @@
+
+
 \section{Relative suffix tree}
 
-The \emph{relative suffix tree} (\RST) is a \CSTnpr{} of the
+The \emph{relative suffix tree} (\RCST) is a \CSTnpr{} of the
 target sequence relative to a \CST{} of the reference sequence. It consists of
 two major components: the relative FM-index with full functionality and the
 \emph{relative} \LCP{} (\RLCP) \emph{array}. The optional relative select
@@ -57,9 +59,9 @@ samples} for the differential encoding.
 
 To access $\mLCP_{S}[j]$, we determine the phrase $w_{i}$ as usual, and check whether we should return a mismatch character. If so, we compute which one using a prefix sum query on $L$, and return it.  If not, we determine the starting positions $r_{i}$ and $s_{i}$ of the phrase $w_{i}$ in the reference and the target, respectively. We can then compute the solution as
 \begin{align*}
-\mLCP_{S}[j] &= \mLCP_{S}[s_{i} - 1] + \sum_{k = r_{i}}^{r_{i} + j - s_{i}}
-(\mLCP_{R}[k] - \mLCP_{R}[k-1]) \\
-&= \mLCP_{S}[s_{i} - 1] + \mLCP_{R}[r_{i} + j - s_{i}] - \mLCP_{R}[r_{i} - 1],
+\mLCP_{S}[j] &= \mLCP_{S}[s_1 \!-\! 1] \!+\! \sum_{k = s_i}^{s_i + j- i}
+(\mLCP_{R}[k] \!-\! \mLCP_{R}[k\!-\!1]) \\
+&= \mLCP_{S}[s_1 \!-\! 1] \!+\! \mLCP_{R}[s_i \!+\! j \!-\! i] \!-\! \mLCP_{R}[s_i \!-\! 1],
 \end{align*}
 To speed up the computation, we enforce that each \RLZ{} phrase ends with at least one mismatch character, so $\mLCP_{S}[s_{i} - 1]$ is readily available. After finding $\mLCP_{S}[j]$, accessing $\mLCP_{S}[j-1]$ and $\mLCP_{S}[j+1]$ is fast, as long as we do not cross phrase boundaries.
 

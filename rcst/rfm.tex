@@ -1,3 +1,5 @@
+
+
 \section{Relative FM-index}
 
 The \emph{relative FM-index} (\RFM) \cite{Belazzougui2014} is a compressed
@@ -26,16 +28,17 @@ In its most basic form, the relative FM-index $\mRFM_{S \mid R}$ only supports
 storing $\mAli(\BWT_{R},\BWT_{S})$ and the complements $\mCS(\mBWT_{R})$ and
 $\mCS(\mBWT_{S})$ of the common subsequence. The lcs-bitvectors are compressed
 using \emph{entropy-based compression} \cite{Raman2007}, while the complements
-are stored in similar structures to the reference $\mBWT_{R}$.
+are stored in structures similar to the reference $\mBWT_{R}$.
 
 To compute $\mrank_{c}(\mBWT_{S}, i)$, we first determine the number of
 lcs-positions in $\mBWT_{S}$ up to position $S[i]$ with $k =
 \mrank_{1}(B_{\mBWT_{S}}, i)$. Then we find the lcs-position $k$ in $\mBWT_{R}$
 with $j = \mselect_{1}(B_{\mBWT_{R}}, k)$. With these positions, we can compute
-$$
-\mrank_{c}(\mBWT_{S}, i) = \mrank_{c}(\mBWT_{R}, j) - \mrank_{c}(\mCS(\mBWT_{R}),
-j-k) + \mrank_{c}(\mCS(\mBWT_{S}), i-k).
-$$
+\begin{eqnarray*}
+\mrank_{c}(\mBWT_{S}, i) &=& \mrank_{c}(\mBWT_{R}, j) \\
+   && - \mrank_{c}(\mCS(\mBWT_{R}),j-k) \\
+   && + \mrank_{c}(\mCS(\mBWT_{S}), i-k).
+\end{eqnarray*}
 
 \subsection{Relative select}
 
@@ -50,9 +53,9 @@ A faster alternative to support \select{} queries in the relative FM-index
 is to build a \emph{relative select} structure \rselect{}~\cite{Boucher2015}.
 Let $\mF_{X}$ be a sequence consisting of the characters of sequence $X$ in
 sorted order. Alternatively, $\mF_{X}$ is a sequence such that $\mF_{X}[i] =
-\mBWT_{X}[\mPsi(i)]$. The relative select structure consists of bitvectors
-$\mAli(\mF_{R}, \mF_{S})$, where $B_{\mF_{R}}[i] = B_{\mBWT_{R}}[\mPsi(i)]$ and
-$B_{\mF_{S}}[i] = B_{\mBWT_{S}}[\mPsi(i)]$, as well as the \C{} array
+\mBWT_{X}[\mPsi_X(i)]$. The relative select structure consists of bitvectors
+$\mAli(\mF_{R}, \mF_{S})$, where $B_{\mF_{R}}[i] = B_{\mBWT_{R}}[\mPsi_R(i)]$ 
+and $B_{\mF_{S}}[i] = B_{\mBWT_{S}}[\mPsi_S(i)]$, as well as the \C{} array
 $\mC_{\mLCS}$ for the common subsequence.
 
 To compute $\mselect_{c}(\mBWT_{S}, i)$, we first determine how many of
@@ -61,7 +64,7 @@ the first $i$ occurrences of character $c$ are lcs-positions with $k =
 from bit $B_{\mF_{S}}[\mC_{\mBWT_{S}}[c] + i]$ whether the occurrence we are
 looking for is an lcs-position or not. If it is,
 we find the position in $\mBWT_{R}$ as $j = \mselect_{c}(\mBWT_{R},
-\mselect_{1}(B_{\mF_{R}}, \mC_{\mLCS}[c] + k))$, and then map $j$ to
+\mselect_{1}(B_{\mF_{R}}, \mC_{\mLCS}[c] + k)- \mC_{R}[c])$, and then map $j$ to
 $\mselect_{c}(\mBWT_{S}, i)$ by using $\mAli(\mBWT_{R}, \mBWT_{S})$. Otherwise we
 find the occurrence in $\mCS(\mBWT_{S})$ with $j = \mselect_{c}(\mCS(\mBWT_{S}),
 i-k)$, and return $\mselect_{c}(\mBWT_{S}, i) = \mselect_{0}(B_{\mBWT_{S}}, j)$.
@@ -152,13 +155,13 @@ which correspond to the arrays $A[\cdot][2]$ and $A[\cdot][1]$ in the original
 algorithm. This is done by traversing $\mCSA_{R}$ backwards from
 $\mISA_{R}[\abs{R}] = 1$ with \LF{} queries and following the left and the
 right matches of the current suffix. During the traversal, we maintain
-an invariant $j = \mSA_{R}[i]$ with $(i,j) \leftarrow (\mLF_{R}(i), j-1)$. If
+the invariant $j = \mSA_{R}[i]$ with $(i,j) \leftarrow (\mLF_{R}(i), j-1)$. If
 suffix $R[j,\abs{R}]$ has a left (right) match, we use the shorthand $l(j) =
 \mrank_{1}(B_{R,S}, \mselect_{0}(B_{R,S}, i)-1)$ ($r(j) = \mrank_{1}(B_{R,S},
 \mselect_{0}(B_{R,S}, i)+1)$) to refer to its position in $\mCSA_{S}$.
 
 We say that suffixes $R[j,\abs{R}]$ and $R[j+1,\abs{R}]$ have the same left
-match, if $l(j) = \mLF_{S}(l(j+1))$. Let $R[j,\abs{R}]$ to $R[j+\ell,\abs{R}]$
+match if $l(j) = \mLF_{S}(l(j+1))$. Let $R[j,\abs{R}]$ to $R[j+\ell,\abs{R}]$
 be a maximal run of suffixes having the same left match, with suffixes
 $R[j,\abs{R}]$ to $R[j+\ell-1,\abs{R}]$ starting with the same characters as
 their left matches.\footnote{The first character of a suffix can be determined

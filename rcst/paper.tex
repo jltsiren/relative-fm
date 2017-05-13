@@ -1,6 +1,5 @@
-\documentclass[a4paper,11pt]{llncs}
-\usepackage{fullpage}
-%\documentclass[10pt]{llncs}
+
+\documentclass{comjnl}
 
 \usepackage{array}
 \usepackage{graphicx}
@@ -26,7 +25,7 @@
 \newcommand{\GCT}{\textsf{GCT}}
 \newcommand{\FCST}{\textsf{FCST}}
 \newcommand{\CSTnpr}{\textsf{CST\nobreakdash-NPR}}
-\newcommand{\RST}{\textsf{RST}}
+\newcommand{\RCST}{\textsf{RST}}
 
 % Suffix arrays etc.
 \newcommand{\SA}{\textsf{SA}}
@@ -129,60 +128,30 @@
 \newcommand{\mus}{\textmu{}s}
 
 
-\title{Relative Suffix Trees\thanks{This work is funded in part by:
-Basal Funds FB0001, Conicyt, Chile;
-Fondecyt Grant 1-170048, Chile; 
-Academy of Finland grants 258308 and 250345 (CoECGR);
-the Jenny and Antti Wihuri Foundation, Finland;
-and the Wellcome Trust grant 098051.}}
+\title[Relative Suffix Trees]{Relative Suffix Trees}
 
-\author{
-Andrea Farruggia\inst{1}
-\and
-Travis Gagie\inst{2,3}
-\and
-Gonzalo Navarro\inst{2,4} 
-\and
-Simon J. Puglisi\inst{5}
-\and
-Jouni Sir\'en\inst{6}
-}
+\shortauthors{A. Farruggia et al.}
 
-\institute{
-    Department of Computer Science,
-    University of Pisa,
-    Italy.
-    \email{a.farruggia@di.unipi.it}\\[1ex]
-\and
-    CeBiB -- Center for Biotechnology and Bioengineering, Chile\\[1ex]
-\and
-    School of Computer Science and Telecommunications, Diego Portales
-University, Chile.
-    \email{travis.gagie@gmail.com}\\[1ex]
-\and
-    Department of Computer Science,
-    University of Chile, Chile.
-    \email{gnavarro@dcc.uchile.cl}\\[1ex]
-\and
-    Department of Computer Science,
-    University of Helsinki, Finland.
-    \email{puglisi@cs.helsinki.fi}\\[1ex]
-\and
-    Wellcome Trust Sanger Institute, United Kingdom.
-    \email{jouni.siren@iki.fi}\\[1ex]
-}
+\author{Andrea Farruggia}
+\affiliation{Department of Computer Science, University of Pisa.}
+%\email{a.farruggia@di.unipi.it}
 
-\date{}
+\affiliation{CeBiB -- Center for Biotechnology and Bioengineering, Chile.}
+\author{Travis Gagie$^{2,}$}
+\affiliation{EIT, Diego Portales University, Chile.}
+%\email{travis.gagie@mail.udp.cl}
 
+\author{Gonzalo Navarro$^{2,}$}
+\affiliation{Department of Computer Science, University of Chile, Chile.}
+%\email{gnavarro@dcc.uchile.cl}
 
-\pagestyle{plain}
+\author{Simon J. Puglisi}
+\affiliation{Department of Computer Science, University of Helsinki, Finland.}
+%\email{puglisi@cs.helsinki.fi}
 
-\begin{document}
-
-\maketitle
-
-%\thispagestyle{empty} %for ALENEX
-%\setcounter{page}{0} %for ALENEX
+\author{Jouni Sir\'en}
+\affiliation{Wellcome Trust Sanger Institute, United Kingdom.}
+\email{jouni.siren@iki.fi}
 
 \begin{abstract}
 Suffix trees are one of the most versatile data structures in stringology,
@@ -197,12 +166,13 @@ sequence collections, such as collections of individual genomes. We compress
 the suffix trees of individual sequences relative to the suffix tree of a
 reference sequence. These relative data structures provide competitive
 time/space trade-offs, being almost as small as the smallest compressed suffix
-trees for repetitive collections, and almost as fast as the largest and
-fastest compressed suffix trees. They also provide access to the suffix trees
-of individual sequences, instead of storing all sequences in the same tree.
+trees for repetitive collections, and competitive in time with the largest and
+fastest compressed suffix trees. 
 \end{abstract}
 
-%\newpage %for ALENEX format
+\begin{document}
+
+\maketitle
 
 \input{intro}
 
@@ -216,9 +186,15 @@ of individual sequences, instead of storing all sequences in the same tree.
 
 \input{concl}
 
-%\newpage %for ALENEX format
+\section*{Funding}
 
-\bibliographystyle{plain}
+This work was supported by Basal Funds FB0001, Conicyt, Chile;
+Fondecyt Grant [1-170048], Chile;
+Academy of Finland grants [258308] and [250345] (CoECGR);
+the Jenny and Antti Wihuri Foundation, Finland;
+and the Wellcome Trust grant [098051].
+
+\bibliographystyle{compj}
 \bibliography{paper}
 
 \end{document}

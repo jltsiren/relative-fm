@@ -1,3 +1,5 @@
+
+
 \section{Background}
 
 A \emph{string} $S[1,n] = s_{1} \dotso s_{n}$ is a sequence of
@@ -24,13 +26,13 @@ Because the degree of every internal node is at least two, there can be at most
 $2n-1$ nodes, and the suffix tree can be stored in $\Oh(n \log n)$ bits. In
 practice, this is at least $10n$ bytes for small texts~\cite{Kurtz1999}, and
 more for large texts as the pointers grow larger. If $v$ is a node of a suffix
-tree, we write $\pi(v)$ to denote the concatenation of the labels on the path
-from the root to node $v$.
+tree, we write $\pi(v)$ to denote the concatenation of the labels of the path
+from the root to $v$.
 
 \emph{Suffix arrays} (\SA)~\cite{Manber1993} were introduced as a
 space-efficient alternative to suffix trees. The suffix array $\mSA_{T}[1,n]$ of
 text $T$ is an array of pointers to the suffixes of the text in lexicographic
-order.\footnote{We drop the subscript, if the text is evident from the context.}
+order.\footnote{We drop the subscript if the text is evident from the context.}
 In its basic form, the suffix array requires $n \log n$ bits in
 addition to the text, but its functionality is more limited than that of the
 suffix tree. In addition to the suffix array, many algorithms also use the
@@ -67,13 +69,13 @@ and \select{} on general sequences.
 
 The \emph{Burrows-Wheeler transform} (\BWT)~\cite{Burrows1994} is a reversible
 permutation $\mBWT[1,n]$ of text $T$. It is defined as $\mBWT[i] = T[\mSA[i] -
-1]$ (with $\mBWT[i] = T[n]$, if $\SA[i] = 1$). Originally intended for data
+1]$ (with $\mBWT[i] = T[n]$ if $\SA[i] = 1$). Originally intended for data
 compression, the Burrows-Wheeler transform has been widely used in
 space-efficient text indexes, because it shares the combinatorial structure of
 the suffix tree and the suffix array.
 
 Let \LF{} be a function such that $\mSA[\mLF(i)] = \mSA[i] - 1$ (with
-$\mSA[\mLF(i)] = n$, if $\mSA[i] = 1$). We can compute it as $\mLF(i) =
+$\mSA[\mLF(i)] = n$ if $\mSA[i] = 1$). We can compute it as $\mLF(i) =
 \mC[\mBWT[i]] + \mrank_{\mBWT[i]}(\mBWT, i)$, where $\mC[c]$ is the number of
 occurrences of characters with lexicographical values smaller than $c$ in
 \BWT. The inverse function of \LF{} is $\mPsi$, with $\mPsi(i) =
@@ -84,12 +86,12 @@ suffix. If the sequence $S$ is not evident from the context, we write $\mLF_{S}$
 and $\mPsi_{S}$.
 
 \emph{Compressed suffix arrays} (\CSA) \cite{Sadakane2003,Ferragina2005a,Grossi2005} are
-text indexes supporting similar functionality to the suffix array. This
+text indexes supporting a functionality similar to the suffix array. This
 includes the following queries: i) $\mfind(P) = [sp,ep]$ determines the
 lexicographic range of suffixes starting with \emph{pattern} $P[1,\ell]$; ii)
 $\mlocate(sp,ep) = \mSA[sp,ep]$ returns the starting positions of these
 suffixes; and iii) $\mextract(i,j) = T[i,j]$ extracts substrings of the text.
-In practice, the \find{} performance of compressed suffix arrays can be
+In practice, the \find{} performance of {\CSA}s can be
 competitive with suffix arrays, while \locate{} queries are orders of
 magnitude slower~\cite{Ferragina2009a}. Typical index sizes are less than the
 size of the uncompressed text.
@@ -102,11 +104,11 @@ wavelet tree \cite{Grossi2003}. The index implements \find{} queries via
 range of the suffixes of the text starting with suffix $P[i+1,\ell]$ of the
 pattern. We can find the range matching suffix $P[i,\ell]$ with a
 generalization of function \LF{} as
-$$
-\mLF([sp,ep],P[i]) =
-[\mC[P[i]] + \mrank_{P[i]}(\mBWT, sp-1) + 1,
-\mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
-$$
+\begin{eqnarray*}
+\mLF([sp,ep],P[i]) &\!\!\!=\!\!\!&
+[\mC[P[i]] + \mrank_{P[i]}(\mBWT, sp\!-\!1) \!+\! 1, \\
+&& \,\,\mC[P[i]] + \mrank_{P[i]}(\mBWT, ep)].
+\end{eqnarray*}
 
 We support \locate{} queries by \emph{sampling} some suffix array pointers. If
 we want to determine a value $\mSA[i]$ that has not been sampled, we can
@@ -117,12 +119,12 @@ sampling $\mSA[i]$ at positions divisible by $d$, or in \emph{text order},
 sampling $T[i]$ at positions divisible by $d$ and marking the sampled \SA{}
 positions in a bitvector. Suffix-order sampling requires less space, often
 resulting in better time/space trade-offs in practice, while text-order
-sampling guarantees better worst-case performance. We also sample some \ISA{}
+sampling guarantees better worst-case performance. We also sample the \ISA{}
 pointers for \extract{} queries. To extract $T[i,j]$, we find the nearest
 sampled pointer after $T[j]$, and traverse backwards to $T[i]$ with
 function \LF.
 
-\begin{table}
+\begin{table*}
 \centering{}
 \caption{Typical compressed suffix tree operations.}\label{table:cst
 operations}
@@ -164,7 +166,7 @@ $\mLetter(v,i)$     & The character $\pi(v)[i]$. \\
 \noalign{\smallskip}
 \hline
 \end{tabular}
-\end{table}
+\end{table*}
 
 \emph{Compressed suffix trees} (\CST) \cite{Sadakane2007} are compressed text
 indexes supporting the full functionality of a suffix tree (see
@@ -227,7 +229,7 @@ of \FCST{} \cite{Gog2011a,Abeliuk2013}. There are also some \CST{} variants
 for repetitive texts, such as versioned document collections and collections
 of individual genomes. Abeliuk et al.~\cite{Abeliuk2013} developed a variant
 of \CSTnpr{} that can sometimes be smaller than $n$ bits, while achieving
-similar performance to the \FCST. Navarro and Ordóñez \cite{Navarro2015} used
+performance similar to the \FCST. Navarro and Ordóñez \cite{Navarro2015} used
 grammar-based compression for the tree representation of \CSTsada. The
 resulting compressed suffix tree (\GCT) requires slightly more space than the
 \CSTnpr{} of Abeliuk et al., while being closer to the non-repetitive
@@ -255,11 +257,11 @@ phrases in the shortest \RLZ{} parsing.
 
 In a straightforward implementation, the \emph{phrase pointers} $p_{i}$ and
 the mismatch characters $c_{i}$ can be stored in arrays $W_{p}$ and
-$W_{c}$. These arrays take $z \log \abs{R}$ bits and $z \log \sigma$ bits,
+$W_{c}$. These arrays take $z \log \abs{R}$ and $z \log \sigma$ bits,
 respectively. To support random access to the target sequence, we can encode
-phrase lengths as a bitvector $W_{\ell}$ of length $\abs{S}$ \cite{Kuruppu2010}.
-We set $W_{\ell}[j] = 1$, if $S[j]$ is the first character of a phrase. The
-bitvector requires $z \log \frac{n}{z} + \Oh(z)$ bits, if we use the
+phrase lengths as a bitvector $W_{\ell}$ of length $\abs{S}$ \cite{Kuruppu2010}:
+we set $W_{\ell}[j] = 1$ if $S[j]$ is the first character of a phrase. The
+bitvector requires $z \log \frac{n}{z} + \Oh(z)$ bits if we use the
 \sdarray{} representation \cite{Okanohara2007}. To extract $S[j]$, we first
 determine the phrase $w_{i}$, with $i = \mrank_{1}(W_{\ell}, j)$. If
 $W_{\ell}[j+1] = 1$, we return the mismatch character $W_{c}[i]$. Otherwise
@@ -271,4 +273,3 @@ Ferrada et al.~\cite{Ferrada2014} showed how, by using \emph{relative pointers} 
 When we sort the suffixes in lexicographic order, substitutions in the text move suffixes around, creating \emph{insertions} and \emph{deletions} in the suffix array and related structures. In the \LCP{} array, an insertion or deletion affecting $\mLCP[i]$ can also change the value of $\mLCP[i+1]$. Hence \RLZ{} with relative pointers is not enough to compress the \LCP{} array.
 
 Cox et al.~\cite{CoxEtAl16} modified Ferrada et al.'s version of \RLZ{} to handle other small variations in addition to single-character substitutions. After adding a phrase to the parse, we look ahead a bounded number of positions to find potential phrases with a relative pointer $W_{r}[i]$ close to the previous \emph{explicit} relative pointer $W_{r}[j]$. If we can find a sufficiently long phrase this way, we encode the pointer \emph{differentially} as $W_{r}[i] - W_{r}[j]$. Otherwise we store $W_{r}[i]$ explicitly. We can then save space by storing the differential pointers separately using less bits per pointer. Because there can be multiple mismatch characters between phrases $i$ and $i+1$, we also need a prefix-sum data structure $L$ for finding the range $W_{c}[a,b]$ containing the mismatches. Cox et al.\ showed that their approach compresses both DNA sequences and \LCP{} arrays better than Ferrada et al.'s version, albeit with slightly slower random access. We refer the reader to their paper for more details of their implementation.
-
