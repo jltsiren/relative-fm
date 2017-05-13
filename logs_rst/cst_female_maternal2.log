@@ -1,0 +1,80 @@
+Start time: 1493930548
+
+DFS traversal in compressed suffix trees
+
+Timer:            interval=1000000, max_time=86400
+
+Reference:        female
+
+FM-index:         2110.26 MB (5.83013 bpc)
+LCP array:        3690.1 MB (10.1948 bpc)
+Reference data:   5800.36 MB (16.025 bpc)
+
+
+Target:           maternal2
+
+Relative (slow):  997.036 MB (2.75468 bpc)
+Relative (slow):  5127716113 nodes in 4606.37 seconds
+
+Select structures built in 230.437 seconds
+
+Relative (fast):  1160.22 MB (3.20553 bpc)
+Relative (fast):  5127716113 nodes in 4639.74 seconds
+
+cst_sct3_dac:     6543.94 MB (18.0801 bpc)
+cst_sct3_dac:     5127716113 nodes in 1172.17 seconds
+
+cst_sct3_plcp:    3905.7 MB (10.7909 bpc)
+cst_sct3_plcp:    5127716113 nodes in 1162.48 seconds
+
+cst_sada:         4462.21 MB (12.3285 bpc)
+cst_sada:         5127716113 nodes in 297.567 seconds
+
+cst_fully:        1802.96 MB (4.98135 bpc)
+cst_fully:        273000000 nodes in 86623.8 seconds (timeout)
+
+
+Memory usage: 12.4798 GB
+
+Finding maximal matches with a CST
+
+Timer:            interval=1000000, max_time=86400
+
+Reference:        female
+
+FM-index:         2110.26 MB (5.83013 bpc)
+LCP array:        3690.1 MB (10.1948 bpc)
+Reference data:   5800.36 MB (16.025 bpc)
+
+Target:           maternal2
+Query:            paternal_chr1_noN (225271390 bytes)
+
+Relative (slow):  997.036 MB (2.75468 bpc)
+Forward:          1474642 matches of average length 170.377 in 46997.1 seconds
+Backward:         1474642 matches of average length 170.377 in 837.827 seconds
+
+Relative (fast):  1160.22 MB (3.20553 bpc)
+Forward:          1474642 matches of average length 170.377 in 18066.7 seconds
+Backward:         1474642 matches of average length 170.377 in 836.332 seconds
+
+cst_sct3_dac:     6543.94 MB (18.0801 bpc)
+Forward:          1474642 matches of average length 170.377 in 6690.52 seconds
+Backward:         1474642 matches of average length 170.377 in 89.063 seconds
+
+cst_sct3_plcp:    3905.7 MB (10.7909 bpc)
+Forward:          1474642 matches of average length 170.377 in 10036.2 seconds
+Backward:         1474642 matches of average length 170.377 in 104.011 seconds
+
+cst_sada:         4462.21 MB (12.3285 bpc)
+Forward:          1474642 matches of average length 170.377 in 18014.2 seconds
+Backward:         1474642 matches of average length 170.377 in 1157.68 seconds
+
+cst_fully:        1802.96 MB (4.98135 bpc)
+Forward:          1474642 matches of average length 170.377 in 74969.9 seconds
+Backward:         1474642 matches of average length 170.377 in 705.192 seconds
+
+Maximal matches verified.
+
+Memory usage: 12.8711 GB
+
+Finish time: 1494208172

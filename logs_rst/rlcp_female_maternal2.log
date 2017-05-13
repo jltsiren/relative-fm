@@ -1,0 +1,18 @@
+Start time: 1493452843
+
+Building the relative LCP array
+
+Reference:        female.lcp
+Length:           3036320416
+
+Target:           maternal2.lcp
+Length:           3036191208
+Construction:     25166 seconds
+Phrases:          93966191 (average length 32.3115)
+LCP array:        499.834 MB (1.38098 bpc)
+Tree:             96.7397 MB (0.267279 bpc)
+Relative LCP:     596.574 MB (1.64826 bpc)
+
+Memory usage: 141.528 GB
+
+Finish time: 1493478094

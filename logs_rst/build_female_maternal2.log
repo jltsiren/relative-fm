@@ -1,0 +1,62 @@
+Start time: 1493390047
+
+BWT construction
+Options: isa_sample_rate=64 lcp sa_sample_rate=17
+
+File: female
+Text size: 3036320415
+BWT built in 870.53 seconds (3.32632 MB/s)
+Alphabet written to female.alpha
+BWT written to female.bwt
+Samples written to female.samples
+LCP array built in 748.465 seconds (3.8688 MB/s)
+
+File: maternal2
+Text size: 3036191207
+BWT built in 944.253 seconds (3.06649 MB/s)
+Alphabet written to maternal2.alpha
+BWT written to maternal2.bwt
+Samples written to maternal2.samples
+LCP array built in 744.381 seconds (3.88986 MB/s)
+
+Relative FM-index builder
+Using OpenMP with 32 threads
+
+Algorithm: invariant
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: female
+
+BWT:              1247.95 MB (3.44778 bpc)
+SA samples:       681.332 MB (1.88235 bpc)
+ISA samples:      180.979 MB (0.5 bpc)
+Simple FM:        2110.26 MB (5.83013 bpc)
+
+
+Target: maternal2
+Reference size: 3036320416
+Target size: 3036191208
+Built the merging bitvector in 2302.16 seconds
+Matched 3001221512 positions in 5711.42 seconds
+Found a common subsequence of length 2980010799 in 895.85 seconds
+Built the bwt_lcs bitvectors and samples in 1457.24 seconds
+Index built in 10399.1 seconds
+
+BWT:              1247.9 MB (3.44778 bpc)
+SA samples:       681.303 MB (1.88235 bpc)
+ISA samples:      180.971 MB (0.5 bpc)
+Simple FM:        2110.17 MB (5.83014 bpc)
+
+ref_minus_lcs:    22.0769 MB (0.0609955 bpc)
+seq_minus_lcs:    22.0266 MB (0.0608567 bpc)
+bwt_lcs:          163.138 MB (0.450729 bpc)
+text_lcs:         125.532 MB (0.34683 bpc)
+SA samples:       45.0667 MB (0.124514 bpc)
+ISA samples:      22.6214 MB (0.0625 bpc)
+Relative FM:      400.462 MB (1.10643 bpc)
+
+
+Memory usage: 82.5713 GB
+
+Finish time: 1493404044

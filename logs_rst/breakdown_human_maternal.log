@@ -1,0 +1,23 @@
+Start time: 1494586821
+
+RLCP size breakdown
+
+Reference: human
+
+LCP:              3862.42 MB (10.4663 bpc)
+
+
+Target: maternal
+
+LCP array:        1043.61 MB (2.88336 bpc)
+Tree:             189.71 MB (0.524144 bpc)
+Relative LCP:     1233.32 MB (3.40751 bpc)
+
+RLZAP:            1043.61 MB (2.88336 bpc)
+literals:         556.704 MB (1.5381 bpc)
+parse:            486.906 MB (1.34526 bpc)
+
+
+Memory used: 5104.23 MB
+
+Finish time: 1494586883

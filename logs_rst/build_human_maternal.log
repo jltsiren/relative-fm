@@ -1,0 +1,62 @@
+Start time: 1493281710
+
+BWT construction
+Options: alphabet isa_sample_rate=64 lcp sa_sample_rate=17
+
+File: human
+Text size: 3095693981
+BWT built in 1007.3 seconds (2.9309 MB/s)
+Alphabet written to human.alpha
+BWT written to human.bwt
+Samples written to human.samples
+LCP array built in 723.609 seconds (4.07994 MB/s)
+
+File: maternal
+Text size: 3036191207
+BWT built in 951.642 seconds (3.04268 MB/s)
+Alphabet written to maternal.alpha
+BWT written to maternal.bwt
+Samples written to maternal.samples
+LCP array built in 738.175 seconds (3.92256 MB/s)
+
+Relative FM-index builder
+Using OpenMP with 32 threads
+
+Algorithm: invariant
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: human
+
+BWT:              1282.54 MB (3.47538 bpc)
+SA samples:       694.655 MB (1.88235 bpc)
+ISA samples:      184.518 MB (0.5 bpc)
+Simple FM:        2161.71 MB (5.85774 bpc)
+
+
+Target: maternal
+Reference size: 3095693982
+Target size: 3036191208
+Built the merging bitvector in 2317.66 seconds
+Matched 3032774943 positions in 5773.64 seconds
+Found a common subsequence of length 2979962648 in 972.89 seconds
+Built the bwt_lcs bitvectors and samples in 1405.35 seconds
+Index built in 10507.6 seconds
+
+BWT:              1247.9 MB (3.44778 bpc)
+SA samples:       681.303 MB (1.88235 bpc)
+ISA samples:      180.971 MB (0.5 bpc)
+Simple FM:        2110.17 MB (5.83014 bpc)
+
+ref_minus_lcs:    49.6847 MB (0.137273 bpc)
+seq_minus_lcs:    22.0453 MB (0.0609084 bpc)
+bwt_lcs:          189.846 MB (0.524521 bpc)
+text_lcs:         126.431 MB (0.349311 bpc)
+SA samples:       45.0667 MB (0.124514 bpc)
+ISA samples:      22.6214 MB (0.0625 bpc)
+Relative FM:      455.695 MB (1.25903 bpc)
+
+
+Memory usage: 83.9516 GB
+
+Finish time: 1493295922

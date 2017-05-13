@@ -1,0 +1,64 @@
+Start time: 1494584309
+
+RFM and RLCP verifier
+
+Reference: female
+
+FM-index:         2110.26 MB (5.83013 bpc)
+
+LCP array:        3690.1 MB (10.1948 bpc)
+
+
+Target: maternal2
+
+BWT:              1247.9 MB (3.44778 bpc)
+SA samples:       681.303 MB (1.88235 bpc)
+ISA samples:      180.971 MB (0.5 bpc)
+Simple FM:        2110.17 MB (5.83014 bpc)
+
+ref_minus_lcs:    22.0769 MB (0.0609955 bpc)
+seq_minus_lcs:    22.0266 MB (0.0608567 bpc)
+bwt_lcs:          163.138 MB (0.450729 bpc)
+text_lcs:         125.532 MB (0.34683 bpc)
+SA samples:       45.0667 MB (0.124514 bpc)
+ISA samples:      22.6214 MB (0.0625 bpc)
+Relative FM:      400.462 MB (1.10643 bpc)
+
+LCP array:        3689.77 MB (10.1944 bpc)
+
+LCP array:        499.834 MB (1.38098 bpc)
+Tree:             96.7397 MB (0.267279 bpc)
+Relative LCP:     596.574 MB (1.64826 bpc)
+
+LF (FM):          10000000 queries in 3.27086 seconds (0.327086 µs/query)
+
+LF (RRR):         10000000 queries in 19.8811 seconds (1.98811 µs/query)
+
+LF (RFM):         10000000 queries in 28.9438 seconds (2.89438 µs/query)
+
+Psi (FM):         10000000 queries in 10.4681 seconds (1.04681 µs/query)
+
+Psi (RRR):        10000000 queries in 27.0742 seconds (2.70742 µs/query)
+
+Psi (RFM, slow):  10000000 queries in 404.783 seconds (40.4783 µs/query)
+
+Select structures built in 400.001 seconds
+Relative select:  163.182 MB (0.450851 bpc)
+
+Psi (RFM, fast):  10000000 queries in 50.0009 seconds (5.00009 µs/query)
+
+LCP (random):     100000000 queries in 5.37228 seconds (0.0537228 µs/query)
+LCP (seq):        3036191208 queries in 6.17201 seconds (0.00203281 µs/query)
+RLCP (random):    100000000 queries in 148.016 seconds (1.48016 µs/query)
+RLCP (seq):       3036191208 queries in 52.8455 seconds (0.0174052 µs/query)
+
+RMQ:              100000000 queries in 307.795 seconds (3.07795 µs/query)
+
+PSV:              100000000 queries in 178.783 seconds (1.78783 µs/query)
+
+NSV:              100000000 queries in 183.385 seconds (1.83385 µs/query)
+
+
+Memory used: 16155.9 MB
+
+Finish time: 1494586457

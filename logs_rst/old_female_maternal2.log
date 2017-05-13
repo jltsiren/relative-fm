@@ -1,0 +1,40 @@
+Start time: 1494232589
+
+Relative FM-index builder
+Using OpenMP with 32 threads
+
+Algorithm: partitioning
+Block size: 1024
+Maximum diagonal: 8192
+Maximum length: 32
+Buffers: on demand
+
+Reference: female
+
+BWT:              1247.95 MB (3.44778 bpc)
+Simple FM:        1247.95 MB (3.44778 bpc)
+
+
+Target: maternal2
+Reference size: 3036320416
+Target size: 3036191208
+Found 8315561 ranges with intersection length 3028240572 in 3.60987 seconds
+Partitioning misses: reference 698, target 796
+Partitioning losses: reference 8079146, target 7949840
+Found a common subsequence of length 2990988921 in 50.2578 seconds
+LCS losses: exact 37213658, heuristics 37993
+
+Index built in 79.7281 seconds
+
+BWT:              1247.9 MB (3.44778 bpc)
+Simple FM:        1247.9 MB (3.44778 bpc)
+
+ref_minus_lcs:    17.7606 MB (0.0490704 bpc)
+seq_minus_lcs:    17.7109 MB (0.0489331 bpc)
+bwt_lcs:          150.468 MB (0.415724 bpc)
+Relative FM:      185.94 MB (0.513729 bpc)
+
+
+Memory usage: 4.37933 GB
+
+Finish time: 1494232819

@@ -1,0 +1,46 @@
+Start time: 1493818091
+
+BWT construction
+Options: isa_sample_rate=64 sa_sample_rate=31
+
+File: female
+Text size: 3036320415
+BWT built in 1042.28 seconds (2.7782 MB/s)
+Alphabet written to female.alpha
+BWT written to female.bwt
+Samples written to female.samples
+
+File: maternal2
+Text size: 3036191207
+BWT built in 866.308 seconds (3.34239 MB/s)
+Alphabet written to maternal2.alpha
+BWT written to maternal2.bwt
+Samples written to maternal2.samples
+
+Query test
+
+Reference: female
+Sequence: maternal2
+Patterns: patterns
+
+Read 2000000 patterns of total length 64000000
+
+
+Executing locate() queries.
+
+SimpleFM<plain>:  1802.49 MB (4.98004 bpc)
+SimpleFM<plain>:  Found 2000000 patterns with 254997642 occ in 1317.27 seconds (193580 occ/s)
+Hash of located positions: 11653246869206397622
+
+SimpleFM<rrr>:    1190.58 MB (3.28942 bpc)
+SimpleFM<rrr>:    Found 2000000 patterns with 254997642 occ in 8579.72 seconds (29721 occ/s)
+Hash of located positions: 11653246869206397622
+
+RFM<plain,plain>: 400.462 MB (1.10643 bpc)
+RFM<plain,plain>: Found 2000000 patterns with 254997642 occ in 2939.68 seconds (86743.3 occ/s)
+Hash of located positions: 11653246869206397622
+
+
+Memory usage: 2557.56 MB
+
+Finish time: 1493833176

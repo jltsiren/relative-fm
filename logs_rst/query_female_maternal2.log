@@ -1,0 +1,24 @@
+Start time: 1493803191
+
+Query test
+
+Reference: female
+Sequence: maternal2
+Patterns: patterns
+
+Read 2000000 patterns of total length 64000000
+
+
+SimpleFM<plain>:  2110.17 MB (5.83014 bpc)
+SimpleFM<plain>:  Found 2000000 patterns with 254997642 occ in 25.8003 seconds (2.36568 MB/s)
+
+SimpleFM<rrr>:    1498.27 MB (4.13952 bpc)
+SimpleFM<rrr>:    Found 2000000 patterns with 254997642 occ in 129.956 seconds (0.46966 MB/s)
+
+RFM<plain,plain>: 400.462 MB (1.10643 bpc)
+RFM<plain,plain>: Found 2000000 patterns with 254997642 occ in 246.484 seconds (0.247623 MB/s)
+
+
+Memory usage: 2865.13 MB
+
+Finish time: 1493803837

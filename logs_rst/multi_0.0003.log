@@ -1,0 +1,1339 @@
+Start time: 1494457999
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_1
+Mutation rate: 0.0003
+Seed: 5005089644506278062
+
+Target size: 20971409
+Substitutions: 5470
+Insertions: 281, total size 1486
+Deletions: 286, total size 1597
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_2
+Mutation rate: 0.0003
+Seed: 2772774237538688653
+
+Target size: 20971356
+Substitutions: 5387
+Insertions: 284, total size 1426
+Deletions: 285, total size 1590
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_3
+Mutation rate: 0.0003
+Seed: 540458830571099244
+
+Target size: 20971673
+Substitutions: 5498
+Insertions: 324, total size 1635
+Deletions: 290, total size 1482
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_4
+Mutation rate: 0.0003
+Seed: 16754887497313061451
+
+Target size: 20971273
+Substitutions: 5693
+Insertions: 299, total size 1433
+Deletions: 323, total size 1680
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_5
+Mutation rate: 0.0003
+Seed: 14522572090345472042
+
+Target size: 20971713
+Substitutions: 5404
+Insertions: 326, total size 1662
+Deletions: 291, total size 1469
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_6
+Mutation rate: 0.0003
+Seed: 12290256683377882633
+
+Target size: 20971892
+Substitutions: 5529
+Insertions: 347, total size 1721
+Deletions: 277, total size 1349
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_7
+Mutation rate: 0.0003
+Seed: 10057941276410293224
+
+Target size: 20971741
+Substitutions: 5451
+Insertions: 311, total size 1684
+Deletions: 322, total size 1463
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_8
+Mutation rate: 0.0003
+Seed: 7825625869442703815
+
+Target size: 20971398
+Substitutions: 5472
+Insertions: 315, total size 1559
+Deletions: 320, total size 1681
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_9
+Mutation rate: 0.0003
+Seed: 5593310462475114406
+
+Target size: 20971770
+Substitutions: 5509
+Insertions: 336, total size 1778
+Deletions: 306, total size 1528
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_10
+Mutation rate: 0.0003
+Seed: 3360995055507524997
+
+Target size: 20971515
+Substitutions: 5559
+Insertions: 278, total size 1422
+Deletions: 309, total size 1427
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_11
+Mutation rate: 0.0003
+Seed: 1128679648539935588
+
+Target size: 20971363
+Substitutions: 5519
+Insertions: 318, total size 1535
+Deletions: 324, total size 1692
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_12
+Mutation rate: 0.0003
+Seed: 17343108315281897795
+
+Target size: 20971145
+Substitutions: 5379
+Insertions: 320, total size 1525
+Deletions: 352, total size 1900
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_13
+Mutation rate: 0.0003
+Seed: 15110792908314308386
+
+Target size: 20971578
+Substitutions: 5429
+Insertions: 317, total size 1615
+Deletions: 300, total size 1557
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_14
+Mutation rate: 0.0003
+Seed: 12878477501346718977
+
+Target size: 20971273
+Substitutions: 5540
+Insertions: 297, total size 1445
+Deletions: 334, total size 1692
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_15
+Mutation rate: 0.0003
+Seed: 10646162094379129568
+
+Target size: 20971865
+Substitutions: 5474
+Insertions: 333, total size 1635
+Deletions: 274, total size 1290
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_16
+Mutation rate: 0.0003
+Seed: 6060963415536194783
+
+Target size: 20971606
+Substitutions: 5575
+Insertions: 321, total size 1535
+Deletions: 313, total size 1449
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_17
+Mutation rate: 0.0003
+Seed: 3828648008568605374
+
+Target size: 20971798
+Substitutions: 5523
+Insertions: 304, total size 1560
+Deletions: 281, total size 1282
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_18
+Mutation rate: 0.0003
+Seed: 1596332601601015965
+
+Target size: 20971363
+Substitutions: 5489
+Insertions: 289, total size 1463
+Deletions: 332, total size 1620
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_19
+Mutation rate: 0.0003
+Seed: 17810761268342978172
+
+Target size: 20971529
+Substitutions: 5416
+Insertions: 323, total size 1548
+Deletions: 307, total size 1539
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_20
+Mutation rate: 0.0003
+Seed: 15578445861375388763
+
+Target size: 20971532
+Substitutions: 5558
+Insertions: 295, total size 1335
+Deletions: 270, total size 1323
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_21
+Mutation rate: 0.0003
+Seed: 13346130454407799354
+
+Target size: 20971708
+Substitutions: 5494
+Insertions: 335, total size 1775
+Deletions: 306, total size 1587
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_22
+Mutation rate: 0.0003
+Seed: 11113815047440209945
+
+Target size: 20971816
+Substitutions: 5367
+Insertions: 339, total size 1598
+Deletions: 287, total size 1302
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_23
+Mutation rate: 0.0003
+Seed: 8881499640472620536
+
+Target size: 20971456
+Substitutions: 5583
+Insertions: 291, total size 1466
+Deletions: 307, total size 1530
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_24
+Mutation rate: 0.0003
+Seed: 6649184233505031127
+
+Target size: 20971391
+Substitutions: 5484
+Insertions: 293, total size 1382
+Deletions: 313, total size 1511
+
+Sequence mutator
+
+Source: ref
+Size: 20971520
+Target: target_25
+Mutation rate: 0.0003
+Seed: 4416868826537441718
+
+Target size: 20971511
+Substitutions: 5425
+Insertions: 300, total size 1539
+Deletions: 317, total size 1548
+
+BWT construction
+Options: isa_sample_rate=64 lcp sa_sample_rate=17
+
+File: ref
+Text size: 20971520
+BWT built in 3.14017 seconds (6.36909 MB/s)
+Alphabet written to ref.alpha
+BWT written to ref.bwt
+Samples written to ref.samples
+LCP array built in 4.61997 seconds (4.32903 MB/s)
+
+File: target_1
+Text size: 20971409
+BWT built in 3.10032 seconds (6.45092 MB/s)
+Alphabet written to target_1.alpha
+BWT written to target_1.bwt
+Samples written to target_1.samples
+LCP array built in 4.62847 seconds (4.32106 MB/s)
+
+File: target_2
+Text size: 20971356
+BWT built in 3.1434 seconds (6.36249 MB/s)
+Alphabet written to target_2.alpha
+BWT written to target_2.bwt
+Samples written to target_2.samples
+LCP array built in 4.60975 seconds (4.3386 MB/s)
+
+File: target_3
+Text size: 20971673
+BWT built in 3.11168 seconds (6.42744 MB/s)
+Alphabet written to target_3.alpha
+BWT written to target_3.bwt
+Samples written to target_3.samples
+LCP array built in 4.61387 seconds (4.33479 MB/s)
+
+File: target_4
+Text size: 20971273
+BWT built in 3.10594 seconds (6.43921 MB/s)
+Alphabet written to target_4.alpha
+BWT written to target_4.bwt
+Samples written to target_4.samples
+LCP array built in 4.63 seconds (4.3196 MB/s)
+
+File: target_5
+Text size: 20971713
+BWT built in 3.1162 seconds (6.41812 MB/s)
+Alphabet written to target_5.alpha
+BWT written to target_5.bwt
+Samples written to target_5.samples
+LCP array built in 4.63977 seconds (4.31059 MB/s)
+
+File: target_6
+Text size: 20971892
+BWT built in 3.11092 seconds (6.42909 MB/s)
+Alphabet written to target_6.alpha
+BWT written to target_6.bwt
+Samples written to target_6.samples
+LCP array built in 4.63154 seconds (4.31829 MB/s)
+
+File: target_7
+Text size: 20971741
+BWT built in 3.10211 seconds (6.44729 MB/s)
+Alphabet written to target_7.alpha
+BWT written to target_7.bwt
+Samples written to target_7.samples
+LCP array built in 4.6279 seconds (4.32166 MB/s)
+
+File: target_8
+Text size: 20971398
+BWT built in 3.1082 seconds (6.43455 MB/s)
+Alphabet written to target_8.alpha
+BWT written to target_8.bwt
+Samples written to target_8.samples
+LCP array built in 4.62338 seconds (4.32582 MB/s)
+
+File: target_9
+Text size: 20971770
+BWT built in 3.13592 seconds (6.3778 MB/s)
+Alphabet written to target_9.alpha
+BWT written to target_9.bwt
+Samples written to target_9.samples
+LCP array built in 4.63117 seconds (4.31861 MB/s)
+
+File: target_10
+Text size: 20971515
+BWT built in 3.11411 seconds (6.42238 MB/s)
+Alphabet written to target_10.alpha
+BWT written to target_10.bwt
+Samples written to target_10.samples
+LCP array built in 4.6143 seconds (4.33435 MB/s)
+
+File: target_11
+Text size: 20971363
+BWT built in 3.15105 seconds (6.34704 MB/s)
+Alphabet written to target_11.alpha
+BWT written to target_11.bwt
+Samples written to target_11.samples
+LCP array built in 4.652 seconds (4.2992 MB/s)
+
+File: target_12
+Text size: 20971145
+BWT built in 3.12368 seconds (6.40259 MB/s)
+Alphabet written to target_12.alpha
+BWT written to target_12.bwt
+Samples written to target_12.samples
+LCP array built in 4.64948 seconds (4.30148 MB/s)
+
+File: target_13
+Text size: 20971578
+BWT built in 3.13778 seconds (6.37395 MB/s)
+Alphabet written to target_13.alpha
+BWT written to target_13.bwt
+Samples written to target_13.samples
+LCP array built in 4.61882 seconds (4.33012 MB/s)
+
+File: target_14
+Text size: 20971273
+BWT built in 3.11767 seconds (6.41497 MB/s)
+Alphabet written to target_14.alpha
+BWT written to target_14.bwt
+Samples written to target_14.samples
+LCP array built in 4.62323 seconds (4.32593 MB/s)
+
+File: target_15
+Text size: 20971865
+BWT built in 3.12705 seconds (6.39592 MB/s)
+Alphabet written to target_15.alpha
+BWT written to target_15.bwt
+Samples written to target_15.samples
+LCP array built in 4.61492 seconds (4.33384 MB/s)
+
+File: target_16
+Text size: 20971606
+BWT built in 3.11643 seconds (6.41762 MB/s)
+Alphabet written to target_16.alpha
+BWT written to target_16.bwt
+Samples written to target_16.samples
+LCP array built in 4.59496 seconds (4.35261 MB/s)
+
+File: target_17
+Text size: 20971798
+BWT built in 3.10387 seconds (6.44366 MB/s)
+Alphabet written to target_17.alpha
+BWT written to target_17.bwt
+Samples written to target_17.samples
+LCP array built in 4.61386 seconds (4.33482 MB/s)
+
+File: target_18
+Text size: 20971363
+BWT built in 3.12556 seconds (6.39881 MB/s)
+Alphabet written to target_18.alpha
+BWT written to target_18.bwt
+Samples written to target_18.samples
+LCP array built in 4.61512 seconds (4.33355 MB/s)
+
+File: target_19
+Text size: 20971529
+BWT built in 3.10242 seconds (6.44659 MB/s)
+Alphabet written to target_19.alpha
+BWT written to target_19.bwt
+Samples written to target_19.samples
+LCP array built in 4.59535 seconds (4.35223 MB/s)
+
+File: target_20
+Text size: 20971532
+BWT built in 3.12634 seconds (6.39725 MB/s)
+Alphabet written to target_20.alpha
+BWT written to target_20.bwt
+Samples written to target_20.samples
+LCP array built in 4.63108 seconds (4.31865 MB/s)
+
+File: target_21
+Text size: 20971708
+BWT built in 3.12907 seconds (6.39173 MB/s)
+Alphabet written to target_21.alpha
+BWT written to target_21.bwt
+Samples written to target_21.samples
+LCP array built in 4.639 seconds (4.31131 MB/s)
+
+File: target_22
+Text size: 20971816
+BWT built in 3.15536 seconds (6.33852 MB/s)
+Alphabet written to target_22.alpha
+BWT written to target_22.bwt
+Samples written to target_22.samples
+LCP array built in 4.64394 seconds (4.30675 MB/s)
+
+File: target_23
+Text size: 20971456
+BWT built in 3.11639 seconds (6.41767 MB/s)
+Alphabet written to target_23.alpha
+BWT written to target_23.bwt
+Samples written to target_23.samples
+LCP array built in 4.60972 seconds (4.33865 MB/s)
+
+File: target_24
+Text size: 20971391
+BWT built in 3.09758 seconds (6.4566 MB/s)
+Alphabet written to target_24.alpha
+BWT written to target_24.bwt
+Samples written to target_24.samples
+LCP array built in 4.59226 seconds (4.35513 MB/s)
+
+File: target_25
+Text size: 20971511
+BWT built in 3.11525 seconds (6.42003 MB/s)
+Alphabet written to target_25.alpha
+BWT written to target_25.bwt
+Samples written to target_25.samples
+LCP array built in 4.61365 seconds (4.33496 MB/s)
+
+Relative FM-index builder
+Using OpenMP with 32 threads
+
+Algorithm: invariant
+SA sample rate: 257
+ISA sample rate: 512
+
+Reference: ref
+
+BWT:              8.59464 MB (3.43785 bpc)
+SA samples:       3.67648 MB (1.47059 bpc)
+ISA samples:      0.976579 MB (0.390631 bpc)
+Simple FM:        13.248 MB (5.29922 bpc)
+
+
+Target: target_1
+Reference size: 20971521
+Target size: 20971410
+Built the merging bitvector in 7.95117 seconds
+Matched 20868416 positions in 20.5646 seconds
+Found a common subsequence of length 20773581 in 3.60468 seconds
+Built the bwt_lcs bitvectors and samples in 3.30362 seconds
+Index built in 35.5978 seconds
+
+BWT:              8.59461 MB (3.43786 bpc)
+SA samples:       3.67647 MB (1.4706 bpc)
+ISA samples:      0.976571 MB (0.39063 bpc)
+Simple FM:        13.248 MB (5.29923 bpc)
+
+ref_minus_lcs:    0.0995646 MB (0.039826 bpc)
+seq_minus_lcs:    0.099534 MB (0.0398138 bpc)
+bwt_lcs:          0.858511 MB (0.343406 bpc)
+text_lcs:         0.66139 MB (0.264558 bpc)
+SA samples:       0.243203 MB (0.0972818 bpc)
+ISA samples:      0.122079 MB (0.0488318 bpc)
+Relative FM:      2.08476 MB (0.833909 bpc)
+
+
+Target: target_2
+Reference size: 20971521
+Target size: 20971357
+Built the merging bitvector in 8.11533 seconds
+Matched 20866580 positions in 19.928 seconds
+Found a common subsequence of length 20764360 in 3.53017 seconds
+Built the bwt_lcs bitvectors and samples in 3.13525 seconds
+Index built in 34.8774 seconds
+
+BWT:              8.59464 MB (3.43788 bpc)
+SA samples:       3.67645 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390631 bpc)
+Simple FM:        13.248 MB (5.29925 bpc)
+
+ref_minus_lcs:    0.103178 MB (0.0412715 bpc)
+seq_minus_lcs:    0.10314 MB (0.0412563 bpc)
+bwt_lcs:          0.869963 MB (0.347988 bpc)
+text_lcs:         0.660414 MB (0.264168 bpc)
+SA samples:       0.243203 MB (0.097282 bpc)
+ISA samples:      0.122079 MB (0.0488319 bpc)
+Relative FM:      2.10246 MB (0.840989 bpc)
+
+
+Target: target_3
+Reference size: 20971521
+Target size: 20971674
+Built the merging bitvector in 7.95465 seconds
+Matched 20881262 positions in 19.972 seconds
+Found a common subsequence of length 20767233 in 3.97593 seconds
+Built the bwt_lcs bitvectors and samples in 3.15512 seconds
+Index built in 35.2292 seconds
+
+BWT:              8.59475 MB (3.43787 bpc)
+SA samples:       3.67651 MB (1.47059 bpc)
+ISA samples:      0.976586 MB (0.390632 bpc)
+Simple FM:        13.2482 MB (5.29924 bpc)
+
+ref_minus_lcs:    0.102039 MB (0.0408154 bpc)
+seq_minus_lcs:    0.102208 MB (0.040883 bpc)
+bwt_lcs:          0.866484 MB (0.346591 bpc)
+text_lcs:         0.662329 MB (0.26493 bpc)
+SA samples:       0.243203 MB (0.0972806 bpc)
+ISA samples:      0.122087 MB (0.0488343 bpc)
+Relative FM:      2.09883 MB (0.839525 bpc)
+
+
+Target: target_4
+Reference size: 20971521
+Target size: 20971274
+Built the merging bitvector in 9.03139 seconds
+Matched 20879197 positions in 21.9347 seconds
+Found a common subsequence of length 20751544 in 3.48722 seconds
+Built the bwt_lcs bitvectors and samples in 3.22442 seconds
+Index built in 37.8532 seconds
+
+BWT:              8.59451 MB (3.43784 bpc)
+SA samples:       3.67644 MB (1.47059 bpc)
+ISA samples:      0.976563 MB (0.39063 bpc)
+Simple FM:        13.2479 MB (5.29921 bpc)
+
+ref_minus_lcs:    0.108235 MB (0.0432947 bpc)
+seq_minus_lcs:    0.108136 MB (0.043255 bpc)
+bwt_lcs:          0.886183 MB (0.354477 bpc)
+text_lcs:         0.664793 MB (0.26592 bpc)
+SA samples:       0.243203 MB (0.0972824 bpc)
+ISA samples:      0.122079 MB (0.0488321 bpc)
+Relative FM:      2.13311 MB (0.853253 bpc)
+
+
+Target: target_5
+Reference size: 20971521
+Target size: 20971714
+Built the merging bitvector in 10.5963 seconds
+Matched 20875818 positions in 25.6204 seconds
+Found a common subsequence of length 20754520 in 3.46925 seconds
+Built the bwt_lcs bitvectors and samples in 2.9645 seconds
+Index built in 42.8209 seconds
+
+BWT:              8.59471 MB (3.43785 bpc)
+SA samples:       3.67652 MB (1.4706 bpc)
+ISA samples:      0.976586 MB (0.390631 bpc)
+Simple FM:        13.2482 MB (5.29922 bpc)
+
+ref_minus_lcs:    0.107036 MB (0.0428139 bpc)
+seq_minus_lcs:    0.107104 MB (0.0428413 bpc)
+bwt_lcs:          0.880095 MB (0.352035 bpc)
+text_lcs:         0.661436 MB (0.264572 bpc)
+SA samples:       0.243203 MB (0.0972804 bpc)
+ISA samples:      0.122087 MB (0.0488342 bpc)
+Relative FM:      2.12144 MB (0.848568 bpc)
+
+
+Target: target_6
+Reference size: 20971521
+Target size: 20971893
+Built the merging bitvector in 10.3253 seconds
+Matched 20870879 positions in 24.2261 seconds
+Found a common subsequence of length 20766748 in 3.46801 seconds
+Built the bwt_lcs bitvectors and samples in 2.97824 seconds
+Index built in 41.1672 seconds
+
+BWT:              8.59479 MB (3.43785 bpc)
+SA samples:       3.67655 MB (1.47059 bpc)
+ISA samples:      0.976594 MB (0.390631 bpc)
+Simple FM:        13.2483 MB (5.29922 bpc)
+
+ref_minus_lcs:    0.102368 MB (0.0409466 bpc)
+seq_minus_lcs:    0.10249 MB (0.0409954 bpc)
+bwt_lcs:          0.867468 MB (0.346981 bpc)
+text_lcs:         0.663176 MB (0.265266 bpc)
+SA samples:       0.243211 MB (0.0972826 bpc)
+ISA samples:      0.122087 MB (0.0488337 bpc)
+Relative FM:      2.10128 MB (0.840496 bpc)
+
+
+Target: target_7
+Reference size: 20971521
+Target size: 20971742
+Built the merging bitvector in 10.3541 seconds
+Matched 20873114 positions in 24.1993 seconds
+Found a common subsequence of length 20767134 in 3.4879 seconds
+Built the bwt_lcs bitvectors and samples in 2.99878 seconds
+Index built in 41.2183 seconds
+
+BWT:              8.59477 MB (3.43787 bpc)
+SA samples:       3.67652 MB (1.47059 bpc)
+ISA samples:      0.976586 MB (0.39063 bpc)
+Simple FM:        13.2482 MB (5.29924 bpc)
+
+ref_minus_lcs:    0.10217 MB (0.0408676 bpc)
+seq_minus_lcs:    0.102277 MB (0.0409103 bpc)
+bwt_lcs:          0.866385 MB (0.34655 bpc)
+text_lcs:         0.662115 MB (0.264843 bpc)
+SA samples:       0.243211 MB (0.0972833 bpc)
+ISA samples:      0.122087 MB (0.0488341 bpc)
+Relative FM:      2.09872 MB (0.83948 bpc)
+
+
+Target: target_8
+Reference size: 20971521
+Target size: 20971399
+Built the merging bitvector in 8.32626 seconds
+Matched 20876523 positions in 21.4273 seconds
+Found a common subsequence of length 20747643 in 3.83749 seconds
+Built the bwt_lcs bitvectors and samples in 3.01216 seconds
+Index built in 36.7777 seconds
+
+BWT:              8.59459 MB (3.43786 bpc)
+SA samples:       3.67646 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390631 bpc)
+Simple FM:        13.248 MB (5.29922 bpc)
+
+ref_minus_lcs:    0.109786 MB (0.0439147 bpc)
+seq_minus_lcs:    0.109771 MB (0.0439086 bpc)
+bwt_lcs:          0.890547 MB (0.356221 bpc)
+text_lcs:         0.662405 MB (0.264964 bpc)
+SA samples:       0.243203 MB (0.0972818 bpc)
+ISA samples:      0.122079 MB (0.0488318 bpc)
+Relative FM:      2.13827 MB (0.855313 bpc)
+
+
+Target: target_9
+Reference size: 20971521
+Target size: 20971771
+Built the merging bitvector in 11.0167 seconds
+Matched 20868819 positions in 21.8348 seconds
+Found a common subsequence of length 20764442 in 3.49781 seconds
+Built the bwt_lcs bitvectors and samples in 3.23293 seconds
+Index built in 39.7495 seconds
+
+BWT:              8.59483 MB (3.43789 bpc)
+SA samples:       3.67653 MB (1.47059 bpc)
+ISA samples:      0.976586 MB (0.39063 bpc)
+Simple FM:        13.2483 MB (5.29926 bpc)
+
+ref_minus_lcs:    0.103086 MB (0.0412341 bpc)
+seq_minus_lcs:    0.103178 MB (0.0412707 bpc)
+bwt_lcs:          0.867689 MB (0.347071 bpc)
+text_lcs:         0.662756 MB (0.265099 bpc)
+SA samples:       0.243211 MB (0.0972832 bpc)
+ISA samples:      0.122087 MB (0.048834 bpc)
+Relative FM:      2.10249 MB (0.840984 bpc)
+
+
+Target: target_10
+Reference size: 20971521
+Target size: 20971516
+Built the merging bitvector in 7.90674 seconds
+Matched 20865312 positions in 24.6322 seconds
+Found a common subsequence of length 20760812 in 3.46625 seconds
+Built the bwt_lcs bitvectors and samples in 3.17484 seconds
+Index built in 39.3514 seconds
+
+BWT:              8.5947 MB (3.43788 bpc)
+SA samples:       3.67648 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390629 bpc)
+Simple FM:        13.2481 MB (5.29925 bpc)
+
+ref_minus_lcs:    0.104645 MB (0.0418579 bpc)
+seq_minus_lcs:    0.10463 MB (0.0418518 bpc)
+bwt_lcs:          0.874975 MB (0.34999 bpc)
+text_lcs:         0.662649 MB (0.26506 bpc)
+SA samples:       0.243203 MB (0.0972813 bpc)
+ISA samples:      0.122079 MB (0.0488316 bpc)
+Relative FM:      2.11266 MB (0.845064 bpc)
+
+
+Target: target_11
+Reference size: 20971521
+Target size: 20971364
+Built the merging bitvector in 10.3669 seconds
+Matched 20879529 positions in 24.3273 seconds
+Found a common subsequence of length 20789573 in 3.47263 seconds
+Built the bwt_lcs bitvectors and samples in 3.03347 seconds
+Index built in 41.364 seconds
+
+BWT:              8.59448 MB (3.43782 bpc)
+SA samples:       3.67645 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390631 bpc)
+Simple FM:        13.2479 MB (5.29918 bpc)
+
+ref_minus_lcs:    0.0934381 MB (0.0373755 bpc)
+seq_minus_lcs:    0.093277 MB (0.0373111 bpc)
+bwt_lcs:          0.836126 MB (0.334453 bpc)
+text_lcs:         0.662359 MB (0.264946 bpc)
+SA samples:       0.243203 MB (0.097282 bpc)
+ISA samples:      0.122079 MB (0.0488319 bpc)
+Relative FM:      2.05096 MB (0.820391 bpc)
+
+
+Target: target_12
+Reference size: 20971521
+Target size: 20971146
+Built the merging bitvector in 10.3333 seconds
+Matched 20879545 positions in 24.2589 seconds
+Found a common subsequence of length 20786456 in 3.49814 seconds
+Built the bwt_lcs bitvectors and samples in 3.03905 seconds
+Index built in 41.2952 seconds
+
+BWT:              8.59454 MB (3.43788 bpc)
+SA samples:       3.67642 MB (1.47059 bpc)
+ISA samples:      0.976563 MB (0.390632 bpc)
+Simple FM:        13.2479 MB (5.29924 bpc)
+
+ref_minus_lcs:    0.0946074 MB (0.0378436 bpc)
+seq_minus_lcs:    0.0943394 MB (0.0377364 bpc)
+bwt_lcs:          0.843245 MB (0.337304 bpc)
+text_lcs:         0.661558 MB (0.264628 bpc)
+SA samples:       0.243196 MB (0.0972799 bpc)
+ISA samples:      0.122079 MB (0.0488324 bpc)
+Relative FM:      2.0595 MB (0.823816 bpc)
+
+
+Target: target_13
+Reference size: 20971521
+Target size: 20971579
+Built the merging bitvector in 10.3675 seconds
+Matched 20885989 positions in 24.2678 seconds
+Found a common subsequence of length 20793050 in 3.46434 seconds
+Built the bwt_lcs bitvectors and samples in 2.98282 seconds
+Index built in 41.2471 seconds
+
+BWT:              8.59457 MB (3.43782 bpc)
+SA samples:       3.67649 MB (1.47059 bpc)
+ISA samples:      0.976579 MB (0.39063 bpc)
+Simple FM:        13.248 MB (5.29918 bpc)
+
+ref_minus_lcs:    0.0918255 MB (0.0367301 bpc)
+seq_minus_lcs:    0.0918407 MB (0.0367362 bpc)
+bwt_lcs:          0.832373 MB (0.332948 bpc)
+text_lcs:         0.661497 MB (0.264598 bpc)
+SA samples:       0.243203 MB (0.097281 bpc)
+ISA samples:      0.122087 MB (0.0488345 bpc)
+Relative FM:      2.0433 MB (0.817319 bpc)
+
+
+Target: target_14
+Reference size: 20971521
+Target size: 20971274
+Built the merging bitvector in 10.344 seconds
+Matched 20878926 positions in 24.3 seconds
+Found a common subsequence of length 20808112 in 3.45574 seconds
+Built the bwt_lcs bitvectors and samples in 2.98811 seconds
+Index built in 41.2473 seconds
+
+BWT:              8.5946 MB (3.43788 bpc)
+SA samples:       3.67644 MB (1.47059 bpc)
+ISA samples:      0.976563 MB (0.39063 bpc)
+Simple FM:        13.248 MB (5.29924 bpc)
+
+ref_minus_lcs:    0.0860205 MB (0.0344086 bpc)
+seq_minus_lcs:    0.0859594 MB (0.0343842 bpc)
+bwt_lcs:          0.813818 MB (0.325531 bpc)
+text_lcs:         0.663443 MB (0.26538 bpc)
+SA samples:       0.243203 MB (0.0972824 bpc)
+ISA samples:      0.122079 MB (0.0488321 bpc)
+Relative FM:      2.015 MB (0.80601 bpc)
+
+
+Target: target_15
+Reference size: 20971521
+Target size: 20971866
+Built the merging bitvector in 10.3698 seconds
+Matched 20871212 positions in 24.2128 seconds
+Found a common subsequence of length 20779936 in 3.46731 seconds
+Built the bwt_lcs bitvectors and samples in 3.44685 seconds
+Index built in 41.6684 seconds
+
+BWT:              8.59476 MB (3.43785 bpc)
+SA samples:       3.67655 MB (1.47059 bpc)
+ISA samples:      0.976594 MB (0.390631 bpc)
+Simple FM:        13.2482 MB (5.29921 bpc)
+
+ref_minus_lcs:    0.0971432 MB (0.0388566 bpc)
+seq_minus_lcs:    0.097311 MB (0.0389238 bpc)
+bwt_lcs:          0.850546 MB (0.340213 bpc)
+text_lcs:         0.661978 MB (0.264787 bpc)
+SA samples:       0.243211 MB (0.0972827 bpc)
+ISA samples:      0.122087 MB (0.0488338 bpc)
+Relative FM:      2.07275 MB (0.829088 bpc)
+
+
+Target: target_16
+Reference size: 20971521
+Target size: 20971607
+Built the merging bitvector in 11.0008 seconds
+Matched 20884463 positions in 26.8935 seconds
+Found a common subsequence of length 20779549 in 4.11877 seconds
+Built the bwt_lcs bitvectors and samples in 3.09929 seconds
+Index built in 45.2794 seconds
+
+BWT:              8.59474 MB (3.43788 bpc)
+SA samples:       3.6765 MB (1.47059 bpc)
+ISA samples:      0.976579 MB (0.39063 bpc)
+Simple FM:        13.2482 MB (5.29925 bpc)
+
+ref_minus_lcs:    0.0972118 MB (0.0388846 bpc)
+seq_minus_lcs:    0.0880642 MB (0.0352255 bpc)
+bwt_lcs:          0.850637 MB (0.340254 bpc)
+text_lcs:         0.663511 MB (0.265403 bpc)
+SA samples:       0.243203 MB (0.0972809 bpc)
+ISA samples:      0.122087 MB (0.0488344 bpc)
+Relative FM:      2.06519 MB (0.826074 bpc)
+
+
+Target: target_17
+Reference size: 20971521
+Target size: 20971799
+Built the merging bitvector in 10.4503 seconds
+Matched 20879210 positions in 24.4169 seconds
+Found a common subsequence of length 20729131 in 3.46851 seconds
+Built the bwt_lcs bitvectors and samples in 2.95724 seconds
+Index built in 41.4701 seconds
+
+BWT:              8.59469 MB (3.43783 bpc)
+SA samples:       3.67654 MB (1.4706 bpc)
+ISA samples:      0.976586 MB (0.390629 bpc)
+Simple FM:        13.2482 MB (5.2992 bpc)
+
+ref_minus_lcs:    0.117997 MB (0.0471982 bpc)
+seq_minus_lcs:    0.118119 MB (0.0472471 bpc)
+bwt_lcs:          0.911467 MB (0.364582 bpc)
+text_lcs:         0.661963 MB (0.264781 bpc)
+SA samples:       0.243211 MB (0.097283 bpc)
+ISA samples:      0.122087 MB (0.048834 bpc)
+Relative FM:      2.17532 MB (0.870117 bpc)
+
+
+Target: target_18
+Reference size: 20971521
+Target size: 20971364
+Built the merging bitvector in 10.4149 seconds
+Matched 20872256 positions in 24.3357 seconds
+Found a common subsequence of length 20757086 in 3.48196 seconds
+Built the bwt_lcs bitvectors and samples in 2.95332 seconds
+Index built in 41.3585 seconds
+
+BWT:              8.59458 MB (3.43786 bpc)
+SA samples:       3.67645 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390631 bpc)
+Simple FM:        13.248 MB (5.29922 bpc)
+
+ref_minus_lcs:    0.106157 MB (0.0424632 bpc)
+seq_minus_lcs:    0.106096 MB (0.0424388 bpc)
+bwt_lcs:          0.879644 MB (0.35186 bpc)
+text_lcs:         0.662733 MB (0.265095 bpc)
+SA samples:       0.243203 MB (0.097282 bpc)
+ISA samples:      0.122079 MB (0.0488319 bpc)
+Relative FM:      2.12039 MB (0.848163 bpc)
+
+
+Target: target_19
+Reference size: 20971521
+Target size: 20971530
+Built the merging bitvector in 10.3703 seconds
+Matched 20875682 positions in 24.3334 seconds
+Found a common subsequence of length 20793526 in 3.59817 seconds
+Built the bwt_lcs bitvectors and samples in 2.99146 seconds
+Index built in 41.4564 seconds
+
+BWT:              8.59464 MB (3.43786 bpc)
+SA samples:       3.67648 MB (1.47059 bpc)
+ISA samples:      0.976579 MB (0.390631 bpc)
+Simple FM:        13.2481 MB (5.29922 bpc)
+
+ref_minus_lcs:    0.0916653 MB (0.0366661 bpc)
+seq_minus_lcs:    0.0916805 MB (0.0366722 bpc)
+bwt_lcs:          0.831717 MB (0.332686 bpc)
+text_lcs:         0.661657 MB (0.264663 bpc)
+SA samples:       0.243203 MB (0.0972812 bpc)
+ISA samples:      0.122087 MB (0.0488346 bpc)
+Relative FM:      2.04249 MB (0.816995 bpc)
+
+
+Target: target_20
+Reference size: 20971521
+Target size: 20971533
+Built the merging bitvector in 10.4338 seconds
+Matched 20872465 positions in 24.3143 seconds
+Found a common subsequence of length 20768866 in 3.47906 seconds
+Built the bwt_lcs bitvectors and samples in 3.37536 seconds
+Index built in 41.7723 seconds
+
+BWT:              8.59457 MB (3.43782 bpc)
+SA samples:       3.67648 MB (1.47059 bpc)
+ISA samples:      0.976579 MB (0.390631 bpc)
+Simple FM:        13.248 MB (5.29919 bpc)
+
+ref_minus_lcs:    0.101437 MB (0.0405746 bpc)
+seq_minus_lcs:    0.101437 MB (0.0405746 bpc)
+bwt_lcs:          0.8645 MB (0.3458 bpc)
+text_lcs:         0.662527 MB (0.265011 bpc)
+SA samples:       0.243203 MB (0.0972812 bpc)
+ISA samples:      0.122087 MB (0.0488346 bpc)
+Relative FM:      2.09567 MB (0.838267 bpc)
+
+
+Target: target_21
+Reference size: 20971521
+Target size: 20971709
+Built the merging bitvector in 10.3556 seconds
+Matched 20875823 positions in 24.4548 seconds
+Found a common subsequence of length 20746922 in 3.81757 seconds
+Built the bwt_lcs bitvectors and samples in 3.11164 seconds
+Index built in 41.9124 seconds
+
+BWT:              8.59475 MB (3.43787 bpc)
+SA samples:       3.67651 MB (1.47059 bpc)
+ISA samples:      0.976586 MB (0.390631 bpc)
+Simple FM:        13.2482 MB (5.29923 bpc)
+
+ref_minus_lcs:    0.110069 MB (0.0440273 bpc)
+seq_minus_lcs:    0.110146 MB (0.0440578 bpc)
+bwt_lcs:          0.891951 MB (0.356777 bpc)
+text_lcs:         0.662832 MB (0.265131 bpc)
+SA samples:       0.243203 MB (0.0972804 bpc)
+ISA samples:      0.122087 MB (0.0488342 bpc)
+Relative FM:      2.14077 MB (0.856299 bpc)
+
+
+Target: target_22
+Reference size: 20971521
+Target size: 20971817
+Built the merging bitvector in 7.99535 seconds
+Matched 20876303 positions in 19.8428 seconds
+Found a common subsequence of length 20797107 in 3.6841 seconds
+Built the bwt_lcs bitvectors and samples in 3.08069 seconds
+Index built in 34.7633 seconds
+
+BWT:              8.59489 MB (3.43791 bpc)
+SA samples:       3.67654 MB (1.47059 bpc)
+ISA samples:      0.976586 MB (0.390629 bpc)
+Simple FM:        13.2484 MB (5.29927 bpc)
+
+ref_minus_lcs:    0.0904207 MB (0.0361678 bpc)
+seq_minus_lcs:    0.0905046 MB (0.0362013 bpc)
+bwt_lcs:          0.826796 MB (0.330714 bpc)
+text_lcs:         0.660826 MB (0.264327 bpc)
+SA samples:       0.243211 MB (0.0972829 bpc)
+ISA samples:      0.122087 MB (0.0488339 bpc)
+Relative FM:      2.03432 MB (0.813718 bpc)
+
+
+Target: target_23
+Reference size: 20971521
+Target size: 20971457
+Built the merging bitvector in 7.93513 seconds
+Matched 20872157 positions in 19.862 seconds
+Found a common subsequence of length 20770847 in 3.5035 seconds
+Built the bwt_lcs bitvectors and samples in 3.12702 seconds
+Index built in 34.593 seconds
+
+BWT:              8.59455 MB (3.43783 bpc)
+SA samples:       3.67648 MB (1.4706 bpc)
+ISA samples:      0.976571 MB (0.39063 bpc)
+Simple FM:        13.248 MB (5.2992 bpc)
+
+ref_minus_lcs:    0.100519 MB (0.0402078 bpc)
+seq_minus_lcs:    0.100512 MB (0.0402047 bpc)
+bwt_lcs:          0.860884 MB (0.344355 bpc)
+text_lcs:         0.663519 MB (0.265408 bpc)
+SA samples:       0.243203 MB (0.0972816 bpc)
+ISA samples:      0.122079 MB (0.0488317 bpc)
+Relative FM:      2.09119 MB (0.83648 bpc)
+
+
+Target: target_24
+Reference size: 20971521
+Target size: 20971392
+Built the merging bitvector in 7.95098 seconds
+Matched 20869892 positions in 19.7062 seconds
+Found a common subsequence of length 20753941 in 3.52337 seconds
+Built the bwt_lcs bitvectors and samples in 3.21905 seconds
+Index built in 34.5766 seconds
+
+BWT:              8.59454 MB (3.43784 bpc)
+SA samples:       3.67646 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390631 bpc)
+Simple FM:        13.2479 MB (5.2992 bpc)
+
+ref_minus_lcs:    0.107342 MB (0.042937 bpc)
+seq_minus_lcs:    0.107304 MB (0.0429217 bpc)
+bwt_lcs:          0.883032 MB (0.353215 bpc)
+text_lcs:         0.662016 MB (0.264808 bpc)
+SA samples:       0.243203 MB (0.0972819 bpc)
+ISA samples:      0.122079 MB (0.0488319 bpc)
+Relative FM:      2.12545 MB (0.850187 bpc)
+
+
+Target: target_25
+Reference size: 20971521
+Target size: 20971512
+Built the merging bitvector in 11.0333 seconds
+Matched 20872632 positions in 26.8852 seconds
+Found a common subsequence of length 20745791 in 3.48804 seconds
+Built the bwt_lcs bitvectors and samples in 3.11372 seconds
+Index built in 44.6942 seconds
+
+BWT:              8.59463 MB (3.43785 bpc)
+SA samples:       3.67648 MB (1.47059 bpc)
+ISA samples:      0.976571 MB (0.390629 bpc)
+Simple FM:        13.248 MB (5.29922 bpc)
+
+ref_minus_lcs:    0.101349 MB (0.0405396 bpc)
+seq_minus_lcs:    0.110512 MB (0.0442047 bpc)
+bwt_lcs:          0.893072 MB (0.357229 bpc)
+text_lcs:         0.66194 MB (0.264776 bpc)
+SA samples:       0.243203 MB (0.0972813 bpc)
+ISA samples:      0.122079 MB (0.0488316 bpc)
+Relative FM:      2.13263 MB (0.853054 bpc)
+
+
+Memory usage: 0.506428 GB
+
+Building the relative LCP array
+
+Reference:        ref.lcp
+Length:           20971521
+LCP array:        22.5668 MB (9.02673 bpc)
+
+Target:           target_1.lcp
+Length:           20971410
+Construction:     98.8213 seconds
+Phrases:          296135 (average length 70.8171)
+LCP array:        2.42315 MB (0.969265 bpc)
+Tree:             0.294359 MB (0.117744 bpc)
+Relative LCP:     2.71751 MB (1.08701 bpc)
+
+Target:           target_2.lcp
+Length:           20971357
+Construction:     98.9366 seconds
+Phrases:          308928 (average length 67.8843)
+LCP array:        2.6338 MB (1.05353 bpc)
+Tree:             0.307238 MB (0.122896 bpc)
+Relative LCP:     2.94104 MB (1.17642 bpc)
+
+Target:           target_3.lcp
+Length:           20971674
+Construction:     98.1255 seconds
+Phrases:          331499 (average length 63.2632)
+LCP array:        3.00828 MB (1.2033 bpc)
+Tree:             0.329676 MB (0.131869 bpc)
+Relative LCP:     3.33795 MB (1.33517 bpc)
+
+Target:           target_4.lcp
+Length:           20971274
+Construction:     98.6468 seconds
+Phrases:          316642 (average length 66.2302)
+LCP array:        2.60719 MB (1.04289 bpc)
+Tree:             0.314631 MB (0.125854 bpc)
+Relative LCP:     2.92182 MB (1.16874 bpc)
+
+Target:           target_5.lcp
+Length:           20971714
+Construction:     98.6815 seconds
+Phrases:          313216 (average length 66.9561)
+LCP array:        2.64662 MB (1.05864 bpc)
+Tree:             0.310946 MB (0.124377 bpc)
+Relative LCP:     2.95756 MB (1.18301 bpc)
+
+Target:           target_6.lcp
+Length:           20971893
+Construction:     98.7051 seconds
+Phrases:          314192 (average length 66.7487)
+LCP array:        2.63791 MB (1.05515 bpc)
+Tree:             0.313768 MB (0.125505 bpc)
+Relative LCP:     2.95168 MB (1.18065 bpc)
+
+Target:           target_7.lcp
+Length:           20971742
+Construction:     98.6019 seconds
+Phrases:          316224 (average length 66.3193)
+LCP array:        2.69854 MB (1.07941 bpc)
+Tree:             0.314463 MB (0.125784 bpc)
+Relative LCP:     3.01301 MB (1.20519 bpc)
+
+Target:           target_8.lcp
+Length:           20971399
+Construction:     99.8506 seconds
+Phrases:          316184 (average length 66.3266)
+LCP array:        2.75018 MB (1.10008 bpc)
+Tree:             0.315287 MB (0.126115 bpc)
+Relative LCP:     3.06546 MB (1.22619 bpc)
+
+Target:           target_9.lcp
+Length:           20971771
+Construction:     98.7984 seconds
+Phrases:          311941 (average length 67.2299)
+LCP array:        2.57941 MB (1.03175 bpc)
+Tree:             0.312113 MB (0.124844 bpc)
+Relative LCP:     2.89152 MB (1.1566 bpc)
+
+Target:           target_10.lcp
+Length:           20971516
+Construction:     99.4678 seconds
+Phrases:          324348 (average length 64.6575)
+LCP array:        2.85707 MB (1.14283 bpc)
+Tree:             0.322115 MB (0.128846 bpc)
+Relative LCP:     3.17919 MB (1.27168 bpc)
+
+Target:           target_11.lcp
+Length:           20971364
+Construction:     108.237 seconds
+Phrases:          306488 (average length 68.4247)
+LCP array:        2.59548 MB (1.0382 bpc)
+Tree:             0.305651 MB (0.122261 bpc)
+Relative LCP:     2.90113 MB (1.16046 bpc)
+
+Target:           target_12.lcp
+Length:           20971146
+Construction:     99.7734 seconds
+Phrases:          310028 (average length 67.6427)
+LCP array:        2.60472 MB (1.04191 bpc)
+Tree:             0.307802 MB (0.123123 bpc)
+Relative LCP:     2.91253 MB (1.16503 bpc)
+
+Target:           target_13.lcp
+Length:           20971579
+Construction:     106.209 seconds
+Phrases:          310468 (average length 67.5483)
+LCP array:        2.64374 MB (1.05749 bpc)
+Tree:             0.30858 MB (0.123432 bpc)
+Relative LCP:     2.95232 MB (1.18092 bpc)
+
+Target:           target_14.lcp
+Length:           20971274
+Construction:     103.26 seconds
+Phrases:          319792 (average length 65.5779)
+LCP array:        2.71473 MB (1.0859 bpc)
+Tree:             0.317911 MB (0.127166 bpc)
+Relative LCP:     3.03264 MB (1.21307 bpc)
+
+Target:           target_15.lcp
+Length:           20971866
+Construction:     108.393 seconds
+Phrases:          317321 (average length 66.0904)
+LCP array:        2.76014 MB (1.10404 bpc)
+Tree:             0.31518 MB (0.12607 bpc)
+Relative LCP:     3.07532 MB (1.23011 bpc)
+
+Target:           target_16.lcp
+Length:           20971607
+Construction:     99.2283 seconds
+Phrases:          316035 (average length 66.3585)
+LCP array:        2.59314 MB (1.03725 bpc)
+Tree:             0.315355 MB (0.126142 bpc)
+Relative LCP:     2.90849 MB (1.16339 bpc)
+
+Target:           target_17.lcp
+Length:           20971799
+Construction:     98.4157 seconds
+Phrases:          324965 (average length 64.5356)
+LCP array:        2.78793 MB (1.11516 bpc)
+Tree:             0.324228 MB (0.12969 bpc)
+Relative LCP:     3.11216 MB (1.24485 bpc)
+
+Target:           target_18.lcp
+Length:           20971364
+Construction:     98.4469 seconds
+Phrases:          324246 (average length 64.6773)
+LCP array:        2.83631 MB (1.13453 bpc)
+Tree:             0.32332 MB (0.129329 bpc)
+Relative LCP:     3.15963 MB (1.26386 bpc)
+
+Target:           target_19.lcp
+Length:           20971530
+Construction:     105.105 seconds
+Phrases:          298891 (average length 70.1645)
+LCP array:        2.3935 MB (0.9574 bpc)
+Tree:             0.296885 MB (0.118754 bpc)
+Relative LCP:     2.69039 MB (1.07615 bpc)
+
+Target:           target_20.lcp
+Length:           20971533
+Construction:     98.1003 seconds
+Phrases:          324314 (average length 64.6643)
+LCP array:        2.78289 MB (1.11315 bpc)
+Tree:             0.32406 MB (0.129624 bpc)
+Relative LCP:     3.10695 MB (1.24278 bpc)
+
+Target:           target_21.lcp
+Length:           20971709
+Construction:     106.762 seconds
+Phrases:          311467 (average length 67.332)
+LCP array:        2.6154 MB (1.04615 bpc)
+Tree:             0.309328 MB (0.12373 bpc)
+Relative LCP:     2.92473 MB (1.16988 bpc)
+
+Target:           target_22.lcp
+Length:           20971817
+Construction:     98.4378 seconds
+Phrases:          309328 (average length 67.798)
+LCP array:        2.54626 MB (1.01849 bpc)
+Tree:             0.307619 MB (0.123046 bpc)
+Relative LCP:     2.85388 MB (1.14154 bpc)
+
+Target:           target_23.lcp
+Length:           20971457
+Construction:     98.5294 seconds
+Phrases:          316974 (average length 66.1614)
+LCP array:        2.62854 MB (1.05142 bpc)
+Tree:             0.316202 MB (0.126481 bpc)
+Relative LCP:     2.94474 MB (1.1779 bpc)
+
+Target:           target_24.lcp
+Length:           20971392
+Construction:     98.3292 seconds
+Phrases:          321567 (average length 65.2162)
+LCP array:        2.77345 MB (1.10939 bpc)
+Tree:             0.319193 MB (0.127678 bpc)
+Relative LCP:     3.09264 MB (1.23706 bpc)
+
+Target:           target_25.lcp
+Length:           20971512
+Construction:     99.9446 seconds
+Phrases:          320153 (average length 65.5047)
+LCP array:        2.76543 MB (1.10617 bpc)
+Tree:             0.31811 MB (0.127244 bpc)
+Relative LCP:     3.08354 MB (1.23342 bpc)
+
+Memory usage: 0.927303 GB
+
+Finish time: 1494461752
