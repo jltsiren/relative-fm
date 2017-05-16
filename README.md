@@ -75,5 +75,5 @@ Anthony J. Cox, Andrea Farruggia, Travis Gagie, Simon J. Puglisi, and Jouni Sir�
 Proc. SPIRE 2016, Springer LNCS 9954, pp. 1-14, Beppu, Japan, October 18-20, 2016.
 [DOI: 10.1007/978-3-319-46049-9_1](https://doi.org/10.1007/978-3-319-46049-9_1)
 
-Travis Gagie, Gonzalo Navarro, Simon J. Puglisi, and Jouni Sirén: **Relative Compressed Suffix Trees**.
+Travis Gagie, Gonzalo Navarro, Simon J. Puglisi, and Jouni Sirén: **Relative Suffix Trees**.
 [arXiv:1508.02550](https://arxiv.org/abs/1508.02550)
