@@ -12,6 +12,12 @@ representation of $\mBWT_{R}$ supporting \rank{} and \select{}, we can use the
 relative index $\mRFM_{S \mid R}$ to simulate \rank{} and \select{} on
 $\mBWT_{S}$.
 
+In this section, we describe the relative FM-index using the notation and the
+terminology of this paper. We also give an explicit description of the
+\locate{} and \extract{} functionality, which was not included in the original
+paper. Finally, we describe a more space-efficient variant of the algorithm
+for building a relative FM-index with full functionality.
+
 \subsection{Basic index}
 
 Assume that we have found a long common subsequence of sequences $X$ and $Y$.
@@ -25,10 +31,11 @@ pair of \emph{lcs-bitvectors} $\mAli(X,Y) = \langle B_X,B_Y \rangle$.
 
 In its most basic form, the relative FM-index $\mRFM_{S \mid R}$ only supports
 \find{} queries by simulating \rank{} queries on $\mBWT_{S}$. It does this by
-storing $\mAli(\BWT_{R},\BWT_{S})$ and the complements $\mCS(\mBWT_{R})$ and
-$\mCS(\mBWT_{S})$ of the common subsequence. The lcs-bitvectors are compressed
-using \emph{entropy-based compression} \cite{Raman2007}, while the complements
-are stored in structures similar to the reference $\mBWT_{R}$.
+storing $\mAli(\BWT_{R},\BWT_{S})$ and the complements (subsequences of
+non-aligned characters) $\mCS(\mBWT_{R})$ and $\mCS(\mBWT_{S})$. The
+lcs-bitvectors are compressed using \emph{entropy-based compression}
+\cite{Raman2007}, while the complements are stored in structures similar to
+the reference $\mBWT_{R}$.
 
 To compute $\mrank_{c}(\mBWT_{S}, i)$, we first determine the number of
 lcs-positions in $\mBWT_{S}$ up to position $S[i]$ with $k =
@@ -125,11 +132,15 @@ algorithm is fast, easy to parallelize, and quite space-efficient. As such,
 \RFM{} construction is practical, having been tested with datasets of hundreds
 of gigabytes in size.
 
-To find a bwt-invariant subsequence, we start by \emph{matching} each suffix
-of the reference sequence with the lexicographically nearest suffixes of the
-target sequence. In contrast to the original algorithm \cite{Belazzougui2014}, we
-only match suffixes that are lexicographically adjacent in the \emph{mutual
-suffix array} of the two sequences.
+In the following, we describe a more space-efficient variant of the original
+algorithm \cite{Belazzougui2014} for finding a bwt-invariant subsequence. We
+\begin{itemize}
+\item save space by simulating the \emph{mutual suffix array} $\mSA_{RS}$ with
+$\mCSA_{R}$ and $\mCSA_{S}$;
+\item \emph{match} suffixes of $R$ and $S$ only if they are adjacent in
+$\mSA_{RS}$; and
+\item run-length encode the match arrays to save space.
+\end{itemize}
 
 \begin{definition}
 Let $R$ and $S$ be two sequences, and let $\mSA = \mSA_{RS}$ and $\mISA =
@@ -141,10 +152,10 @@ $S[\mSA[\mISA[i]+1] - \abs{R}, \abs{S}]$, if $\mISA[i] < \abs{RS}$ and
 $\mSA[\mISA[i]+1]$ points to a suffix of $S$.
 \end{definition}
 
-Instead of using the mutual suffix array, we can use $\mCSA_{R}$, $\mCSA_{S}$,
+We simulate the mutual suffix array $\mSA_{RS}$ with $\mCSA_{R}$, $\mCSA_{S}$,
 and the \emph{merging bitvector} $B_{R,S}$ of length $\abs{RS}$. We set
-$B_{R,S}[i] = 1$, if $\mSA_{RS}[i]$ points to a suffix of $S$. We can build the
-merging bitvector in $\Oh(\abs{S} \cdot t_{\mLF})$ time, where $t_{\mLF}$ is
+$B_{R,S}[i] = 1$, if $\mSA_{RS}[i]$ points to a suffix of $S$. The merging
+bitvector can be built in $\Oh(\abs{S} \cdot t_{\mLF})$ time, where $t_{\mLF}$ is
 the time required for an \LF{} query, by extracting $S$ from $\mCSA_{S}$ and
 backward searching for it in $\mCSA_{R}$ \cite{Siren2009}. Suffix
 $R[i,\abs{R}]$ has a left (right) match, if $B_{R,S}[\mselect_{0}(B_{R,S},
@@ -178,35 +189,38 @@ required by \rank{} and \select{} operations, $r$ is the number of runs in the
 two arrays, and $d$ is the suffix array sample interval in
 $\mCSA_{S}$.\footnote{The time bound assumes text-order sampling.}
 
-The final step is finding the longest increasing subsequence $X$ of arrays
-$\mleft$ and $\mright$, which corresponds to a common subsequence of $R$ and
-$S$. More precisely, we want to find a binary sequence $B_{R}[1,\abs{R}]$,
-which marks the common subsequence in $R$, and an integer sequence $X$, which
-contains the positions of the common subsequence in $S$. The goal is to make
-sequence $X$ strictly increasing and as long as possible, with
-$X[\mrank_{1}(B_{R}, i)]$ being either $\mleft[i]$ or $\mright[i]$. This can
-be done in $\Oh(\abs{R} \log \abs{R})$ time with $\Oh(\abs{R} \log \abs{R})$
-bits of additional working space with a straightforward modification of the
-dynamic programming algorithm for finding the longest increasing subsequence.
-While the dynamic programming tables can be run-length encoded, the time and
-space savings are negligible or even non-existent in practice.
+The final step is determining the bwt-invariant subsequence. We find a
+binary sequence $B_{R}[1,\abs{R}]$, which marks the common subsequence in $R$,
+and a strictly increasing integer sequence $Y$, which contains the positions
+of the common subsequence in $S$. This can be done by finding the longest
+increasing subsequence over $R$, where we consider both $\mleft[i]$ and
+$\mright[i]$ as candidates for the value at position $i$, and using the found
+subsequence as $Y$. If $Y[j]$ comes from $\mleft[i]$ ($\mright[i]$), we set
+$B_{R}[i] = 1$, and align suffix $R[i, \abs{R}]$ with its
+left (right) match $S[Y[j], \abs{S}]$ in the bwt-invariant subsequence. We can
+find $B_{R}$ and $Y$ in $\Oh(\abs{R} \log \abs{R})$ time with
+$\Oh(\abs{R} \log \abs{R})$ bits of additional working space with a
+straightforward modification of the dynamic programming algorithm for finding
+the longest increasing subsequence. The dynamic programming tables can be
+run-length encoded, but we found that this did not yield good time/space
+trade-offs.
 
-As sequence $X$ is strictly increasing, we can convert it into binary sequence
-$B_{S}[1,\abs{S}]$, marking the values in sequence $X$ with \onebit{}s.
-Afterwards, we can consider the binary sequences $B_{R}$ and $B_{S}$ as the
+As sequence $Y$ is strictly increasing, we can convert it into binary sequence
+$B_{S}[1,\abs{S}]$, marking $B_{S}[Y[j]] = 1$ for all $j$.
+Afterwards, we consider the binary sequences $B_{R}$ and $B_{S}$ as the
 lcs-bitvectors $\mAli(R,S)$. Because every suffix of $R$ starts with the same
 character as its matches stored in the $\mleft$ and $\mright$ arrays,
-subsequences $R[B_{R}]$ and $S[B_{S}]$ are identical. As each suffix
-$R[i,\abs{R}]$ with $B_{R}[i] = 1$ is paired with its left match or right
-match in sequence $S$, no other suffix of $R$ or $S$ is lexicographically
-between the two paired suffixes.
+subsequences $R[B_{R}]$ and $S[B_{S}]$ are identical.
 
 For any $i$, let $i_{R} = \mselect_{1}(B_{R}, i)$ and $i_{S} =
-\mselect_{1}(B_{S}, i)$ be the lcs-positions of rank $i$. Then,
+\mselect_{1}(B_{S}, i)$ be the lcs-positions of rank $i$. As suffixes
+$R[i_{R}, \abs{R}]$ and $S[i_{S}, \abs{S}]$ are aligned in the bwt-invariant
+subsequence, they are also adjacent in the mutual suffix array $\mSA_{RS}$.
+Hence
 $$
 \mISA_{R}[i_{R}] < \mISA_{R}[j_{R}] \iff \mISA_{S}[i_{S}] < \mISA_{S}[j_{S}]
 $$
-for $1 \le i,j \le \abs{X}$, which is equivalent to the condition in
+for $1 \le i,j \le \abs{Y}$, which is equivalent to the condition in
 Definition~\ref{def:bwt-invariant}. We can convert $\mAli(R,S)$ to
 $\mAli(\mBWT_{R},\mBWT_{S})$ in $\Oh((\abs{R}+\abs{S}) \cdot t_{\mLF})$ time by
 traversing $\mCSA_{R}$ and $\mCSA_{S}$ backwards. The resulting subsequence of

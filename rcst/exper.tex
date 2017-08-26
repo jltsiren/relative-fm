@@ -192,6 +192,14 @@ no            &       94 million &            32.3 &      0.97 bpc &          0.
 \end{center}
 \end{table*}
 
+In order to use relative data structures, we also need to have the reference
+data structures in memory. The basic \SSA{} used by the basic
+\RFM{} takes 1283~MB with chromosome~Y and 1248~MB without, while the full
+\SSA{} used by the full \RFM{} takes 2162~MB and 2110~MB, respectively. The
+reference \LCP{} array used by the \RLCP{} array requires 3862~MB and 3690~MB
+with and without chromosome~Y.
+
+
 \subsection{Query times}
 
 Average query times for the basic operations can be seen in Tables~\ref{table:rfm
@@ -257,8 +265,11 @@ the target sequence, and measured the total time taken by \find{} and
 Figure~\ref{fig:locate}. While \SSA{} and \SSArrr{} query times were
 proportional to the sample interval, \RFM{} used 5.4\nobreakdash--7.6~microseconds
 per occurrence more than \SSA{}, resulting in slower growth in query times.
-In particular, \RFM{} with reference sample interval $31$ was faster than
-\SSA{} with sample interval $61$.
+In particular, \RFM{} with sample interval $31$ was faster than
+\SSA{} with sample interval $61$. As the \locate{} performance of the \RFM{}
+index is based on the sample interval in the reference, it is generally best
+to use dense sampling (e.g.~7 or 17), unless there are only a few target
+sequences.
 
 \begin{figure*}
 \begin{center}

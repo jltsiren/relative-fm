@@ -39,31 +39,36 @@ mismatch characters. The corresponding ranges in the
 \DLCP{} array typically consist of values $\set{-1, 0, 1}$, making them much
 easier to compress.
 
-We create an \RLZ{} parsing of $\mDLCP_{S}$ relative to $\mDLCP_{R}$, while
-using $\mLCP_{R}$ as the reference afterwards. The reference is stored in a
+We consider \DLCP{} arrays as strings over an integer alphabet and create an \RLZ{} parsing
+of $\mDLCP_{S}$ relative to $\mDLCP_{R}$. After parsing, we switch to using
+$\mLCP_{R}$ as the reference. The reference is stored in a
 structure we call \slarray, which is a variant of \LCPbyte.
 \cite{Abouelhoda2004}. Small values $\mLCP_{R}[i] < 255$ are stored in a byte
 array, while large values $\mLCP_{R}[i] \ge 255$ are marked with a $255$ in the
 byte array and stored separately. To quickly find the large values, we also
 build a $\mrank_{255}$ structure over the byte array. The \slarray{} provides
-reasonably fast random access and very fast sequential access to the
+reasonably fast random access and fast sequential access to the
 underlying array.
 
 The \RLZ{} parsing produces a sequence of phrases $w_{i} = (p_{i}, \ell_{i},
 c_{i})$ (see Section~\ref{sect:rlz}; since we are using Cox et al.'s version, $c_{i}$ is now a string).
 Because some queries involve decompressing an entire phrase, we limit the maximum phrase length to $1024$.
-Phrase lengths are encoded in the $W_{\ell}$ bitvector in the usual way. We convert the mismatching \DLCP{}
-values $c_{i}$ into absolute \LCP{} values in the mismatch array $W_{c}$, and
-store it as an \slarray. The mismatch values are used as \emph{absolute
+We also require that $\abs{c_{i}} > 0$ for all $i$, using the last character of the copied substring
+as a mismatch if necessary.
+
+Phrase lengths are encoded in the $W_{\ell}$ bitvector in the usual way. We convert the strings of mismatching
+\DLCP{} values $c_{i}$ into strings of absolute \LCP{} values, append them into the mismatch array $W_{c}$, and
+store the array as an \slarray. The mismatch values are used as \emph{absolute
 samples} for the differential encoding.
 
-To access $\mLCP_{S}[j]$, we determine the phrase $w_{i}$ as usual, and check whether we should return a mismatch character. If so, we compute which one using a prefix sum query on $L$, and return it.  If not, we determine the starting positions $r_{i}$ and $s_{i}$ of the phrase $w_{i}$ in the reference and the target, respectively. We can then compute the solution as
+To access $\mLCP_{S}[j]$, we determine the phrase $w_{i}$ as usual, and check whether we should return a mismatch character. If so, we compute which one using a prefix sum query on $L$, and return it.  If not, we determine the starting positions $p_{i}$ and $s_{i}$ of the phrase $w_{i}$ in the reference and the target, respectively. We can then compute the solution as
 \begin{align*}
-\mLCP_{S}[j] &= \mLCP_{S}[s_1 \!-\! 1] \!+\! \sum_{k = s_i}^{s_i + j- i}
-(\mLCP_{R}[k] \!-\! \mLCP_{R}[k\!-\!1]) \\
-&= \mLCP_{S}[s_1 \!-\! 1] \!+\! \mLCP_{R}[s_i \!+\! j \!-\! i] \!-\! \mLCP_{R}[s_i \!-\! 1],
+\mLCP_{S}[j] &= \mLCP_{S}[s_{i} - 1] + \sum_{k = s_{i}}^{j} \mDLCP_{S}[k] \\
+&= \mLCP_{S}[s_{i} - 1] + \sum_{k = p_{i}}^{j'} \mDLCP_{R}[k] \\
+&= \mLCP_{S}[s_{i} - 1] + \mLCP_{R}[j'] - \mLCP_{R}[p_{i} - 1],
 \end{align*}
-To speed up the computation, we enforce that each \RLZ{} phrase ends with at least one mismatch character, so $\mLCP_{S}[s_{i} - 1]$ is readily available. After finding $\mLCP_{S}[j]$, accessing $\mLCP_{S}[j-1]$ and $\mLCP_{S}[j+1]$ is fast, as long as we do not cross phrase boundaries.
+where $j' = p_{i} + j - s_{i}$.
+Each \RLZ{} phrase ends with at least one mismatch character, so $\mLCP_{S}[s_{i} - 1]$ is readily available. After finding $\mLCP_{S}[j]$, accessing $\mLCP_{S}[j-1]$ and $\mLCP_{S}[j+1]$ is fast, as long as we do not cross phrase boundaries.
 
 \subsection{Supporting \nsv/\psv/\rmq{} queries}
 

@@ -57,8 +57,9 @@ Compression algorithms best capture repetitiveness by using \emph{grammar-based}
 compression or \emph{Lempel-Ziv} compression.\footnote{We refer to ``long-range''
 repetitiveness, where similar texts may be found far away in the text
 collection.} In the first case \cite{KY00,CLLPPSS05} one finds a context-free
-grammar that generates (only) the text collection. The more repetitive the
-collection is, the smaller the grammar becomes. Rather than compressing the text directly,
+grammar that generates (only) the text collection.
+%The more repetitive the collection is, the smaller the grammar becomes.
+Rather than compressing the text directly,
 the current \CST{}s for repetitive collections \cite{Abeliuk2013,Navarro2015}
 apply grammar-based compression on the data structures that simulate the suffix tree.
 Grammar-based compression yields relatively easy direct access to the compressed
@@ -85,8 +86,14 @@ sequence has been found, offers compression competitive with the
 classical Lempel-Ziv. In our case, taking any random genome per species as the
 reference is good enough; more sophisticated techniques have been studied
 \cite{KPZ11,KBSCZ12,LPMW16}. Structures for direct access \cite{DG11,Ferrada2014}
-and even for pattern matching \cite{DJSS14,Belazzougui2014} have been developed
+and even for pattern matching \cite{DJSS14} have been developed
 on top of \RLZ.
+
+Another approach to compressing a repetitive collection while supporting interesting queries is to build an automaton that accepts the sequences in the collection, and then index the state diagram as an directed acyclic graph (DAG); see, for example,~\cite{MaciucaEtAl16,PatenEtAl17,Siren17} for recent discussions.  The first data structure to take this approach was the Generalized Compressed Suffix Array (GCSA)~\cite{SVM14,Siren17}, which was designed for pangenomics so queries can return information about sequences not in the collection but that can be obtained from those in the collection by recombination.
+
+The FM-index of an alignment (FMA)~\cite{NaKPLLMP16,NaEtAl17} is similar to the GCSA but indexes only the sequences in the collection: whereas the GCSA conceptually embeds the automaton in a de Bruijn graph, the FMA embeds it in a coloured de Bruijn graph~\cite{IqbalEtAl12}, preserving its specificity.  Both the GCSA and FMA are practical but neither support the full functionality of a suffix tree.  The precursor to the FMA, the suffix tree of an alignment (STA)~\cite{NPCHIMP13,NPLHLMP13}, allows certain disjunctions in the suffix tree's edge labels in order to reduce the size of the tree while maintaining its functionality.  It differs from our approach because it is a single tree for the whole collection and not a separate one for each sequence; also, unlike the FMA, the STA has not been implemented.  Both the STA and FMA divide the sequences in the collection into regions of variation and conserved regions, and depend on the conserved regions being long enough that they can be distinguished from each other and the variations.  This dependency makes these structures vulnerable to even a small change in even one sequence to an otherwise-conserved region, which could hamper their scalability.
+
+\subsection{Our contribution}
 
 In this paper, we develop a \CST{} by augmenting the \emph{relative FM-index}
 \cite{Belazzougui2014} with structures based on \RLZ.
@@ -95,7 +102,15 @@ within microseconds. This performance is comparable to that of a previous \CST{}
 for this scenario \cite{Navarro2015}, but our \CST{}s have a different
 functionality. We have a separate \CST{} for each sequence, instead of a single
 \CST{} for their concatenation. Depending on the application, one kind of \CST{} or
-the other is necessary.
+the other is necessary:
+\begin{itemize}
+\item If the main application is pattern matching, a single \CST{} is faster than multiple \CST{}s,
+as we do not have to repeat the queries in multiple indexes.
+\item Both approaches are equal for listing pattern occurrences and traversing subtrees, as the amount
+of work depends on the total number of matches or the total size of the subtrees.
+\item Comparing individual sequences is easier if we have separate \CST{}s for them.
+\item If the working set of sequences changes frequently, having separate \CST{}s helps to avoid the potentially expensive reconstruction of data structures.
+\end{itemize}
 
 Our compressed suffix tree, called \RCST, follows a trend of \CST{}s
 \cite{Fischer2009a,Ohlebusch2009,Fis10,Ohlebusch2010,Gog2011a,Abeliuk2013} that use only a pattern-matching index
@@ -108,6 +123,4 @@ next- and previous-smaller-value queries, on \LCP{} \cite{Abeliuk2013}. All the 
 is built on those queries \cite{Fischer2009a}. Our main algorithmic contribution
 is this \RLZ\nobreakdash-based representation of the \LCP{} array with the required extra
 functionality.
-
-Another approach to compressing a repetitive collection while supporting interesting queries is to build an automaton that accepts the sequences in the collection, and then index the state diagram as an directed acyclic graph (DAG); see, for example,~\cite{MaciucaEtAl16,PatenEtAl17,Siren17} for recent discussions.  The first data structure to take this approach was the Generalized Compressed Suffix Array (GCSA)~\cite{SVM14,Siren17}, which was designed for pangenomics so queries can return information about sequences not in the collection but that can be obtained from those in the collection by recombination.  The FM-index of an alignment (FMA)~\cite{NaKPLLMP16,NaEtAl17} is similar to the GCSA but indexes only the sequences in the collection: whereas the GCSA conceptually embeds the automaton in a de Bruijn graph, the FMA embeds it in a coloured de Bruijn graph~\cite{IqbalEtAl12}, preserving its specificity.  Both the GCSA and FMA are practical but neither support the full functionality of a suffix tree.  The precursor to the FMA, the suffix tree of an alignment (STA)~\cite{NPCHIMP13,NPLHLMP13}, allows certain disjunctions in the suffix tree's edge labels in order to reduce the size of the tree while maintaining its functionality.  It differs from our approach because it is a single tree for the whole collection and not a separate one for each sequence; also, unlike the FMA, the STA has not been implemented.  Both the STA and FMA divide the sequences in the collection into regions of variation and conserved regions, and depend on the conserved regions being long enough that they can be distinguished from each other and the variations.  This dependency makes these structures vulnerable to even a small change in even one sequence to an otherwise-conserved region, which could hamper their scalability.
 
