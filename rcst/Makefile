@@ -1,5 +1,5 @@
 SOURCES=$(wildcard *.tex)
-FIGURES=locate.pdf locate_bars.pdf synth.pdf comp.pdf
+FIGURES=locate.pdf locate_bars.pdf synth.pdf comp.pdf ex.pdf
 
 all: paper.pdf
 

@@ -70,6 +70,43 @@ To access $\mLCP_{S}[j]$, we determine the phrase $w_{i}$ as usual, and check wh
 where $j' = p_{i} + j - s_{i}$.
 Each \RLZ{} phrase ends with at least one mismatch character, so $\mLCP_{S}[s_{i} - 1]$ is readily available. After finding $\mLCP_{S}[j]$, accessing $\mLCP_{S}[j-1]$ and $\mLCP_{S}[j+1]$ is fast, as long as we do not cross phrase boundaries.
 
+
+\paragraph{Example.}
+Figure~\ref{fig:ex} shows an example reference sequence $R$ and target
+sequence $S$, with their corresponding arrays $\SA$, $\LCP$, and $\DLCP$.
+The single edit at $S[4]$ with respect to $R[4]$ may affect the positions
+of suffixes $4$ and previous ones in $\SA$, although in general only a limited
+number of preceding suffixes are affected. In our example, suffix $4$ moves
+from position $7$ in $\SA_R$ to position $4$ in $\SA_S$, and suffix $3$ moves
+from position $11$ in $\SA_R$ to position $10$ in $\SA_S$. Each suffix that
+is moved from $\SA_R[i]$ to $\SA_S[j]$ may alter the values at positions $i$ 
+or $i+1$ (depending on whether $j>i$ or $j<i$), as well as $j$ and $j+1$, of
+$\LCP_S$. We have surrounded in rectangles the conserved regions in $\LCP_S$
+(some are conserved by chance). Even some suffixes that 
+are not moved may change their $\LCP$ values. In turn, each change in 
+$\LCP_S[k]$ may change values $\DLCP_S[k]$ and $\DLCP_S[k+1]$.
+
+After the change, we can parse $\DLCP_S$ into three phrases (with the copied
+symbols surrounded by rectangles):
+$(1,4,0)$, $(5,3,-2)$, $(6,2,-2)$, where the latter is formed by chance.
+We represent this parsing as $W_c = \langle 1,0,0 \rangle$ (since we store the
+absolute $\LCP_S$ values for the mismatches), $W_\ell = 100001000100$, and
+$W_p = \langle 1,5,6 \rangle$ (or rather $W_r = \langle 0,-1,-4 \rangle$).
+
+Let us compute $\LCP_S[j]$ for $j=8$. This corresponds to phrase number
+$i = \rank(W_\ell,j) = 2$, which starts at position $s_i = \select(W_\ell,i)=6$
+in $\LCP_S$. The corresponding position in $\LCP_R$ is $p_i = W_p[i] = 5$
+(or rather $p_i = s_i + W_r[i] = 5$), and the mapped position $j$ is
+$j' = p_i+j-s_i = 7$. Finally, $\LCP_S[s_i-1] = W_c[i-1]=1$.
+According to our formula, then, we have
+$\LCP_S[8] = \LCP_S[s_i-1] + \LCP_R[j'] - \LCP_R[p_i-1] = 1+2-1=2$.
+
+\begin{figure}
+\centerline{\includegraphics[width=0.4\textwidth]{ex.pdf}}
+\caption{An example of our $\RLZ$ compression of $\DLCP$.}
+\label{fig:ex}
+\end{figure}
+
 \subsection{Supporting \nsv/\psv/\rmq{} queries}
 
 Suffix tree topology can be inferred from the \LCP{} array with range minimum
