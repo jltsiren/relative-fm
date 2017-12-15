@@ -77,4 +77,4 @@ Proc. SPIRE 2016, Springer LNCS 9954, pp. 1-14, Beppu, Japan, October 18-20, 201
 
 Andrea Farruggia, Travis Gagie, Gonzalo Navarro, Simon J. Puglisi, and Jouni Sirén: **Relative Suffix Trees**.
 Accepted to The Computer Journal, 2017.
-[arXiv:1508.02550](https://arxiv.org/abs/1508.02550)
+[DOI: 10.1093/comjnl/bxx108](https://doi.org/10.1093/comjnl/bxx108)
